@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 )
 
@@ -17,7 +18,7 @@ type QueryParams struct {
 	ContractAddr   string `mapstructure:"contract-addr"`
 	BlockHeight    uint64 `mapstructure:"block-height"`
 	BlockHash      string `mapstructure:"block-hash"`
-	BlockTimestamp string `mapstructure:"block-timestamp"`
+	BlockTimestamp uint64 `mapstructure:"block-timestamp"`
 }
 
 // TODO: replace with babylon RPC
@@ -51,7 +52,7 @@ func createQueryData(queryParams QueryParams) string {
 		CheckBlockFinalized: CheckBlockFinalized{
 			Height:    queryParams.BlockHeight,
 			Hash:      queryParams.BlockHash,
-			Timestamp: queryParams.BlockTimestamp,
+			Timestamp: strconv.FormatUint(queryParams.BlockTimestamp, 10),
 		},
 	}
 	jsonData, err := json.Marshal(queryData)

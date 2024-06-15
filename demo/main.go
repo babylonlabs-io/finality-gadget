@@ -12,7 +12,7 @@ func checkBlockFinalized(height uint64, hash string) {
 		ContractAddr:   "osmo1zck32had0fpc4fu34ae58zvs3mjd5yrzs70thw027nfqst7edc3sdqak0m",
 		BlockHeight:    height,
 		BlockHash:      hash,
-		BlockTimestamp: "1718332131",
+		BlockTimestamp: uint64(1718332131),
 	})
 	fmt.Printf("is block %d finalized?: %t\n", height, isFinalized)
 
