@@ -25,7 +25,7 @@ func (babylonClient *babylonQueryClient) querySmartContractState(contractAddress
 	ctx, cancel := babylonClient.getBabylonQueryContext()
 	defer cancel()
 
-	sdkClientCtx := sdkclient.Context{Client: babylonClient.RPCClient}
+	sdkClientCtx := sdkclient.Context{Client: babylonClient.rpcClient}
 	wasmQueryClient := wasmtypes.NewQueryClient(sdkClientCtx)
 
 	req := &wasmtypes.QuerySmartContractStateRequest{

@@ -7,29 +7,29 @@ import (
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 )
 
-// BabylonQueryConfig defines configuration for the Babylon query client
-type BabylonQueryConfig struct {
-	RPCAddr string        `mapstructure:"rpc-addr"`
-	Timeout time.Duration `mapstructure:"timeout"`
+// babylonQueryConfig defines configuration for the Babylon query client
+type babylonQueryConfig struct {
+	rpcAddr string        `mapstructure:"rpc-addr"`
+	timeout time.Duration `mapstructure:"timeout"`
 }
 
 // babylonQueryClient is a client that can only perform queries to a Babylon node
 // It only requires the query config to have `Timeout` and `RPCAddr`, but not other fields
 // such as keyring, chain ID, etc..
 type babylonQueryClient struct {
-	RPCClient rpcclient.Client
+	rpcClient rpcclient.Client
 	timeout   time.Duration
 }
 
 // newBabylonQueryClient creates a new babylonQueryClient according to the given config
-func newBabylonQueryClient(queryConfig BabylonQueryConfig) (*babylonQueryClient, error) {
-	rpcClient, err := sdkclient.NewClientFromNode(queryConfig.RPCAddr)
+func newBabylonQueryClient(queryConfig babylonQueryConfig) (*babylonQueryClient, error) {
+	rpcClient, err := sdkclient.NewClientFromNode(queryConfig.rpcAddr)
 	if err != nil {
 		return nil, err
 	}
 
 	return &babylonQueryClient{
-		RPCClient: rpcClient,
-		timeout:   queryConfig.Timeout,
+		rpcClient: rpcClient,
+		timeout:   queryConfig.timeout,
 	}, nil
 }

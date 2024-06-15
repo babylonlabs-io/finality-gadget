@@ -38,16 +38,16 @@ type CheckBlockFinalized struct {
 	Timestamp string `json:"timestamp"`
 }
 
-type QueryData struct {
+type queryData struct {
 	CheckBlockFinalized CheckBlockFinalized `json:"check_block_finalized"`
 }
 
-type QueryIsBlockBabylonFinalizedResponseData struct {
+type queryIsBlockBabylonFinalizedResponseData struct {
 	Finalized bool `json:"finalized"`
 }
 
 func createQueryData(queryParams QueryParams) string {
-	queryData := QueryData{
+	queryData := queryData{
 		CheckBlockFinalized: CheckBlockFinalized{
 			Height:    queryParams.BlockHeight,
 			Hash:      queryParams.BlockHash,
@@ -67,10 +67,10 @@ func QueryIsBlockBabylonFinalized(queryParams QueryParams) (bool, error) {
 		return false, err
 	}
 
-	queryClient, _ := newBabylonQueryClient(BabylonQueryConfig{
-		RPCAddr: rpcAddr,
+	queryClient, _ := newBabylonQueryClient(babylonQueryConfig{
+		rpcAddr: rpcAddr,
 		// hardcode the timeout to 20 seconds. We can expose it to the params once needed
-		Timeout: 20 * time.Second,
+		timeout: 20 * time.Second,
 	})
 
 	resp, err := queryClient.querySmartContractState(queryParams.ContractAddr, createQueryData(queryParams))
@@ -78,7 +78,7 @@ func QueryIsBlockBabylonFinalized(queryParams QueryParams) (bool, error) {
 		fmt.Println("Query error:", err)
 	}
 
-	var data QueryIsBlockBabylonFinalizedResponseData
+	var data queryIsBlockBabylonFinalizedResponseData
 	if err := json.Unmarshal(resp.Data, &data); err != nil {
 		fmt.Println("Error unmarshaling data:", err)
 	}
