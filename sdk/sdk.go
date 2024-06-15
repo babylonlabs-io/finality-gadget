@@ -46,6 +46,21 @@ type QueryIsBlockBabylonFinalizedResponseData struct {
 	Finalized bool `json:"finalized"`
 }
 
+func createQueryData(queryParams QueryParams) string {
+	queryData := QueryData{
+		CheckBlockFinalized: CheckBlockFinalized{
+			Height:    queryParams.BlockHeight,
+			Hash:      queryParams.BlockHash,
+			Timestamp: queryParams.BlockTimestamp,
+		},
+	}
+	jsonData, err := json.Marshal(queryData)
+	if err != nil {
+		log.Fatalf("Error marshaling JSON: %v", err)
+	}
+	return string(jsonData)
+}
+
 func QueryIsBlockBabylonFinalized(queryParams QueryParams) (bool, error) {
 	rpcAddr, err := queryParams.getRpcAddr()
 	if err != nil {
@@ -58,18 +73,7 @@ func QueryIsBlockBabylonFinalized(queryParams QueryParams) (bool, error) {
 		Timeout: 20 * time.Second,
 	})
 
-	queryData := QueryData{
-		CheckBlockFinalized: CheckBlockFinalized{
-			Height:    queryParams.BlockHeight,
-			Hash:      queryParams.BlockHash,
-			Timestamp: queryParams.BlockTimestamp,
-		},
-	}
-	jsonData, err := json.Marshal(queryData)
-	if err != nil {
-		log.Fatalf("Error marshaling JSON: %v", err)
-	}
-	resp, err := queryClient.querySmartContractState(queryParams.ContractAddr, string(jsonData))
+	resp, err := queryClient.querySmartContractState(queryParams.ContractAddr, createQueryData(queryParams))
 	if err != nil {
 		fmt.Println("Query error:", err)
 	}
