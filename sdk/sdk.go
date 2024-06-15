@@ -3,6 +3,7 @@ package sdk
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -12,9 +13,11 @@ const (
 )
 
 type QueryParams struct {
-	ChainType    int    `mapstructure:"chain-type"`
-	ContractAddr string `mapstructure:"contract-addr"`
-	BlockHeight  uint64 `mapstructure:"block-height"`
+	ChainType      int    `mapstructure:"chain-type"`
+	ContractAddr   string `mapstructure:"contract-addr"`
+	BlockHeight    uint64 `mapstructure:"block-height"`
+	BlockHash      string `mapstructure:"block-hash"`
+	BlockTimestamp string `mapstructure:"block-timestamp"`
 }
 
 // TODO: replace with babylon RPC
@@ -27,6 +30,16 @@ func (queryParams QueryParams) getRpcAddr() (string, error) {
 	default:
 		return "", fmt.Errorf("unrecognized chain type: %d", queryParams.ChainType)
 	}
+}
+
+type CheckBlockFinalized struct {
+	Height    uint64 `json:"height"`
+	Hash      string `json:"hash"`
+	Timestamp string `json:"timestamp"`
+}
+
+type QueryData struct {
+	CheckBlockFinalized CheckBlockFinalized `json:"check_block_finalized"`
 }
 
 type QueryIsBlockBabylonFinalizedResponseData struct {
@@ -45,11 +58,21 @@ func QueryIsBlockBabylonFinalized(queryParams QueryParams) (bool, error) {
 		Timeout: 20 * time.Second,
 	})
 
-	// TODO: is there a better way to define the json schema?
-	queryData := fmt.Sprintf(`{
-        "check_block_finalized": {"height": %d}
-    }`, queryParams.BlockHeight)
-	resp, _ := queryClient.querySmartContractState(queryParams.ContractAddr, queryData)
+	queryData := QueryData{
+		CheckBlockFinalized: CheckBlockFinalized{
+			Height:    queryParams.BlockHeight,
+			Hash:      queryParams.BlockHash,
+			Timestamp: queryParams.BlockTimestamp,
+		},
+	}
+	jsonData, err := json.Marshal(queryData)
+	if err != nil {
+		log.Fatalf("Error marshaling JSON: %v", err)
+	}
+	resp, err := queryClient.querySmartContractState(queryParams.ContractAddr, string(jsonData))
+	if err != nil {
+		fmt.Println("Query error:", err)
+	}
 
 	var data QueryIsBlockBabylonFinalizedResponseData
 	if err := json.Unmarshal(resp.Data, &data); err != nil {
