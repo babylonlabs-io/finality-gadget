@@ -3,6 +3,9 @@ package sdk
 import (
 	"time"
 
+	"context"
+
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	rpcclient "github.com/cometbft/cometbft/rpc/client"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 )
@@ -32,4 +35,19 @@ func newBabylonQueryClient(queryConfig babylonQueryConfig) (*babylonQueryClient,
 		rpcClient: rpcClient,
 		timeout:   queryConfig.timeout,
 	}, nil
+}
+
+// querySmartContractState queries the smart contract state given the contract address and query data
+func (babylonClient *babylonQueryClient) querySmartContractState(contractAddress string, queryData []byte) (*wasmtypes.QuerySmartContractStateResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), babylonClient.timeout)
+	defer cancel()
+
+	sdkClientCtx := sdkclient.Context{Client: babylonClient.rpcClient}
+	wasmQueryClient := wasmtypes.NewQueryClient(sdkClientCtx)
+
+	req := &wasmtypes.QuerySmartContractStateRequest{
+		Address:   contractAddress,
+		QueryData: queryData,
+	}
+	return wasmQueryClient.SmartContractState(ctx, req)
 }

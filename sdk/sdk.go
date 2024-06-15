@@ -20,7 +20,7 @@ type QueryParams struct {
 	BlockTimestamp uint64 `mapstructure:"block-timestamp"`
 }
 
-// TODO: replace with babylon RPC
+// TODO: replace with babylon RPCs when QuerySmartContractStateRequest query is supported
 func (queryParams QueryParams) getRpcAddr() (string, error) {
 	switch queryParams.ChainType {
 	case BabylonTestnet:
@@ -32,14 +32,14 @@ func (queryParams QueryParams) getRpcAddr() (string, error) {
 	}
 }
 
-type CheckBlockFinalized struct {
+type checkBlockFinalizedData struct {
 	Height    uint64 `json:"height"`
 	Hash      string `json:"hash"`
 	Timestamp string `json:"timestamp"`
 }
 
 type queryIsBlockBabylonFinalizedData struct {
-	CheckBlockFinalized CheckBlockFinalized `json:"check_block_finalized"`
+	CheckBlockFinalized checkBlockFinalizedData `json:"check_block_finalized"`
 }
 
 type queryIsBlockBabylonFinalizedResponseData struct {
@@ -48,7 +48,7 @@ type queryIsBlockBabylonFinalizedResponseData struct {
 
 func createQueryData(queryParams QueryParams) ([]byte, error) {
 	queryData := queryIsBlockBabylonFinalizedData{
-		CheckBlockFinalized: CheckBlockFinalized{
+		CheckBlockFinalized: checkBlockFinalizedData{
 			Height:    queryParams.BlockHeight,
 			Hash:      queryParams.BlockHash,
 			Timestamp: strconv.FormatUint(queryParams.BlockTimestamp, 10),
