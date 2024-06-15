@@ -5,3 +5,15 @@ We propoed a [Babylon finality gadget](https://github.com/ethereum-optimism/spec
 We will modify the OP-stack codebase to use this Go module for additional finalty checks.
 
 In the future, we will also move the CosmWasm contract code here.
+
+## Usages
+
+To run the demo app
+```
+make run
+```
+
+To run tests
+```
+make test
+```
