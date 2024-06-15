@@ -25,12 +25,12 @@ func main() {
 	blockHashWithoutEnoughVotes := "0x3aa074144a25d3ed71c7353a20c579650e0c56a993444c6156d44bb90b932f0d"
 	blockHashWithEnoughVotes := "stub hash"
 
-	fmt.Println("=== When the block hash has enoguh votes: ===")
+	fmt.Println("=== When the block hash has enough votes: ===")
 	for i := range 4 {
 		checkBlockFinalized(uint64(i), blockHashWithEnoughVotes)
 	}
 
-	fmt.Println("\n=== When the block hash doesn't have enoguh votes: ===")
+	fmt.Println("\n=== When the block hash doesn't have enough votes: ===")
 	for i := range 4 {
 		checkBlockFinalized(uint64(i), blockHashWithoutEnoughVotes)
 	}

@@ -23,14 +23,14 @@ func TestSdk(t *testing.T) {
 	blockHashWithoutEnoughVotes := "0x3aa074144a25d3ed71c7353a20c579650e0c56a993444c6156d44bb90b932f0d"
 	blockHashWithEnoughVotes := "stub hash"
 
-	// When the block hash has enoguh votes
+	// When the block hash has enough votes
 	for i, expected := range []bool{true, true, true, false} {
 		finaliezd, err := checkBlockFinalized(uint64(i), blockHashWithEnoughVotes)
 		require.Nil(t, err)
 		require.Equal(t, expected, finaliezd)
 	}
 
-	// When the block hash doesn't have enoguh votes
+	// When the block hash doesn't have enough votes
 	for i := range 4 {
 		finaliezd, err := checkBlockFinalized(uint64(i), blockHashWithoutEnoughVotes)
 		require.Nil(t, err)
