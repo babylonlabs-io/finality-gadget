@@ -3,7 +3,6 @@ package sdk
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 )
@@ -39,7 +38,7 @@ type CheckBlockFinalized struct {
 	Timestamp string `json:"timestamp"`
 }
 
-type queryData struct {
+type queryIsBlockBabylonFinalizedData struct {
 	CheckBlockFinalized CheckBlockFinalized `json:"check_block_finalized"`
 }
 
@@ -47,8 +46,8 @@ type queryIsBlockBabylonFinalizedResponseData struct {
 	Finalized bool `json:"finalized"`
 }
 
-func createQueryData(queryParams QueryParams) string {
-	queryData := queryData{
+func createQueryData(queryParams QueryParams) (string, error) {
+	queryData := queryIsBlockBabylonFinalizedData{
 		CheckBlockFinalized: CheckBlockFinalized{
 			Height:    queryParams.BlockHeight,
 			Hash:      queryParams.BlockHash,
@@ -57,9 +56,9 @@ func createQueryData(queryParams QueryParams) string {
 	}
 	jsonData, err := json.Marshal(queryData)
 	if err != nil {
-		log.Fatalf("Error marshaling JSON: %v", err)
+		return "", err
 	}
-	return string(jsonData)
+	return string(jsonData), nil
 }
 
 func QueryIsBlockBabylonFinalized(queryParams QueryParams) (bool, error) {
@@ -68,20 +67,28 @@ func QueryIsBlockBabylonFinalized(queryParams QueryParams) (bool, error) {
 		return false, err
 	}
 
-	queryClient, _ := newBabylonQueryClient(babylonQueryConfig{
+	queryClient, err := newBabylonQueryClient(babylonQueryConfig{
 		rpcAddr: rpcAddr,
 		// hardcode the timeout to 20 seconds. We can expose it to the params once needed
 		timeout: 20 * time.Second,
 	})
-
-	resp, err := queryClient.querySmartContractState(queryParams.ContractAddr, createQueryData(queryParams))
 	if err != nil {
-		fmt.Println("Query error:", err)
+		return false, err
+	}
+
+	queryData, err := createQueryData(queryParams)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := queryClient.querySmartContractState(queryParams.ContractAddr, queryData)
+	if err != nil {
+		return false, err
 	}
 
 	var data queryIsBlockBabylonFinalizedResponseData
 	if err := json.Unmarshal(resp.Data, &data); err != nil {
-		fmt.Println("Error unmarshaling data:", err)
+		return false, err
 	}
 
 	return data.Finalized, nil
