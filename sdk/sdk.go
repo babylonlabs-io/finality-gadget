@@ -46,7 +46,7 @@ type queryIsBlockBabylonFinalizedResponseData struct {
 	Finalized bool `json:"finalized"`
 }
 
-func createQueryData(queryParams QueryParams) (string, error) {
+func createQueryData(queryParams QueryParams) ([]byte, error) {
 	queryData := queryIsBlockBabylonFinalizedData{
 		CheckBlockFinalized: CheckBlockFinalized{
 			Height:    queryParams.BlockHeight,
@@ -54,11 +54,11 @@ func createQueryData(queryParams QueryParams) (string, error) {
 			Timestamp: strconv.FormatUint(queryParams.BlockTimestamp, 10),
 		},
 	}
-	jsonData, err := json.Marshal(queryData)
+	data, err := json.Marshal(queryData)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return string(jsonData), nil
+	return data, nil
 }
 
 func QueryIsBlockBabylonFinalized(queryParams QueryParams) (bool, error) {

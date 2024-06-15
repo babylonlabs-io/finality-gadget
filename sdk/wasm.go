@@ -21,7 +21,7 @@ func (babylonClient *babylonQueryClient) getBabylonQueryContext() (context.Conte
 	return ctx, cancel
 }
 
-func (babylonClient *babylonQueryClient) querySmartContractState(contractAddress string, queryData string) (*wasmtypes.QuerySmartContractStateResponse, error) {
+func (babylonClient *babylonQueryClient) querySmartContractState(contractAddress string, queryData []byte) (*wasmtypes.QuerySmartContractStateResponse, error) {
 	ctx, cancel := babylonClient.getBabylonQueryContext()
 	defer cancel()
 
@@ -30,7 +30,7 @@ func (babylonClient *babylonQueryClient) querySmartContractState(contractAddress
 
 	req := &wasmtypes.QuerySmartContractStateRequest{
 		Address:   contractAddress,
-		QueryData: wasmtypes.RawContractMessage(queryData),
+		QueryData: queryData,
 	}
 	return wasmQueryClient.SmartContractState(ctx, req)
 }
