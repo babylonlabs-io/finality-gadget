@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"time"
 )
 
 const (
@@ -67,10 +66,8 @@ func QueryIsBlockBabylonFinalized(queryParams QueryParams) (bool, error) {
 		return false, err
 	}
 
-	queryClient, err := newBabylonQueryClient(babylonQueryConfig{
+	queryClient, err := newBabylonQueryClient(babylonClientConfig{
 		rpcAddr: rpcAddr,
-		// hardcode the timeout to 20 seconds. We can expose it to the params once needed
-		timeout: 20 * time.Second,
 	})
 	if err != nil {
 		return false, err
