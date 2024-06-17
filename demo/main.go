@@ -7,9 +7,17 @@ import (
 )
 
 func checkBlockFinalized(height uint64, hash string) {
-	isFinalized, err := sdk.QueryIsBlockBabylonFinalized(sdk.QueryParams{
-		ChainType:      0,
-		ContractAddr:   "osmo1zck32had0fpc4fu34ae58zvs3mjd5yrzs70thw027nfqst7edc3sdqak0m",
+	client, err := sdk.NewClient(sdk.Config{
+		ChainType:    0,
+		ContractAddr: "osmo1zck32had0fpc4fu34ae58zvs3mjd5yrzs70thw027nfqst7edc3sdqak0m",
+	})
+
+	if err != nil {
+		fmt.Printf("error creating client: %v\n", err)
+		return
+	}
+
+	isFinalized, err := client.QueryIsBlockBabylonFinalized(sdk.QueryParams{
 		BlockHeight:    height,
 		BlockHash:      hash,
 		BlockTimestamp: uint64(1718332131),

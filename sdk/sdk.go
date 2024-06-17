@@ -2,33 +2,13 @@ package sdk
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 )
 
-const (
-	BabylonTestnet = 0
-	BabylonMainnet = 1
-)
-
 type QueryParams struct {
-	ChainType      int    `mapstructure:"chain-type"`
-	ContractAddr   string `mapstructure:"contract-addr"`
 	BlockHeight    uint64 `mapstructure:"block-height"`
 	BlockHash      string `mapstructure:"block-hash"`
 	BlockTimestamp uint64 `mapstructure:"block-timestamp"`
-}
-
-// TODO: replace with babylon RPCs when QuerySmartContractStateRequest query is supported
-func (queryParams QueryParams) getRpcAddr() (string, error) {
-	switch queryParams.ChainType {
-	case BabylonTestnet:
-		return "https://rpc.testnet.osmosis.zone:443", nil
-	case BabylonMainnet:
-		return "https://rpc.testnet.osmosis.zone:443", nil
-	default:
-		return "", fmt.Errorf("unrecognized chain type: %d", queryParams.ChainType)
-	}
 }
 
 type checkBlockFinalizedData struct {
@@ -60,25 +40,13 @@ func createQueryData(queryParams QueryParams) ([]byte, error) {
 	return data, nil
 }
 
-func QueryIsBlockBabylonFinalized(queryParams QueryParams) (bool, error) {
-	rpcAddr, err := queryParams.getRpcAddr()
-	if err != nil {
-		return false, err
-	}
-
-	queryClient, err := newBabylonQueryClient(babylonClientConfig{
-		rpcAddr: rpcAddr,
-	})
-	if err != nil {
-		return false, err
-	}
-
+func (babylonClient *babylonQueryClient) QueryIsBlockBabylonFinalized(queryParams QueryParams) (bool, error) {
 	queryData, err := createQueryData(queryParams)
 	if err != nil {
 		return false, err
 	}
 
-	resp, err := queryClient.querySmartContractState(queryParams.ContractAddr, queryData)
+	resp, err := babylonClient.querySmartContractState(babylonClient.config.ContractAddr, queryData)
 	if err != nil {
 		return false, err
 	}
