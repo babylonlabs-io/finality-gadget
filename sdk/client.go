@@ -39,7 +39,7 @@ func (config Config) getRpcAddr() (string, error) {
 // such as keyring, chain ID, etc..
 type babylonQueryClient struct {
 	rpcClient rpcclient.Client
-	config    Config
+	config    *Config
 }
 
 // NewClient creates a new babylonQueryClient according to the given config
@@ -56,7 +56,7 @@ func NewClient(config Config) (*babylonQueryClient, error) {
 
 	return &babylonQueryClient{
 		rpcClient: rpcClient,
-		config:    config,
+		config:    &config,
 	}, nil
 }
 
