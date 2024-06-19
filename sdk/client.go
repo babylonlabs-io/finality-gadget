@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"fmt"
 	"time"
 
 	"context"
@@ -10,9 +11,27 @@ import (
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 )
 
-// babylonClientConfig defines configuration for the Babylon query client
-type babylonClientConfig struct {
-	rpcAddr string `mapstructure:"rpc-addr"`
+const (
+	BabylonTestnet = 0
+	BabylonMainnet = 1
+)
+
+// Config defines configuration for the Babylon query client
+type Config struct {
+	ChainType    int    `mapstructure:"chain-type"`
+	ContractAddr string `mapstructure:"contract-addr"`
+}
+
+// TODO: replace with babylon RPCs when QuerySmartContractStateRequest query is supported
+func (config Config) getRpcAddr() (string, error) {
+	switch config.ChainType {
+	case BabylonTestnet:
+		return "https://rpc.testnet.osmosis.zone:443", nil
+	case BabylonMainnet:
+		return "https://rpc.testnet.osmosis.zone:443", nil
+	default:
+		return "", fmt.Errorf("unrecognized chain type: %d", config.ChainType)
+	}
 }
 
 // babylonQueryClient is a client that can only perform queries to a Babylon node
@@ -20,17 +39,24 @@ type babylonClientConfig struct {
 // such as keyring, chain ID, etc..
 type babylonQueryClient struct {
 	rpcClient rpcclient.Client
+	config    *Config
 }
 
-// newBabylonQueryClient creates a new babylonQueryClient according to the given config
-func newBabylonQueryClient(queryConfig babylonClientConfig) (*babylonQueryClient, error) {
-	rpcClient, err := sdkclient.NewClientFromNode(queryConfig.rpcAddr)
+// NewClient creates a new babylonQueryClient according to the given config
+func NewClient(config Config) (*babylonQueryClient, error) {
+	rpcAddr, err := config.getRpcAddr()
+	if err != nil {
+		return nil, err
+	}
+
+	rpcClient, err := sdkclient.NewClientFromNode(rpcAddr)
 	if err != nil {
 		return nil, err
 	}
 
 	return &babylonQueryClient{
 		rpcClient: rpcClient,
+		config:    &config,
 	}, nil
 }
 
