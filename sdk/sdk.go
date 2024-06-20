@@ -84,14 +84,11 @@ func (babylonClient *babylonQueryClient) QueryIsBlockBabylonFinalized(queryParam
 
 	// TODO: change w real implementation
 	var consumerId = ""
-	allFps, err := babylonClient.queryFinalityProviders(consumerId)
+	_, err = babylonClient.queryFinalityProviders(consumerId)
 	if err != nil {
 		return false, err
 	}
-	for _, fp := range allFps {
-		// TODO: change w real implementation
-		println(fp.BtcPk)
-	}
+
 	// TODO: change w real implementation
 	// stub contract: https://www.seiscan.app/atlantic-2/query?contract=sei18fs8atjcxrsypskpk725q2vr8j76q3xwcfle3w2qlna48acmed0sp30xm8
 	// stub contract code: https://gist.github.com/bap2pecs/9541adb2ba61e7abb481bf03f863435d

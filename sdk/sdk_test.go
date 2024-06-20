@@ -20,7 +20,7 @@ func checkBlockFinalized(client *babylonQueryClient, height uint64, hash string)
 func TestSdk(t *testing.T) {
 	client, err := NewClient(Config{
 		ChainType:    0,
-		ContractAddr: "sei18fs8atjcxrsypskpk725q2vr8j76q3xwcfle3w2qlna48acmed0sp30xm8",
+		ContractAddr: "bbn17p9rzwnnfxcjp32un9ug7yhhzgtkhvl9jfksztgw5uh69wac2pgs6spw0g",
 	})
 	require.Nil(t, err)
 

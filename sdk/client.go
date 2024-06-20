@@ -9,7 +9,6 @@ import (
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	bbnclient "github.com/babylonchain/babylon/client/client"
 	bbncfg "github.com/babylonchain/babylon/client/config"
-	rpcclient "github.com/cometbft/cometbft/rpc/client"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"go.uber.org/zap"
 )
@@ -25,13 +24,13 @@ type Config struct {
 	ContractAddr string `mapstructure:"contract-addr"`
 }
 
-// TODO: replace with babylon RPCs when QuerySmartContractStateRequest query is supported
 func (config Config) getRpcAddr() (string, error) {
 	switch config.ChainType {
 	case BabylonTestnet:
-		return "https://sei-testnet-2-rpc.brocha.in", nil
+		return "https://rpc-euphrates.devnet.babylonchain.io/", nil
+	// TODO: replace with babylon RPCs when QuerySmartContractStateRequest query is supported
 	case BabylonMainnet:
-		return "https://rpc.testnet.osmosis.zone:443", nil
+		return "https://rpc-euphrates.devnet.babylonchain.io/", nil
 	default:
 		return "", fmt.Errorf("unrecognized chain type: %d", config.ChainType)
 	}
@@ -41,8 +40,6 @@ func (config Config) getRpcAddr() (string, error) {
 // It only requires the client config to have `rpcAddr`, but not other fields
 // such as keyring, chain ID, etc..
 type babylonQueryClient struct {
-	// TODO: remove rpcClient after the Babylon testnet supports cw
-	rpcClient rpcclient.Client
 	bbnClient *bbnclient.Client
 	config    *Config
 }
@@ -54,14 +51,8 @@ func NewClient(config Config) (*babylonQueryClient, error) {
 		return nil, err
 	}
 
-	rpcClient, err := sdkclient.NewClientFromNode(rpcAddr)
-	if err != nil {
-		return nil, err
-	}
-
 	bbnConfig := bbncfg.DefaultBabylonConfig()
-	// TODO: replace it with config.getRpcAddr() after the Babylon testnet supports cw
-	bbnConfig.RPCAddr = "https://rpc-euphrates.devnet.babylonchain.io/"
+	bbnConfig.RPCAddr = rpcAddr
 
 	logger, err := zap.NewProduction()
 	if err != nil {
@@ -79,7 +70,6 @@ func NewClient(config Config) (*babylonQueryClient, error) {
 	}
 
 	return &babylonQueryClient{
-		rpcClient: rpcClient,
 		bbnClient: bbnClient,
 		config:    &config,
 	}, nil
@@ -92,7 +82,7 @@ func (babylonClient *babylonQueryClient) querySmartContractState(contractAddress
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	sdkClientCtx := sdkclient.Context{Client: babylonClient.rpcClient}
+	sdkClientCtx := sdkclient.Context{Client: babylonClient.bbnClient.RPCClient}
 	wasmQueryClient := wasmtypes.NewQueryClient(sdkClientCtx)
 
 	req := &wasmtypes.QuerySmartContractStateRequest{
