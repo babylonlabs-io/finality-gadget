@@ -7,8 +7,11 @@ import (
 	"context"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	bbnclient "github.com/babylonchain/babylon/client/client"
+	bbncfg "github.com/babylonchain/babylon/client/config"
 	rpcclient "github.com/cometbft/cometbft/rpc/client"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
+	"go.uber.org/zap"
 )
 
 const (
@@ -38,7 +41,9 @@ func (config Config) getRpcAddr() (string, error) {
 // It only requires the client config to have `rpcAddr`, but not other fields
 // such as keyring, chain ID, etc..
 type babylonQueryClient struct {
+	// TODO: remove rpcClient after the Babylon testnet supports cw
 	rpcClient rpcclient.Client
+	bbnClient *bbnclient.Client
 	config    *Config
 }
 
@@ -54,8 +59,28 @@ func NewClient(config Config) (*babylonQueryClient, error) {
 		return nil, err
 	}
 
+	bbnConfig := bbncfg.DefaultBabylonConfig()
+	// TODO: replace it with config.getRpcAddr() after the Babylon testnet supports cw
+	bbnConfig.RPCAddr = "https://rpc-euphrates.devnet.babylonchain.io/"
+
+	logger, err := zap.NewProduction()
+	if err != nil {
+		return nil, err
+	}
+
+	// Note: We can just ignore the below info which is printed by bbnclient.New
+	// service injective.evm.v1beta1.Msg does not have cosmos.msg.v1.service proto annotation
+	bbnClient, err := bbnclient.New(
+		&bbnConfig,
+		logger,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Babylon client: %w", err)
+	}
+
 	return &babylonQueryClient{
 		rpcClient: rpcClient,
+		bbnClient: bbnClient,
 		config:    &config,
 	}, nil
 }
