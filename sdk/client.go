@@ -26,7 +26,7 @@ type Config struct {
 func (config Config) getRpcAddr() (string, error) {
 	switch config.ChainType {
 	case BabylonTestnet:
-		return "https://rpc.testnet.osmosis.zone:443", nil
+		return "https://sei-testnet-2-rpc.brocha.in", nil
 	case BabylonMainnet:
 		return "https://rpc.testnet.osmosis.zone:443", nil
 	default:

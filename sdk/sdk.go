@@ -2,7 +2,6 @@ package sdk
 
 import (
 	"encoding/json"
-	"strconv"
 )
 
 type QueryParams struct {
@@ -11,26 +10,32 @@ type QueryParams struct {
 	BlockTimestamp uint64 `mapstructure:"block-timestamp"`
 }
 
-type checkBlockFinalizedData struct {
-	Height    uint64 `json:"height"`
-	Hash      string `json:"hash"`
-	Timestamp string `json:"timestamp"`
+type ContractQueryMsgs struct {
+	Config     *contractConfig `json:"config,omitempty"`
+	BlockVotes *blockVotes     `json:"block_votes,omitempty"`
 }
 
-type queryIsBlockBabylonFinalizedData struct {
-	CheckBlockFinalized checkBlockFinalizedData `json:"check_block_finalized"`
+type contractConfig struct{}
+
+type contractConfigResponse struct {
+	ConsumerId      string `json:"consumer_id"`
+	ActivatedHeight uint64 `json:"activated_height"`
 }
 
-type queryIsBlockBabylonFinalizedResponseData struct {
-	Finalized bool `json:"finalized"`
+type blockVotes struct {
+	Height uint64 `json:"height"`
+	Hash   string `json:"hash"`
 }
 
-func createQueryData(queryParams QueryParams) ([]byte, error) {
-	queryData := queryIsBlockBabylonFinalizedData{
-		CheckBlockFinalized: checkBlockFinalizedData{
-			Height:    queryParams.BlockHeight,
-			Hash:      queryParams.BlockHash,
-			Timestamp: strconv.FormatUint(queryParams.BlockTimestamp, 10),
+type blockVotesResponse struct {
+	BtcPkHexList []string `json:"fp_pubkey_hex_list"`
+}
+
+func createBlockVotesQueryData(queryParams QueryParams) ([]byte, error) {
+	queryData := ContractQueryMsgs{
+		BlockVotes: &blockVotes{
+			Height: queryParams.BlockHeight,
+			Hash:   queryParams.BlockHash,
 		},
 	}
 	data, err := json.Marshal(queryData)
@@ -40,21 +45,37 @@ func createQueryData(queryParams QueryParams) ([]byte, error) {
 	return data, nil
 }
 
-func (babylonClient *babylonQueryClient) QueryIsBlockBabylonFinalized(queryParams QueryParams) (bool, error) {
-	queryData, err := createQueryData(queryParams)
+func (babylonClient *babylonQueryClient) queryListOfVotedFinalityProviders(queryParams QueryParams) ([]string, error) {
+	queryData, err := createBlockVotesQueryData(queryParams)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
 	resp, err := babylonClient.querySmartContractState(babylonClient.config.ContractAddr, queryData)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	var data queryIsBlockBabylonFinalizedResponseData
+	var data blockVotesResponse
 	if err := json.Unmarshal(resp.Data, &data); err != nil {
+		return nil, err
+	}
+
+	return data.BtcPkHexList, nil
+}
+
+func (babylonClient *babylonQueryClient) QueryIsBlockBabylonFinalized(queryParams QueryParams) (bool, error) {
+	votedFps, err := babylonClient.queryListOfVotedFinalityProviders(queryParams)
+	if err != nil {
 		return false, err
 	}
 
-	return data.Finalized, nil
+	// TODO: change w real implementation
+	// stub contract: https://www.seiscan.app/atlantic-2/query?contract=sei18fs8atjcxrsypskpk725q2vr8j76q3xwcfle3w2qlna48acmed0sp30xm8
+	// stub contract code: https://gist.github.com/bap2pecs/9541adb2ba61e7abb481bf03f863435d
+	if len(votedFps) < 3 {
+		return false, nil
+	}
+
+	return true, nil
 }
