@@ -57,6 +57,19 @@
           }
         },
         "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "is_enabled"
+        ],
+        "properties": {
+          "is_enabled": {
+            "type": "object",
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
       }
     ]
   },
@@ -100,6 +113,11 @@
         }
       },
       "additionalProperties": false
+    },
+    "is_enabled": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Boolean",
+      "type": "boolean"
     }
   }
 }

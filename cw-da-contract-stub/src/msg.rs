@@ -12,6 +12,8 @@ pub enum QueryMsg {
     Config {},
     #[returns(BlockVotesResponse)]
     BlockVotes { height: u64, hash: String },
+    #[returns(bool)]
+    IsEnabled {},
 }
 
 #[cw_serde]

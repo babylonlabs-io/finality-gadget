@@ -17,6 +17,7 @@ pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => Ok(to_json_binary(&query::query_config()?)?),
         BlockVotes { height, hash } => to_json_binary(&query::block_votes(height, hash)?),
+        QueryMsg::IsEnabled {} => Ok(to_json_binary(&query::query_ks()?)?),
     }
 }
 
@@ -34,6 +35,10 @@ mod query {
             activated_height: 1022293,
         };
         return Ok(config);
+    }
+
+    pub fn query_ks() -> StdResult<bool> {
+        return Ok(true);
     }
 
     pub fn block_votes(height: u64, hash: String) -> StdResult<BlockVotesResponse> {
