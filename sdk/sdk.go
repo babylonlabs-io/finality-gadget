@@ -18,6 +18,7 @@ type QueryParams struct {
 type ContractQueryMsgs struct {
 	Config     *contractConfig `json:"config,omitempty"`
 	BlockVotes *blockVotes     `json:"block_votes,omitempty"`
+	IsDisabled *isDisabledQuery `json:"is_disabled,omitempty"`
 }
 
 type contractConfig struct{}
@@ -34,6 +35,12 @@ type blockVotes struct {
 
 type blockVotesResponse struct {
 	BtcPkHexList []string `json:"fp_pubkey_hex_list"`
+}
+
+type isDisabledQuery struct {}
+
+type isDisabledResponse struct {
+	IsDisabled bool `json:"is_disabled"`
 }
 
 func createConfigQueryData() ([]byte, error) {
@@ -196,6 +203,16 @@ func (babylonClient *babylonQueryClient) queryFpPower(fpPubkeyHex string, btcHei
 }
 
 func (babylonClient *babylonQueryClient) QueryIsBlockBabylonFinalized(queryParams QueryParams) (bool, error) {
+	// check if the contract is disabled
+	// if so, return true to pass through op derivation pipeline
+	isDisabled, err := babylonClient.queryIsDisabled()
+	if err != nil {
+		return false, err
+	}
+	if isDisabled {
+		return true, nil
+	}
+
 	// get the consumer chain id
 	consumerId, err := babylonClient.queryConsumerId()
 	if err != nil {
@@ -246,4 +263,34 @@ func (babylonClient *babylonQueryClient) QueryIsBlockBabylonFinalized(queryParam
 		return false, errors.New("not enough voting power")
 	}
 	return true, nil
+}
+
+func createIsDisabledQueryData() ([]byte, error) {
+	queryData := ContractQueryMsgs{
+		IsDisabled: &isDisabledQuery{},
+	}
+	data, err := json.Marshal(queryData)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func (babylonClient *babylonQueryClient) queryIsDisabled() (bool, error) {
+	queryData, err := createIsDisabledQueryData()
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := babylonClient.querySmartContractState(babylonClient.config.ContractAddr, queryData)
+	if err != nil {
+		return false, err
+	}
+
+	var data isDisabledResponse
+	if err := json.Unmarshal(resp.Data, &data); err != nil {
+		return false, err
+	}
+
+	return data.IsDisabled, nil
 }
