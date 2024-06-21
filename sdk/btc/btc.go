@@ -1,4 +1,4 @@
-package sdk
+package btc
 
 import (
 	"bytes"
@@ -67,7 +67,7 @@ func callRPC(method string, params []interface{}) (json.RawMessage, error) {
 }
 
 // given a timestamp, search the largest block height whose timestamp is less or equal to it
-func getBlockHeightByTimestamp(targetTimestamp uint64) (uint64, error) {
+func GetBlockHeightByTimestamp(targetTimestamp uint64) (uint64, error) {
 	var currentHeight uint64
 	// returns the height of the most-work fully-validated chain.
 	result, err := callRPC("getblockcount", []interface{}{})

@@ -31,15 +31,7 @@ func checkBlockFinalized(height uint64, hash string) {
 
 func main() {
 	blockHash := "0x3aa074144a25d3ed71c7353a20c579650e0c56a993444c6156d44bb90b932f0d"
-	blockHashForked := "forked hash"
-
-	fmt.Println("=== When the block hash has enough votes: ===")
-	for i := range 4 {
-		checkBlockFinalized(uint64(i), blockHash)
-	}
-
-	fmt.Println("\n=== When the block hash doesn't have enough votes: ===")
-	for i := range 4 {
-		checkBlockFinalized(uint64(i), blockHashForked)
-	}
+	// TODO: now you will see `error checking block 2: not enough voting power`
+	// in the future, we will deploy a better stub contract
+	checkBlockFinalized(uint64(2), blockHash)
 }

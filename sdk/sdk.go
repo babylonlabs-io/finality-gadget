@@ -2,8 +2,9 @@ package sdk
 
 import (
 	"encoding/json"
+	"errors"
 
-	bsctypes "github.com/babylonchain/babylon/x/btcstkconsumer/types"
+	"github.com/babylonchain/babylon-da-sdk/sdk/btc"
 	sdkquerytypes "github.com/cosmos/cosmos-sdk/types/query"
 )
 
@@ -78,13 +79,19 @@ func (babylonClient *babylonQueryClient) queryListOfVotedFinalityProviders(query
 	return data.BtcPkHexList, nil
 }
 
-func (babylonClient *babylonQueryClient) queryFinalityProviders(consumerId string) ([]*bsctypes.FinalityProviderResponse, error) {
+func (babylonClient *babylonQueryClient) queryFpBtcPubKeys(consumerId string) ([]string, error) {
 	pagination := &sdkquerytypes.PageRequest{}
 	resp, err := babylonClient.bbnClient.QueryClient.QueryConsumerFinalityProviders(consumerId, pagination)
 	if err != nil {
 		return nil, err
 	}
-	return resp.FinalityProviders, nil
+
+	var pkArr []string
+
+	for _, fp := range resp.FinalityProviders {
+		pkArr = append(pkArr, fp.BtcPk.MarshalHex())
+	}
+	return pkArr, nil
 }
 
 func (babylonClient *babylonQueryClient) queryConsumerId() (string, error) {
@@ -106,28 +113,65 @@ func (babylonClient *babylonQueryClient) queryConsumerId() (string, error) {
 	return data.ConsumerId, nil
 }
 
-func (babylonClient *babylonQueryClient) QueryIsBlockBabylonFinalized(queryParams QueryParams) (bool, error) {
-	votedFps, err := babylonClient.queryListOfVotedFinalityProviders(queryParams)
-	if err != nil {
-		return false, err
-	}
+func queryMultiFpPowerAtHeight(fps []string, btcHeight uint64) (map[string]uint64, error) {
+	// TODO: implement
+	return map[string]uint64{
+		"pk1": 12345,
+		"pk2": 67890,
+		"pk3": 111213,
+		"pk4": 141516,
+	}, nil
+}
 
+func (babylonClient *babylonQueryClient) QueryIsBlockBabylonFinalized(queryParams QueryParams) (bool, error) {
+	// get the consumer chain id
 	consumerId, err := babylonClient.queryConsumerId()
 	if err != nil {
 		return false, err
 	}
 
-	_, err = babylonClient.queryFinalityProviders(consumerId)
+	// get all the FPs pubkey for the consumer chain
+	allFpPks, err := babylonClient.queryFpBtcPubKeys(consumerId)
 	if err != nil {
 		return false, err
 	}
 
-	// TODO: change w real implementation
-	// stub contract: https://www.seiscan.app/atlantic-2/query?contract=sei18fs8atjcxrsypskpk725q2vr8j76q3xwcfle3w2qlna48acmed0sp30xm8
-	// stub contract code: https://gist.github.com/bap2pecs/9541adb2ba61e7abb481bf03f863435d
-	if len(votedFps) < 3 {
-		return false, nil
+	// convert the L2 timestamp to BTC height
+	btcblockHeight, err := btc.GetBlockHeightByTimestamp(queryParams.BlockTimestamp)
+	if err != nil {
+		return false, err
 	}
 
+	// get all FPs voting power at this BTC height
+	allFpPower, err := queryMultiFpPowerAtHeight(allFpPks, btcblockHeight)
+	if err != nil {
+		return false, err
+	}
+
+	// get all FPs that voted this (L2 block height, L2 block hash) combination
+	votedFpPks, err := babylonClient.queryListOfVotedFinalityProviders(queryParams)
+	if err != nil {
+		return false, err
+	}
+
+	// calculate total voting power
+	var totalPower uint64 = 0
+	for _, power := range allFpPower {
+		totalPower += power
+	}
+
+	// calculate voted voting power
+	var votedPower uint64 = 0
+	for _, key := range votedFpPks {
+		if power, exists := allFpPower[key]; exists {
+			votedPower += power
+		}
+	}
+
+	quorum := float64(votedPower) / float64(totalPower)
+	// TODO: the quorom is hardcode for now. later we can consider make it a config param
+	if quorum < 0.667 {
+		return false, errors.New("not enough voting power")
+	}
 	return true, nil
 }
