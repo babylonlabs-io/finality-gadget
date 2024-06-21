@@ -18,7 +18,7 @@ type QueryParams struct {
 type ContractQueryMsgs struct {
 	Config     *contractConfig `json:"config,omitempty"`
 	BlockVotes *blockVotes     `json:"block_votes,omitempty"`
-	IsEnabled *killswitchQuery `json:"is_enabled,omitempty"`
+	IsEnabled *isEnabledQuery `json:"is_enabled,omitempty"`
 }
 
 type contractConfig struct{}
@@ -37,11 +37,7 @@ type blockVotesResponse struct {
 	BtcPkHexList []string `json:"fp_pubkey_hex_list"`
 }
 
-type killswitchQuery struct {}
-
-type killswitchResponse struct {
-	IsEnabled bool `json:"is_enabled"`
-}
+type isEnabledQuery struct {}
 
 func createConfigQueryData() ([]byte, error) {
 	queryData := ContractQueryMsgs{
@@ -267,7 +263,7 @@ func (babylonClient *babylonQueryClient) QueryIsBlockBabylonFinalized(queryParam
 
 func createIsEnabledQueryData() ([]byte, error) {
 	queryData := ContractQueryMsgs{
-		IsEnabled: &killswitchQuery{},
+		IsEnabled: &isEnabledQuery{},
 	}
 	data, err := json.Marshal(queryData)
 	if err != nil {
@@ -287,10 +283,10 @@ func (babylonClient *babylonQueryClient) queryIsEnabled() (bool, error) {
 		return false, err
 	}
 
-	var data killswitchResponse
-	if err := json.Unmarshal(resp.Data, &data); err != nil {
+	var isEnabled bool
+	if err := json.Unmarshal(resp.Data, &isEnabled); err != nil {
 		return false, err
 	}
 
-	return data.IsEnabled, nil
+	return isEnabled, nil
 }
