@@ -16,9 +16,9 @@ type QueryParams struct {
 }
 
 type ContractQueryMsgs struct {
-	Config     *contractConfig `json:"config,omitempty"`
-	BlockVotes *blockVotes     `json:"block_votes,omitempty"`
-	IsEnabled *killswitchQuery `json:"is_enabled,omitempty"`
+	Config     *contractConfig  `json:"config,omitempty"`
+	BlockVotes *blockVotes      `json:"block_votes,omitempty"`
+	IsEnabled  *killswitchQuery `json:"is_enabled,omitempty"`
 }
 
 type contractConfig struct{}
@@ -37,7 +37,7 @@ type blockVotesResponse struct {
 	BtcPkHexList []string `json:"fp_pubkey_hex_list"`
 }
 
-type killswitchQuery struct {}
+type killswitchQuery struct{}
 
 type killswitchResponse struct {
 	IsEnabled bool `json:"is_enabled"`
@@ -203,8 +203,8 @@ func (babylonClient *babylonQueryClient) queryFpPower(fpPubkeyHex string, btcHei
 }
 
 func (babylonClient *babylonQueryClient) QueryIsBlockBabylonFinalized(queryParams QueryParams) (bool, error) {
-	// check if the contract is enabled
-	// if so, return true to pass through op derivation pipeline
+	// check if the finality gadget is enabled
+	// if not, always return true to pass through op derivation pipeline
 	isEnabled, err := babylonClient.queryIsEnabled()
 	if err != nil {
 		return false, err
