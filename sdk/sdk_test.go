@@ -14,7 +14,7 @@ import (
  * example stub instance: https://www.seiscan.app/atlantic-2/query?contract=sei18fs8atjcxrsypskpk725q2vr8j76q3xwcfle3w2qlna48acmed0sp30xm8
  */
 
-func newE2eClientWithStubContract() *babylonQueryClient {
+func newE2eClientWithStubContract() *BabylonQueryClient {
 	stubContractConfig := Config{
 		ChainType:    0,
 		ContractAddr: "bbn1ghd753shjuwexxywmgs4xz7x2q732vcnkm6h2pyv9s6ah3hylvrqxxvh0f",
@@ -35,8 +35,8 @@ func TestQueryConsumerId(t *testing.T) {
 
 // this uses a stub contract deployed on Osmosis testnet
 // TODO: replace with one deployed on Babylon chain
-func queryListOfVotedFinalityProvidersHelper(client *babylonQueryClient, height uint64, hash string) ([]string, error) {
-	return client.queryListOfVotedFinalityProviders(QueryParams{
+func queryListOfVotedFinalityProvidersHelper(client *BabylonQueryClient, height uint64, hash string) ([]string, error) {
+	return client.queryListOfVotedFinalityProviders(&L2Block{
 		BlockHeight:    height,
 		BlockHash:      hash,
 		BlockTimestamp: uint64(1718332131),

@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	BabylonTestnet = 0
-	BabylonMainnet = 1
+	BabylonLocalnet = -1
+	BabylonTestnet  = 0
+	BabylonMainnet  = 1
 )
 
 // Config defines configuration for the Babylon query client
@@ -24,8 +25,11 @@ type Config struct {
 	ContractAddr string `mapstructure:"contract-addr"`
 }
 
-func (config Config) getRpcAddr() (string, error) {
+func (config *Config) getRpcAddr() (string, error) {
 	switch config.ChainType {
+	case BabylonLocalnet:
+		// only for the e2e test
+		return "http://127.0.0.1:26657", nil
 	case BabylonTestnet:
 		return "https://rpc-euphrates.devnet.babylonchain.io/", nil
 	// TODO: replace with babylon RPCs when QuerySmartContractStateRequest query is supported
@@ -36,16 +40,16 @@ func (config Config) getRpcAddr() (string, error) {
 	}
 }
 
-// babylonQueryClient is a client that can only perform queries to a Babylon node
+// BabylonQueryClient is a client that can only perform queries to a Babylon node
 // It only requires the client config to have `rpcAddr`, but not other fields
 // such as keyring, chain ID, etc..
-type babylonQueryClient struct {
+type BabylonQueryClient struct {
 	bbnClient *bbnclient.Client
 	config    *Config
 }
 
 // NewClient creates a new babylonQueryClient according to the given config
-func NewClient(config Config) (*babylonQueryClient, error) {
+func NewClient(config Config) (*BabylonQueryClient, error) {
 	rpcAddr, err := config.getRpcAddr()
 	if err != nil {
 		return nil, err
@@ -69,14 +73,14 @@ func NewClient(config Config) (*babylonQueryClient, error) {
 		return nil, fmt.Errorf("failed to create Babylon client: %w", err)
 	}
 
-	return &babylonQueryClient{
+	return &BabylonQueryClient{
 		bbnClient: bbnClient,
 		config:    &config,
 	}, nil
 }
 
 // querySmartContractState queries the smart contract state given the contract address and query data
-func (babylonClient *babylonQueryClient) querySmartContractState(contractAddress string, queryData []byte) (*wasmtypes.QuerySmartContractStateResponse, error) {
+func (babylonClient *BabylonQueryClient) querySmartContractState(contractAddress string, queryData []byte) (*wasmtypes.QuerySmartContractStateResponse, error) {
 	// hardcode the timeout to 20 seconds. We can expose it to the params once needed
 	timeout := 20 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)

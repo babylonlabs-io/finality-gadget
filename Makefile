@@ -1,4 +1,4 @@
-.PHONY: test run
+.PHONY: lint test run
 
 # Target to run tests
 test:
@@ -7,3 +7,6 @@ test:
 # Target to run the demo
 run:
 	go run demo/main.go
+
+lint:
+	golangci-lint run

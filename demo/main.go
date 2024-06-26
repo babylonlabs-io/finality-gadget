@@ -17,7 +17,7 @@ func checkBlockFinalized(height uint64, hash string) {
 		return
 	}
 
-	isFinalized, err := client.QueryIsBlockBabylonFinalized(sdk.QueryParams{
+	isFinalized, err := client.QueryIsBlockBabylonFinalized(&sdk.L2Block{
 		BlockHeight:    height,
 		BlockHash:      hash,
 		BlockTimestamp: uint64(1718332131),
