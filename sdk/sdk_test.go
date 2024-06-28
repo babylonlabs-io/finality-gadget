@@ -15,7 +15,7 @@ import (
  */
 
 func newE2eClientWithStubContract() *BabylonQueryClient {
-	stubContractConfig := Config{
+	stubContractConfig := &Config{
 		ChainType:    0,
 		ContractAddr: "bbn1ghd753shjuwexxywmgs4xz7x2q732vcnkm6h2pyv9s6ah3hylvrqxxvh0f",
 	}

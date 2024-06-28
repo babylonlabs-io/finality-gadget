@@ -49,7 +49,7 @@ type BabylonQueryClient struct {
 }
 
 // NewClient creates a new babylonQueryClient according to the given config
-func NewClient(config Config) (*BabylonQueryClient, error) {
+func NewClient(config *Config) (*BabylonQueryClient, error) {
 	rpcAddr, err := config.getRpcAddr()
 	if err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func NewClient(config Config) (*BabylonQueryClient, error) {
 
 	return &BabylonQueryClient{
 		bbnClient: bbnClient,
-		config:    &config,
+		config:    config,
 	}, nil
 }
 

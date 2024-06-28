@@ -2,7 +2,6 @@ package sdk
 
 import (
 	"encoding/json"
-	"errors"
 
 	"github.com/babylonchain/babylon-da-sdk/sdk/btc"
 	btcstakingtypes "github.com/babylonchain/babylon/x/btcstaking/types"
@@ -233,16 +232,21 @@ func (babylonClient *BabylonQueryClient) QueryIsBlockBabylonFinalized(queryParam
 		return false, err
 	}
 
-	// get all FPs that voted this (L2 block height, L2 block hash) combination
-	votedFpPks, err := babylonClient.queryListOfVotedFinalityProviders(queryParams)
-	if err != nil {
-		return false, err
-	}
-
 	// calculate total voting power
 	var totalPower uint64 = 0
 	for _, power := range allFpPower {
 		totalPower += power
+	}
+
+	// no FP has voting power for the consumer chain
+	if totalPower == 0 {
+		return false, nil
+	}
+
+	// get all FPs that voted this (L2 block height, L2 block hash) combination
+	votedFpPks, err := babylonClient.queryListOfVotedFinalityProviders(queryParams)
+	if err != nil {
+		return false, err
 	}
 
 	// calculate voted voting power
@@ -253,10 +257,9 @@ func (babylonClient *BabylonQueryClient) QueryIsBlockBabylonFinalized(queryParam
 		}
 	}
 
-	quorum := float64(votedPower) / float64(totalPower)
-	// TODO: the quorom is hardcode for now. later we can consider make it a config param
-	if quorum < 0.667 {
-		return false, errors.New("not enough voting power")
+	// quorom < 2/3
+	if votedPower*3 < totalPower*2 {
+		return false, nil
 	}
 	return true, nil
 }

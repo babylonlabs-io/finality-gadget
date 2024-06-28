@@ -7,9 +7,10 @@ import (
 )
 
 func checkBlockFinalized(height uint64, hash string) {
-	client, err := sdk.NewClient(sdk.Config{
-		ChainType:    0,
-		ContractAddr: "bbn1eyfccmjm6732k7wp4p6gdjwhxjwsvje44j0hfx8nkgrm8fs7vqfsa3n3gc",
+	client, err := sdk.NewClient(&sdk.Config{
+		ChainType: 0,
+		// TODO: avoid using stub contract
+		ContractAddr: "bbn1ghd753shjuwexxywmgs4xz7x2q732vcnkm6h2pyv9s6ah3hylvrqxxvh0f",
 	})
 
 	if err != nil {
@@ -30,8 +31,6 @@ func checkBlockFinalized(height uint64, hash string) {
 }
 
 func main() {
-	blockHash := "0x3aa074144a25d3ed71c7353a20c579650e0c56a993444c6156d44bb90b932f0d"
-	// TODO: now you will see `error checking block 2: not enough voting power`
-	// in the future, we will deploy a better stub contract
-	checkBlockFinalized(uint64(2), blockHash)
+	// TODO: this will always return false. we should find a better way to demo it
+	checkBlockFinalized(uint64(2), "0x1000000000000000000000000000000000000000000000000000000000000000")
 }
