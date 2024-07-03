@@ -9,8 +9,8 @@ import (
 )
 
 type L2Block struct {
-	BlockHeight    uint64 `mapstructure:"block-height"`
 	BlockHash      string `mapstructure:"block-hash"`
+	BlockHeight    uint64 `mapstructure:"block-height"`
 	BlockTimestamp uint64 `mapstructure:"block-timestamp"`
 }
 
@@ -28,8 +28,8 @@ type contractConfigResponse struct {
 }
 
 type blockVotes struct {
-	Height uint64 `json:"height"`
 	Hash   string `json:"hash"`
+	Height uint64 `json:"height"`
 }
 
 type blockVotesResponse struct {
@@ -240,7 +240,7 @@ func (babylonClient *BabylonQueryClient) QueryIsBlockBabylonFinalized(queryParam
 
 	// no FP has voting power for the consumer chain
 	if totalPower == 0 {
-		return false, nil
+		return false, ErrNoFpHasVotingPower
 	}
 
 	// get all FPs that voted this (L2 block height, L2 block hash) combination

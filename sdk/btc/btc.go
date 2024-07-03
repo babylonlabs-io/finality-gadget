@@ -16,14 +16,14 @@ const (
 
 type rpcRequest struct {
 	Method string        `json:"method"`
-	Params []interface{} `json:"params"`
 	ID     string        `json:"id"`
+	Params []interface{} `json:"params"`
 }
 
 type rpcResponse struct {
-	Result json.RawMessage `json:"result"`
-	Error  interface{}     `json:"error"`
 	ID     string          `json:"id"`
+	Error  interface{}     `json:"error"`
+	Result json.RawMessage `json:"result"`
 }
 
 func callRPC(method string, params []interface{}) (json.RawMessage, error) {
@@ -86,8 +86,8 @@ func GetBlockHeightByTimestamp(targetTimestamp uint64) (uint64, error) {
 			return 0, err
 		}
 		var blockHash string
-		if err := json.Unmarshal(result, &blockHash); err != nil {
-			return 0, err
+		if errUnmarshal := json.Unmarshal(result, &blockHash); errUnmarshal != nil {
+			return 0, errUnmarshal
 		}
 
 		// get block header by hash. the header contains info such as the block time expressed in UNIX epoch time
