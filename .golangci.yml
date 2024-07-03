@@ -1,10 +1,3 @@
-run:
-  build-tags: 
-    - e2e_op
-    - e2e_babylon
-    - e2e_bcd
-    - e2e_wasmd
-
 linters-settings:
   govet:
       enable-all: true
