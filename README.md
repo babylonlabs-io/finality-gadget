@@ -6,14 +6,20 @@ We will modify the OP-stack codebase to use this SDK for additional finalty chec
 
 In the future, we will also move the CosmWasm contract code here.
 
+## Dependencies
+
+The DA SDK requires a BTC RPC client defined in https://github.com/btcsuite/btcd/tree/master/rpcclient. We wrap it in our own BTC Client to make it easier to use.
+
 ## Usages
 
 To run the demo app
+
 ```
 make run
 ```
 
 To run tests
+
 ```
 make test
 ```
