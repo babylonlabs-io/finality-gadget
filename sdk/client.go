@@ -12,8 +12,8 @@ import (
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"go.uber.org/zap"
 
-	"github.com/babylonchain/babylon-da-sdk/btcclient"
-	"github.com/babylonchain/babylon-da-sdk/testutils"
+	"github.com/babylonchain/babylon-finality-gadget/btcclient"
+	"github.com/babylonchain/babylon-finality-gadget/testutils"
 )
 
 type BtcClient interface {

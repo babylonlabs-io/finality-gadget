@@ -1,7 +1,7 @@
 package testutils
 
 import (
-	"github.com/babylonchain/babylon-da-sdk/btcclient"
+	"github.com/babylonchain/babylon-finality-gadget/btcclient"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
 )

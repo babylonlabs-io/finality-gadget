@@ -1,4 +1,4 @@
-module github.com/babylonchain/babylon-da-sdk
+module github.com/babylonchain/babylon-finality-gadget
 
 go 1.21
 
