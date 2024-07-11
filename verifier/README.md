@@ -11,6 +11,17 @@ git clone https://github.com/babylonchain/babylon-finality-gadget.git
 cd verifier
 ```
 
+Create a `.env` file in the `/verifier` directory with the following content:
+
+```bash
+L2_RPC_HOST=
+BITCOIN_RPC_HOST=
+PG_CONNECTION_STRING=
+FG_CONTRACT_ADDRESS=
+BBN_CHAIN_TYPE=
+POLL_INTERVAL_IN_SECS=
+```
+
 Make sure you have Docker installed locally. If you don't, you can download it [here](https://www.docker.com/products/docker-desktop).
 
 To run the Docker container, run:
