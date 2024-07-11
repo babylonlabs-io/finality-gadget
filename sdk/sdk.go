@@ -59,7 +59,7 @@ func createBlockVotersQueryData(queryParams *L2Block) ([]byte, error) {
 	return data, nil
 }
 
-func (babylonClient *BabylonFinalityGadgetClient) queryListOfVotedFinalityProviders(queryParams *L2Block) ([]string, error) {
+func (babylonClient *BabylonFinalityGadgetClient) QueryListOfVotedFinalityProviders(queryParams *L2Block) ([]string, error) {
 	queryData, err := createBlockVotersQueryData(queryParams)
 	if err != nil {
 		return nil, err
@@ -243,7 +243,7 @@ func (babylonClient *BabylonFinalityGadgetClient) QueryIsBlockBabylonFinalized(q
 	}
 
 	// get all FPs that voted this (L2 block height, L2 block hash) combination
-	votedFpPks, err := babylonClient.queryListOfVotedFinalityProviders(queryParams)
+	votedFpPks, err := babylonClient.QueryListOfVotedFinalityProviders(queryParams)
 	if err != nil {
 		return false, err
 	}
