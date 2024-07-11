@@ -14,12 +14,6 @@ import (
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 )
 
-// TODO: refactor to use op types and methods
-
-// TODO: add method `SubscribeToNewHeads` to subscribe to new block heads
-// TODO: add method `GetBlockByNumber` to get block by number
-// TODO: add method `GetBlockByHash` to get block by hash
-
 func NewVerifier(ctx context.Context, cfg *Config) (*Verifier, error) {
 	// Create finality gadget client
 	btcConfig := btcclient.DefaultBTCConfig()
@@ -62,7 +56,7 @@ func (vf *Verifier) ProcessBlocks(ctx context.Context) error {
 	// Query L2 node for last finalized block
 	block, err := vf.getLatestFinalizedBlock(ctx)
 	if err != nil {
-		return fmt.Errorf("error getting last finalized block: %v\n", err)
+		return fmt.Errorf("error getting last finalized block: %v", err)
 	}
 
 	// If this block already exists in our DB, skip the finality check
