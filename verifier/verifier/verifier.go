@@ -75,12 +75,7 @@ func (vf *Verifier) ProcessBlocks(ctx context.Context) error {
 			return fmt.Errorf("error checking block %d: %v", block.Height, err)
 		}
 		// If finalised, store the block in DB and set the last finalized block
-		err = vf.Pg.InsertBlock(ctx, db.Block{ 
-			BlockHeight: block.Height,
-			BlockHash: block.Hash,
-			BlockTimestamp: block.Timestamp,
-			IsFinalized: true,
-		})
+		err = vf.insertBlock(ctx, block)
 		if err != nil {
 			return fmt.Errorf("error storing block %d: %v", block.Height, err)
 		}
@@ -101,7 +96,9 @@ func (vf *Verifier) ProcessBlocks(ctx context.Context) error {
 			fmt.Printf("error getting new block: %v\n", err)
 			continue
 		}
-		go handleBlock(vf, ctx, block)
+		go func() {
+			vf.handleBlock(ctx, block)
+		}()
 	}
 
 	return nil
@@ -125,7 +122,7 @@ func (vf *Verifier) getBlockByNumber(ctx context.Context, blockNumber int64) (*B
 	}, nil
 }
 
-func handleBlock(vf *Verifier, ctx context.Context, block *BlockInfo) {
+func (vf *Verifier) handleBlock(ctx context.Context, block *BlockInfo) {
 	// while block is not finalized, recheck if block is finalized every `retryInterval` seconds
 	// if finalized, store the block in DB and set the last finalized block
 	for {
@@ -137,18 +134,10 @@ func handleBlock(vf *Verifier, ctx context.Context, block *BlockInfo) {
 			return
 		}
 		if isFinal {
-			// Store block in DB
-			err := vf.Pg.InsertBlock(ctx, db.Block{
-				BlockHeight: 			block.Height,
-				BlockHash:   			block.Hash,
-				BlockTimestamp:   block.Timestamp,
-				IsFinalized: true,
-			})
+			err = vf.insertBlock(ctx, block)
 			if err != nil {
 				fmt.Printf("error storing block %d: %v\n", block.Height, err)
 			}
-			// Set last finalized block in memory
-			vf.blockHeight = block.Height
 			return
 		}
 
@@ -163,4 +152,25 @@ func (vf *Verifier) queryIsBlockBabylonFinalized(ctx context.Context, block *Blo
 		BlockHeight: 			block.Height,
 		BlockTimestamp: 	block.Timestamp,
 	})
+}
+
+func (vf *Verifier) insertBlock(ctx context.Context, block *BlockInfo) error {
+	// Lock mutex
+	vf.Mutex.Lock()
+	// Store block in DB
+	err := vf.Pg.InsertBlock(ctx, db.Block{
+		BlockHeight: 			block.Height,
+		BlockHash:   			block.Hash,
+		BlockTimestamp:   block.Timestamp,
+		IsFinalized: 			true,
+	})
+	if err != nil {
+		return err
+	}
+	// Set last finalized block in memory
+	vf.blockHeight = block.Height
+	// Unlock mutex
+	vf.Mutex.Unlock()
+
+	return nil
 }

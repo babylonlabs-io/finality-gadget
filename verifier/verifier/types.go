@@ -1,6 +1,7 @@
 package verifier
 
 import (
+	"sync"
 	"time"
 
 	"github.com/babylonchain/babylon-finality-gadget/sdk"
@@ -12,6 +13,9 @@ type Verifier struct {
 	SdkClient 		*sdk.BabylonFinalityGadgetClient
 	L2Client 			*ethclient.Client
 	Pg 						*db.PostgresHandler
+
+	Mutex 				sync.Mutex
+
 	PollInterval 	time.Duration
 	blockHeight 	uint64
 }
