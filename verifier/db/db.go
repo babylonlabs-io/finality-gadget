@@ -44,7 +44,15 @@ func (pg *PostgresHandler) TryCreateInitialTables(ctx context.Context) error {
 
 func (pg *PostgresHandler) InsertBlock(ctx context.Context, block Block) error {
 	fmt.Printf("Inserting block %d into DB\n", block.BlockHeight)
-	_, err := pg.conn.Exec(
+
+	// Start atomic insert tx
+	tx, err := pg.conn.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("unable to start DB tx: %v", err)
+	}
+	
+	// Insert block
+	_, err = tx.Exec(
 		ctx, 
 		"INSERT INTO blocks (block_height, block_hash, block_timestamp, is_finalized) VALUES ($1, $2, $3, $4)", 
 		block.BlockHeight, 
@@ -52,9 +60,17 @@ func (pg *PostgresHandler) InsertBlock(ctx context.Context, block Block) error {
 		block.BlockTimestamp,
 		block.IsFinalized,
 	)
-
+	// Rollback tx if error
 	if err != nil {
+		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+			return fmt.Errorf("unable to insert block: %v, unable to rollback transaction: %v", err, rollbackErr)
+		}
 		return fmt.Errorf("unable to insert block: %v", err)
+	}
+
+	// Commit tx if no error
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("unable to commit transaction: %v", err)
 	}
 
 	return nil
