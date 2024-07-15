@@ -1,12 +1,7 @@
-.PHONY: lint test run
+.PHONY: lint test
 
-# Target to run tests
 test:
-	go test ./sdk -v
-
-# Target to run the demo
-run:
-	go run demo/main.go
+	go test -race ./... -v
 
 lint:
 	golangci-lint run

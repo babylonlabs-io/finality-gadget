@@ -125,7 +125,11 @@ func (c *BTCClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint64, e
 func clientCallWithRetry[T any](
 	call retry.RetryableFuncWithData[*T], logger *zap.Logger, cfg *BTCConfig,
 ) (*T, error) {
-	result, err := retry.DoWithData(call, retry.Attempts(cfg.MaxRetryTimes), retry.Delay(cfg.RetryInterval), retry.LastErrorOnly(true),
+	result, err := retry.DoWithData(
+		call,
+		retry.Attempts(cfg.MaxRetryTimes),
+		retry.Delay(cfg.RetryInterval),
+		retry.LastErrorOnly(true),
 		retry.OnRetry(func(n uint, err error) {
 			logger.Debug(
 				"failed to call the RPC client",
@@ -133,7 +137,8 @@ func clientCallWithRetry[T any](
 				zap.Uint("max_attempts", cfg.MaxRetryTimes),
 				zap.Error(err),
 			)
-		}))
+		}),
+	)
 
 	if err != nil {
 		return nil, err
