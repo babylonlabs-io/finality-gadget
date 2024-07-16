@@ -29,10 +29,10 @@ func (config *Config) GetRpcAddr() (string, error) {
 
 func (config *Config) getDefaultRpcAddr() (string, error) {
 	switch config.ChainID {
-	case "chain-test":
+	case BabylonLocalnet:
 		// for the e2e test
 		return "http://127.0.0.1:26657", nil
-	case "euphrates-0.2.0":
+	case BabylonDevnet:
 		return "https://rpc-euphrates.devnet.babylonchain.io/", nil
 	// TODO: add mainnet RPCs when available
 	default:
