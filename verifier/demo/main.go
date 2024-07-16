@@ -32,13 +32,10 @@ func main() {
 	BITCOIN_RPC_HOST := os.Getenv("BITCOIN_RPC_HOST")
 	PG_CONNECTION_STRING := os.Getenv("PG_CONNECTION_STRING")
 	FG_CONTRACT_ADDRESS := os.Getenv("FG_CONTRACT_ADDRESS")
-	BBN_CHAIN_TYPE := os.Getenv("BBN_CHAIN_TYPE")
+	BBN_CHAIN_ID := os.Getenv("BBN_CHAIN_ID")
+	BBN_RPC_ADDRESS := os.Getenv("BBN_RPC_ADDRESS")
 	POLL_INTERVAL_IN_SECS := os.Getenv("POLL_INTERVAL_IN_SECS")
 
-	bbnChainType, err := strconv.Atoi(BBN_CHAIN_TYPE)
-	if err != nil {
-		fmt.Printf("error converting babylon chain type to int: %v\n", err)
-	}
 	pollInterval, err := strconv.Atoi(POLL_INTERVAL_IN_SECS)
 	if err != nil {
 		fmt.Printf("error converting poll interval to int: %v\n", err)
@@ -50,7 +47,8 @@ func main() {
 		BitcoinRPCHost: BITCOIN_RPC_HOST,
 		PGConnectionString: PG_CONNECTION_STRING,
 		FGContractAddress:FG_CONTRACT_ADDRESS,
-		BBNChainType: bbnChainType,
+		BBNChainID: BBN_CHAIN_ID,
+		BBNRPCAddress: BBN_RPC_ADDRESS,
 		PollInterval: time.Second * time.Duration(pollInterval),
 	})
 	if err != nil {

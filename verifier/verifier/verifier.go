@@ -7,8 +7,10 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/babylonchain/babylon-finality-gadget/btcclient"
-	"github.com/babylonchain/babylon-finality-gadget/sdk"
+	"github.com/babylonchain/babylon-finality-gadget/sdk/btcclient"
+	"github.com/babylonchain/babylon-finality-gadget/sdk/client"
+	sdkconfig "github.com/babylonchain/babylon-finality-gadget/sdk/config"
+	"github.com/babylonchain/babylon-finality-gadget/sdk/cwclient"
 	"github.com/babylonchain/babylon-finality-gadget/verifier/db"
 	"github.com/ethereum/go-ethereum/ethclient"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
@@ -18,10 +20,11 @@ func NewVerifier(ctx context.Context, cfg *Config) (*Verifier, error) {
 	// Create finality gadget client
 	btcConfig := btcclient.DefaultBTCConfig()
 	btcConfig.RPCHost = cfg.BitcoinRPCHost
-	sdkClient, err := sdk.NewClient(&sdk.Config{
-		ChainType: cfg.BBNChainType,
-		ContractAddr: cfg.FGContractAddress,
+	sdkClient, err := client.NewClient(&sdkconfig.Config{
 		BTCConfig:    btcConfig,
+		ContractAddr: cfg.FGContractAddress,
+		ChainID: cfg.BBNChainID,
+		RPCAddr: cfg.BBNRPCAddress,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating client: %w", err)
@@ -147,7 +150,7 @@ func (vf *Verifier) handleBlock(ctx context.Context, block *BlockInfo) {
 }
 
 func (vf *Verifier) queryIsBlockBabylonFinalized(ctx context.Context, block *BlockInfo) (bool, error) {
-	return vf.SdkClient.QueryIsBlockBabylonFinalized(&sdk.L2Block{
+	return vf.SdkClient.QueryIsBlockBabylonFinalized(cwclient.L2Block{
 		BlockHash: 				string(block.Hash),
 		BlockHeight: 			block.Height,
 		BlockTimestamp: 	block.Timestamp,
