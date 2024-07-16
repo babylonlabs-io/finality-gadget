@@ -28,34 +28,15 @@ func TestFinalityGadgetDisabled(t *testing.T) {
 	require.True(t, res)
 }
 
-// func TestTrimHash(t *testing.T) {
-// 	ctl := gomock.NewController(t)
-
-// 	queryParams := cwclient.L2Block{
-// 		BlockHash:      "0x123",
-// 		BlockHeight:    123,
-// 		BlockTimestamp: 12345,
-// 	}
-
-// 	// mock CwClient
-// 	mockCwClient := mocks.NewMockICosmWasmClient(ctl)
-// 	mockCwClient.EXPECT().QueryIsEnabled().Return(false, nil).Times(1)
-
-// 	mockSdkClient := &SdkClient{
-// 		cwClient:  mockCwClient,
-// 		bbnClient: nil,
-// 		btcClient: nil,
-// 	}
-
-// 	// check QueryIsBlockBabylonFinalized always returns true when finality gadget is not enabled
-// 	res, err := mockSdkClient.QueryIsBlockBabylonFinalized(cwclient.L2Block{})
-// 	require.NoError(t, err)
-// 	require.True(t, res)
-// }
-
 func TestQueryIsBlockBabylonFinalized(t *testing.T) {
-	queryParams := cwclient.L2Block{
+	blockWithHashTrimmed := cwclient.L2Block{
 		BlockHash:      "d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3",
+		BlockHeight:    123,
+		BlockTimestamp: 12345,
+	}
+
+	blockWithHashUntrimmed := cwclient.L2Block{
+		BlockHash:      "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3",
 		BlockHeight:    123,
 		BlockTimestamp: 12345,
 	}
@@ -65,38 +46,74 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 
 	testCases := []struct {
 		name           string
+		queryParams    cwclient.L2Block
 		fpPowers       map[string]uint64
 		allFpPks       []string
 		votedProviders []string
 		expectResult   bool
+		expectedErr    error
 	}{
 		{
+			name:           "0% votes, expects false",
+			queryParams:    blockWithHashTrimmed,
+			allFpPks:       []string{"pk1", "pk2"},
+			votedProviders: []string{},
+			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 300},
+			expectResult:   false,
+			expectedErr:    nil,
+		},
+		{
 			name:           "25% votes, expects false",
+			queryParams:    blockWithHashTrimmed,
 			allFpPks:       []string{"pk1", "pk2"},
 			votedProviders: []string{"pk1"},
 			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 300},
 			expectResult:   false,
-		},
-		{
-			name:           "75% votes, expects true",
-			allFpPks:       []string{"pk1", "pk2"},
-			votedProviders: []string{"pk2"},
-			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 300},
-			expectResult:   true,
+			expectedErr:    nil,
 		},
 		{
 			name:           "exact 2/3 votes, expects true",
+			queryParams:    blockWithHashTrimmed,
 			allFpPks:       []string{"pk1", "pk2", "pk3"},
 			votedProviders: []string{"pk1", "pk2"},
 			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 100, "pk3": 100},
 			expectResult:   true,
+			expectedErr:    nil,
 		},
 		{
-			name:           "everyone has 100 voting power, 3 of them votes, return true",
+			name:           "75% votes, expects true",
+			queryParams:    blockWithHashTrimmed,
+			allFpPks:       []string{"pk1", "pk2"},
+			votedProviders: []string{"pk2"},
+			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 300},
+			expectResult:   true,
+			expectedErr:    nil,
+		},
+		{
+			name:           "100% votes, expects true",
+			queryParams:    blockWithHashTrimmed,
+			allFpPks:       []string{"pk1", "pk2", "pk3"},
+			votedProviders: []string{"pk1", "pk2", "pk3"},
+			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 100, "pk3": 100},
+			expectResult:   true,
+			expectedErr:    nil,
+		},
+		{
+			name:           "untrimmed block hash in input params, 75% votes, expects true",
+			queryParams:    blockWithHashUntrimmed,
 			allFpPks:       []string{"pk1", "pk2", "pk3", "pk4"},
 			votedProviders: []string{"pk1", "pk2", "pk3"},
 			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 100, "pk3": 100, "pk4": 100},
 			expectResult:   true,
+		},
+		{
+			name:           "zero voting power, 100% votes, expects false",
+			queryParams:    blockWithHashUntrimmed,
+			allFpPks:       []string{"pk1", "pk2", "pk3"},
+			votedProviders: []string{"pk1", "pk2", "pk3"},
+			fpPowers:       map[string]uint64{"pk1": 0, "pk2": 0, "pk3": 0},
+			expectResult:   false,
+			expectedErr:    ErrNoFpHasVotingPower,
 		},
 	}
 
@@ -108,14 +125,16 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 			mockCwClient := mocks.NewMockICosmWasmClient(ctl)
 			mockCwClient.EXPECT().QueryIsEnabled().Return(true, nil).Times(1)
 			mockCwClient.EXPECT().QueryConsumerId().Return(consumerChainID, nil).Times(1)
-			mockCwClient.EXPECT().
-				QueryListOfVotedFinalityProviders(&queryParams).
-				Return(tc.votedProviders, nil).
-				Times(1)
+			if tc.expectedErr != ErrNoFpHasVotingPower {
+				mockCwClient.EXPECT().
+					QueryListOfVotedFinalityProviders(&blockWithHashTrimmed).
+					Return(tc.votedProviders, nil).
+					Times(1)
+			}
 
 			mockBTCClient := mocks.NewMockIBitcoinClient(ctl)
 			mockBTCClient.EXPECT().
-				GetBlockHeightByTimestamp(queryParams.BlockTimestamp).
+				GetBlockHeightByTimestamp(tc.queryParams.BlockTimestamp).
 				Return(BTCHeight, nil).
 				Times(1)
 
@@ -135,9 +154,9 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 				btcClient: mockBTCClient,
 			}
 
-			res, err := mockSdkClient.QueryIsBlockBabylonFinalized(queryParams)
-			require.NoError(t, err)
+			res, err := mockSdkClient.QueryIsBlockBabylonFinalized(tc.queryParams)
 			require.Equal(t, tc.expectResult, res)
+			require.Equal(t, tc.expectedErr, err)
 		})
 	}
 }
