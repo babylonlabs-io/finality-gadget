@@ -1,6 +1,7 @@
 package client
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/babylonchain/babylon-finality-gadget/sdk/cwclient"
@@ -29,17 +30,14 @@ func TestFinalityGadgetDisabled(t *testing.T) {
 }
 
 func TestQueryIsBlockBabylonFinalized(t *testing.T) {
-	blockWithHashTrimmed := cwclient.L2Block{
-		BlockHash:      "d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3",
-		BlockHeight:    123,
-		BlockTimestamp: 12345,
-	}
-
 	blockWithHashUntrimmed := cwclient.L2Block{
 		BlockHash:      "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3",
 		BlockHeight:    123,
 		BlockTimestamp: 12345,
 	}
+
+	blockWithHashTrimmed := blockWithHashUntrimmed
+	blockWithHashTrimmed.BlockHash = strings.TrimPrefix(blockWithHashUntrimmed.BlockHash, "0x")
 
 	const consumerChainID = "consumer-chain-id"
 	const BTCHeight = uint64(111)
