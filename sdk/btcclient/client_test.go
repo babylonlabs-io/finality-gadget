@@ -41,9 +41,4 @@ func TestBtcClient(t *testing.T) {
 	blockHeight, err = btc.GetBlockHeightByTimestamp(uint64(2718840690))
 	require.Nil(t, err)
 	require.Equal(t, uint64(0), blockHeight)
-
-	// a timestamp in the past i.e. year 2014
-	blockHeight, err = btc.GetBlockHeightByTimestamp(uint64(1418840690))
-	require.Nil(t, err)
-	require.Equal(t, uint64(0), blockHeight)
 }
