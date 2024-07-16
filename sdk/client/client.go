@@ -3,31 +3,26 @@ package client
 import (
 	"fmt"
 
+	"github.com/babylonchain/babylon-finality-gadget/testutils"
 	bbncfg "github.com/babylonchain/babylon/client/config"
 	"go.uber.org/zap"
 
+	"github.com/babylonchain/babylon-finality-gadget/sdk/bbnclient"
 	"github.com/babylonchain/babylon-finality-gadget/sdk/btcclient"
 	sdkconfig "github.com/babylonchain/babylon-finality-gadget/sdk/config"
 
 	babylonClient "github.com/babylonchain/babylon/client/client"
 
-	"github.com/babylonchain/babylon-finality-gadget/sdk/bbnclient"
 	"github.com/babylonchain/babylon-finality-gadget/sdk/cwclient"
-	"github.com/babylonchain/babylon-finality-gadget/testutils"
 )
-
-type BtcClient interface {
-	GetBlockHeightByTimestamp(targetTimestamp uint64) (uint64, error)
-}
 
 // SdkClient is a client that can only perform queries to a Babylon node
 // It only requires the client config to have `rpcAddr`, but not other fields
 // such as keyring, chain ID, etc..
 type SdkClient struct {
-	config    *sdkconfig.Config
-	bbnClient *bbnclient.Client
-	cwClient  *cwclient.Client
-	btcClient BtcClient
+	bbnClient IBabylonClient
+	cwClient  ICosmWasmClient
+	btcClient IBitcoinClient
 }
 
 // NewClient creates a new BabylonFinalityGadgetClient according to the given config
@@ -55,9 +50,10 @@ func NewClient(config *sdkconfig.Config) (*SdkClient, error) {
 		return nil, fmt.Errorf("failed to create Babylon client: %w", err)
 	}
 
-	var btcClient BtcClient
+	var btcClient IBitcoinClient
 	// Create BTC client
 	switch config.ChainID {
+	// TODO: once we set up our own local BTC devnet, we don't need to use this mock BTC client
 	case sdkconfig.BabylonLocalnet:
 		btcClient, err = testutils.NewMockBTCClient(config.BTCConfig, logger)
 	default:
@@ -70,7 +66,6 @@ func NewClient(config *sdkconfig.Config) (*SdkClient, error) {
 	cwClient := cwclient.NewClient(babylonClient.QueryClient.RPCClient, config.ContractAddr)
 
 	return &SdkClient{
-		config:    config,
 		bbnClient: &bbnclient.Client{QueryClient: babylonClient.QueryClient},
 		cwClient:  cwClient,
 		btcClient: btcClient,

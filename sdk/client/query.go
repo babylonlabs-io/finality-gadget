@@ -24,7 +24,7 @@ import (
  *   - check if the voted voting power is more than 2/3 of the total voting power
  */
 func (sdkClient *SdkClient) QueryIsBlockBabylonFinalized(
-	queryParams *cwclient.L2Block,
+	queryParams cwclient.L2Block,
 ) (bool, error) {
 	// check if the finality gadget is enabled
 	// if not, always return true to pass through op derivation pipeline
@@ -75,7 +75,7 @@ func (sdkClient *SdkClient) QueryIsBlockBabylonFinalized(
 	}
 
 	// get all FPs that voted this (L2 block height, L2 block hash) combination
-	votedFpPks, err := sdkClient.cwClient.QueryListOfVotedFinalityProviders(queryParams)
+	votedFpPks, err := sdkClient.cwClient.QueryListOfVotedFinalityProviders(&queryParams)
 	if err != nil {
 		return false, err
 	}
@@ -108,8 +108,8 @@ func (sdkClient *SdkClient) QueryIsBlockBabylonFinalized(
  * Example: if give block range 1-10, and block 1-5 are finalized, and when querying block 6 we meet an error, then
  * return (5, error)
  *
- * Note: caller needs to make sure the given queryBlocks are consecutive (we don't check hashes inside this method) and
- * start from low to high
+ * Note: caller needs to make sure the given queryBlocks are consecutive (we don't check hashes inside this method)
+ * and start from low to high
  */
 func (sdkClient *SdkClient) QueryBlockRangeBabylonFinalized(
 	queryBlocks []*cwclient.L2Block,
@@ -125,7 +125,7 @@ func (sdkClient *SdkClient) QueryBlockRangeBabylonFinalized(
 	}
 	var finalizedBlockHeight *uint64
 	for _, block := range queryBlocks {
-		isFinalized, err := sdkClient.QueryIsBlockBabylonFinalized(block)
+		isFinalized, err := sdkClient.QueryIsBlockBabylonFinalized(*block)
 		if err != nil {
 			return nil, err
 		}
