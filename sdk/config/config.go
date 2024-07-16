@@ -34,7 +34,6 @@ func (config *Config) getDefaultRpcAddr() (string, error) {
 		return "http://127.0.0.1:26657", nil
 	case "euphrates-0.2.0":
 		return "https://rpc-euphrates.devnet.babylonchain.io/", nil
-	// TODO: replace with babylon RPCs when QuerySmartContractStateRequest query is supported
 	// TODO: add mainnet RPCs when available
 	default:
 		return "", fmt.Errorf("unrecognized chain id: %s", config.ChainID)
