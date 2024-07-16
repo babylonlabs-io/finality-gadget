@@ -28,6 +28,31 @@ func TestFinalityGadgetDisabled(t *testing.T) {
 	require.True(t, res)
 }
 
+// func TestTrimHash(t *testing.T) {
+// 	ctl := gomock.NewController(t)
+
+// 	queryParams := cwclient.L2Block{
+// 		BlockHash:      "0x123",
+// 		BlockHeight:    123,
+// 		BlockTimestamp: 12345,
+// 	}
+
+// 	// mock CwClient
+// 	mockCwClient := mocks.NewMockICosmWasmClient(ctl)
+// 	mockCwClient.EXPECT().QueryIsEnabled().Return(false, nil).Times(1)
+
+// 	mockSdkClient := &SdkClient{
+// 		cwClient:  mockCwClient,
+// 		bbnClient: nil,
+// 		btcClient: nil,
+// 	}
+
+// 	// check QueryIsBlockBabylonFinalized always returns true when finality gadget is not enabled
+// 	res, err := mockSdkClient.QueryIsBlockBabylonFinalized(cwclient.L2Block{})
+// 	require.NoError(t, err)
+// 	require.True(t, res)
+// }
+
 func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 	queryParams := cwclient.L2Block{
 		BlockHash:      "d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3",
