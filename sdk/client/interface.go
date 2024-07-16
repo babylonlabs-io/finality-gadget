@@ -19,7 +19,7 @@ type ISdkClient interface {
 	 *   - calculate voted voting power
 	 *   - check if the voted voting power is more than 2/3 of the total voting power
 	 */
-	QueryIsBlockBabylonFinalized(queryParams *cwclient.L2Block) (bool, error)
+	QueryIsBlockBabylonFinalized(queryParams cwclient.L2Block) (bool, error)
 
 	/* QueryBlockRangeBabylonFinalized searches for a row of consecutive finalized blocks in the block range, and returns
 	 * the last finalized block height
