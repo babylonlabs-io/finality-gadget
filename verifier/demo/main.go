@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/babylonchain/babylon-finality-gadget/verifier/server"
 	"github.com/babylonchain/babylon-finality-gadget/verifier/verifier"
 	"github.com/joho/godotenv"
 )
@@ -54,9 +53,6 @@ func main() {
 	if err != nil {
 		fmt.Printf("error creating verifier: %v\n", err)
 	}
-
-	// Start server
-	go server.StartServer()
 
 	// Start processing blocks
 	vf.ProcessBlocks(ctx)

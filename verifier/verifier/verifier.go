@@ -12,6 +12,7 @@ import (
 	sdkconfig "github.com/babylonchain/babylon-finality-gadget/sdk/config"
 	"github.com/babylonchain/babylon-finality-gadget/sdk/cwclient"
 	"github.com/babylonchain/babylon-finality-gadget/verifier/db"
+	"github.com/babylonchain/babylon-finality-gadget/verifier/server"
 	"github.com/ethereum/go-ethereum/ethclient"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 )
@@ -45,6 +46,9 @@ func NewVerifier(ctx context.Context, cfg *Config) (*Verifier, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create initial tables error: %w", err)
 	}
+
+	// Start server
+	go server.StartServer()
 
 	// Create verifier
 	return &Verifier{
