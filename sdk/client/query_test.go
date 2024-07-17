@@ -1,6 +1,7 @@
 package client
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/babylonchain/babylon-finality-gadget/sdk/cwclient"
@@ -29,49 +30,88 @@ func TestFinalityGadgetDisabled(t *testing.T) {
 }
 
 func TestQueryIsBlockBabylonFinalized(t *testing.T) {
-	queryParams := cwclient.L2Block{
-		BlockHash:      "d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3",
+	blockWithHashUntrimmed := cwclient.L2Block{
+		BlockHash:      "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3",
 		BlockHeight:    123,
 		BlockTimestamp: 12345,
 	}
+
+	blockWithHashTrimmed := blockWithHashUntrimmed
+	blockWithHashTrimmed.BlockHash = strings.TrimPrefix(blockWithHashUntrimmed.BlockHash, "0x")
 
 	const consumerChainID = "consumer-chain-id"
 	const BTCHeight = uint64(111)
 
 	testCases := []struct {
 		name           string
-		fpPowers       map[string]uint64
+		expectedErr    error
+		queryParams    *cwclient.L2Block
 		allFpPks       []string
+		fpPowers       map[string]uint64
 		votedProviders []string
 		expectResult   bool
 	}{
 		{
-			name:           "25% votes, expects false",
+			name:           "0% votes, expects false",
+			queryParams:    &blockWithHashTrimmed,
 			allFpPks:       []string{"pk1", "pk2"},
-			votedProviders: []string{"pk1"},
 			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 300},
+			votedProviders: []string{},
 			expectResult:   false,
+			expectedErr:    nil,
 		},
 		{
-			name:           "75% votes, expects true",
+			name:           "25% votes, expects false",
+			queryParams:    &blockWithHashTrimmed,
 			allFpPks:       []string{"pk1", "pk2"},
-			votedProviders: []string{"pk2"},
 			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 300},
-			expectResult:   true,
+			votedProviders: []string{"pk1"},
+			expectResult:   false,
+			expectedErr:    nil,
 		},
 		{
 			name:           "exact 2/3 votes, expects true",
+			queryParams:    &blockWithHashTrimmed,
 			allFpPks:       []string{"pk1", "pk2", "pk3"},
-			votedProviders: []string{"pk1", "pk2"},
 			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 100, "pk3": 100},
+			votedProviders: []string{"pk1", "pk2"},
+			expectResult:   true,
+			expectedErr:    nil,
+		},
+		{
+			name:           "75% votes, expects true",
+			queryParams:    &blockWithHashTrimmed,
+			allFpPks:       []string{"pk1", "pk2"},
+			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 300},
+			votedProviders: []string{"pk2"},
+			expectResult:   true,
+			expectedErr:    nil,
+		},
+		{
+			name:           "100% votes, expects true",
+			queryParams:    &blockWithHashTrimmed,
+			allFpPks:       []string{"pk1", "pk2", "pk3"},
+			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 100, "pk3": 100},
+			votedProviders: []string{"pk1", "pk2", "pk3"},
+			expectResult:   true,
+			expectedErr:    nil,
+		},
+		{
+			name:           "untrimmed block hash in input params, 75% votes, expects true",
+			queryParams:    &blockWithHashUntrimmed,
+			allFpPks:       []string{"pk1", "pk2", "pk3", "pk4"},
+			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 100, "pk3": 100, "pk4": 100},
+			votedProviders: []string{"pk1", "pk2", "pk3"},
 			expectResult:   true,
 		},
 		{
-			name:           "everyone has 100 voting power, 3 of them votes, return true",
-			allFpPks:       []string{"pk1", "pk2", "pk3", "pk4"},
+			name:           "zero voting power, 100% votes, expects false",
+			queryParams:    &blockWithHashUntrimmed,
+			allFpPks:       []string{"pk1", "pk2", "pk3"},
+			fpPowers:       map[string]uint64{"pk1": 0, "pk2": 0, "pk3": 0},
 			votedProviders: []string{"pk1", "pk2", "pk3"},
-			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 100, "pk3": 100, "pk4": 100},
-			expectResult:   true,
+			expectResult:   false,
+			expectedErr:    ErrNoFpHasVotingPower,
 		},
 	}
 
@@ -83,14 +123,16 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 			mockCwClient := mocks.NewMockICosmWasmClient(ctl)
 			mockCwClient.EXPECT().QueryIsEnabled().Return(true, nil).Times(1)
 			mockCwClient.EXPECT().QueryConsumerId().Return(consumerChainID, nil).Times(1)
-			mockCwClient.EXPECT().
-				QueryListOfVotedFinalityProviders(&queryParams).
-				Return(tc.votedProviders, nil).
-				Times(1)
+			if tc.expectedErr != ErrNoFpHasVotingPower {
+				mockCwClient.EXPECT().
+					QueryListOfVotedFinalityProviders(&blockWithHashTrimmed).
+					Return(tc.votedProviders, nil).
+					Times(1)
+			}
 
 			mockBTCClient := mocks.NewMockIBitcoinClient(ctl)
 			mockBTCClient.EXPECT().
-				GetBlockHeightByTimestamp(queryParams.BlockTimestamp).
+				GetBlockHeightByTimestamp(tc.queryParams.BlockTimestamp).
 				Return(BTCHeight, nil).
 				Times(1)
 
@@ -110,9 +152,9 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 				btcClient: mockBTCClient,
 			}
 
-			res, err := mockSdkClient.QueryIsBlockBabylonFinalized(queryParams)
-			require.NoError(t, err)
+			res, err := mockSdkClient.QueryIsBlockBabylonFinalized(*tc.queryParams)
 			require.Equal(t, tc.expectResult, res)
+			require.Equal(t, tc.expectedErr, err)
 		})
 	}
 }
