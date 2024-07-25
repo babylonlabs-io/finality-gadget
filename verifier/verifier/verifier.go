@@ -65,12 +65,15 @@ func (vf *Verifier) ProcessBlocks(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("error getting last finalized block: %v", err)
 	}
-
+	fmt.Printf("[ProcessBlocks] last finalized block: %d\n", block.Height)
+	
 	// If this block already exists in our DB, skip the finality check
 	exists := vf.Pg.GetBlockStatusByHeight(ctx, block.Height)
+	fmt.Printf("[ProcessBlocks] does latest block exist in db: %v\n", exists)
 	if !exists {
 		// Check the block is finalized using sdk client
 		isFinal, err := vf.queryIsBlockBabylonFinalized(ctx, block)
+		fmt.Printf("[ProcessBlocks] is block %d finalized: %v\n", block.Height, isFinal)
 		// If not finalized, throw error
 		if !isFinal {
 			return fmt.Errorf("block %d should be finalized according to client but is not", block.Height)
@@ -79,6 +82,7 @@ func (vf *Verifier) ProcessBlocks(ctx context.Context) error {
 			return fmt.Errorf("error checking block %d: %v", block.Height, err)
 		}
 		// If finalised, store the block in DB and set the last finalized block
+		fmt.Printf("[ProcessBlocks] storing block %d\n", block.Height)
 		err = vf.insertBlock(ctx, block)
 		if err != nil {
 			return fmt.Errorf("error storing block %d: %v", block.Height, err)
