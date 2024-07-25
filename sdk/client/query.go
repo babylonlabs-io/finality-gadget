@@ -127,7 +127,7 @@ func (sdkClient *SdkClient) QueryBlockRangeBabylonFinalized(
 	for _, block := range queryBlocks {
 		isFinalized, err := sdkClient.QueryIsBlockBabylonFinalized(*block)
 		if err != nil {
-			return nil, err
+			return finalizedBlockHeight, err
 		}
 		if isFinalized {
 			finalizedBlockHeight = &block.BlockHeight
