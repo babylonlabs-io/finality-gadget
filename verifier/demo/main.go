@@ -55,5 +55,8 @@ func main() {
 	}
 
 	// Start processing blocks
-	vf.ProcessBlocks(ctx)
+	err = vf.ProcessBlocks(ctx)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
