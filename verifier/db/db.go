@@ -25,14 +25,10 @@ const (
 		INSERT INTO blocks (block_height, block_hash, block_timestamp, is_finalized) VALUES ($1, $2, $3, $4)
 	`
 	getBlockStatusByHeightSql = `
-		SELECT COALESCE(is_finalized, false) AS is_finalized 
-		FROM blocks 
-		WHERE block_height = $1
-		`
-		getBlockStatusByHashSql = `
-		SELECT COALESCE(is_finalized, false) AS is_finalized 
-		FROM blocks 
-		WHERE block_hash = $1
+		SELECT is_finalized FROM blocks WHERE block_height = $1
+	`
+	getBlockStatusByHashSql = `
+		SELECT is_finalized FROM blocks WHERE block_hash = $1
 	`
 	getLatestBlockSql = `
     SELECT b.block_height, b.block_hash, b.block_timestamp, b.is_finalized
