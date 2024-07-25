@@ -5,17 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
-
-	"github.com/babylonchain/babylon-finality-gadget/verifier/db"
 )
 
 type StatusResponse struct {
 	IsFinalized bool `json:"isFinalized"`
 }
 
-func getBlockStatusByHeight(w http.ResponseWriter, r *http.Request) {
+func (s *Server) getBlockStatusByHeight(w http.ResponseWriter, r *http.Request) {
 	// Fetch params and run validation check
 	blockHeightStr := r.URL.Query().Get("blockHeight")
 	if blockHeightStr == "" {
@@ -34,13 +31,7 @@ func getBlockStatusByHeight(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch status from DB
 	ctx := context.Background()
-	pg, err := db.NewPostgresHandler(ctx, os.Getenv("PG_CONNECTION_STRING"))
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "Error creating postgres handler: %v\n", err)
-		return
-	}
-	isFinal := pg.GetBlockStatusByHeight(ctx, uint64(blockHeight))
+	isFinal := s.pg.GetBlockStatusByHeight(ctx, uint64(blockHeight))
 
 	// Marshal and return status
 	jsonResponse, err := json.Marshal(StatusResponse {
@@ -54,7 +45,7 @@ func getBlockStatusByHeight(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResponse)
 }
 
-func getBlockStatusByHash(w http.ResponseWriter, r *http.Request) {
+func (s *Server) getBlockStatusByHash(w http.ResponseWriter, r *http.Request) {
 	// Fetch params and run validation check
 	hash := r.URL.Query().Get("hash")
 	if hash == "" {
@@ -65,13 +56,7 @@ func getBlockStatusByHash(w http.ResponseWriter, r *http.Request) {
 	
 	// Fetch status from DB
 	ctx := context.Background()
-	pg, err := db.NewPostgresHandler(ctx, os.Getenv("PG_CONNECTION_STRING"))
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "Error creating postgres handler: %v\n", err)
-		return
-	}
-	isFinal := pg.GetBlockStatusByHash(ctx, hash)
+	isFinal := s.pg.GetBlockStatusByHash(ctx, hash)
 
 	// Marshal and return status
 	jsonResponse, err := json.Marshal(StatusResponse {
@@ -85,16 +70,10 @@ func getBlockStatusByHash(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResponse)
 }
 
-func getLatestConsecutivelyFinalizedBlock(w http.ResponseWriter, r *http.Request) {
+func (s *Server) getLatestConsecutivelyFinalizedBlock(w http.ResponseWriter, r *http.Request) {
 	// Fetch status from DB
 	ctx := context.Background()
-	pg, err := db.NewPostgresHandler(ctx, os.Getenv("PG_CONNECTION_STRING"))
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "Error creating postgres handler: %v\n", err)
-		return
-	}
-	block, err := pg.GetLatestConsecutivelyFinalizedBlock(ctx)
+	block, err := s.pg.GetLatestConsecutivelyFinalizedBlock(ctx)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Error getting latest block: %v\n", err)

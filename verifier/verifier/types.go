@@ -23,10 +23,11 @@ type Verifier struct {
 type Config struct {
 	L2RPCHost        		string 					`long:"l2-rpc-host" description:"rpc host address of the L2 node"`
 	BitcoinRPCHost      string 					`long:"bitcoin-rpc-host" description:"rpc host address of the bitcoin node"`
-	PGConnectionString 	string 					`long:"pg-connection-string" description:"Postgres DB connection string"`
 	FGContractAddress 	string 					`long:"fg-contract-address" description:"BabylonChain op finality gadget contract address"`
 	BBNChainID 					string 					`long:"bbn-chain-id" description:"BabylonChain chain ID"`
 	BBNRPCAddress 			string 					`long:"bbn-rpc-address" description:"BabylonChain chain RPC address"`
+	PGConnectionString 	string 					`long:"pg-connection-string" description:"Postgres DB connection string"`
+	ServerPort				 	string 					`long:"server-port" description:"port to start the verifier server"`
 	PollInterval				time.Duration		`long:"retry-interval" description:"interval in seconds to recheck Babylon finality of block"`
 }
 

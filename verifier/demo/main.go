@@ -39,6 +39,10 @@ func main() {
 	if err != nil {
 		fmt.Printf("error converting poll interval to int: %v\n", err)
 	}
+	serverPort := os.Getenv("SERVER_PORT")
+	if serverPort == "" {
+		serverPort = "8080"
+	}
 
 	// Create verifier
 	vf, err := verifier.NewVerifier(ctx, &verifier.Config{
@@ -48,6 +52,7 @@ func main() {
 		FGContractAddress:FG_CONTRACT_ADDRESS,
 		BBNChainID: BBN_CHAIN_ID,
 		BBNRPCAddress: BBN_RPC_ADDRESS,
+		ServerPort: serverPort,
 		PollInterval: time.Second * time.Duration(pollInterval),
 	})
 	if err != nil {
