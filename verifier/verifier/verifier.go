@@ -66,6 +66,14 @@ func (vf *Verifier) ProcessBlocks(ctx context.Context) error {
 		return fmt.Errorf("error getting last finalized block: %v", err)
 	}
 	fmt.Printf("[ProcessBlocks] last finalized block: %d\n", block.Height)
+
+	// If block height is 0, replace it with block height 1
+	if block.Height == 0 {
+		block, err = vf.getBlockByNumber(ctx, 1)
+		if err != nil {
+			return fmt.Errorf("error getting block 1: %v", err)
+		}
+	}
 	
 	// If this block already exists in our DB, skip the finality check
 	exists := vf.Pg.GetBlockStatusByHeight(ctx, block.Height)
