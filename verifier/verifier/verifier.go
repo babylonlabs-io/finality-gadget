@@ -68,9 +68,6 @@ func (vf *Verifier) ProcessBlocks(ctx context.Context) error {
 
 	// If this block already exists in our DB, skip the finality check
 	exists := vf.Pg.GetBlockStatusByHeight(ctx, block.Height)
-	if err != nil {
-		return fmt.Errorf("error checking block %d: %v", block.Height, err)
-	}
 	if !exists {
 		// Check the block is finalized using sdk client
 		isFinal, err := vf.queryIsBlockBabylonFinalized(ctx, block)
