@@ -114,7 +114,7 @@ func (vf *Verifier) startService(ctx context.Context) error {
 	}
 
 	// if local chain tip is ahead of node, start service at latest block
-	if localBlock.BlockHeight >= block.Height {
+	if localBlock.BlockHeight != 0 && localBlock.BlockHeight >= block.Height {
 		block = &BlockInfo{
 			Height: 		localBlock.BlockHeight,
 			Hash:   		localBlock.BlockHash,

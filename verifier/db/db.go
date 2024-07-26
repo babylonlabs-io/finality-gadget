@@ -125,6 +125,10 @@ func (pg *PostgresHandler) GetLatestBlock(ctx context.Context) (*Block, error) {
 	var block Block
 	err := pg.conn.QueryRow(ctx, getLatestBlockSql).Scan(&block.BlockHeight, &block.BlockHash, &block.BlockTimestamp, &block.IsFinalized)
 	if err != nil {
+		if err == pgx.ErrNoRows {
+			// If no rows are returned, return a block with BlockHeight = 0
+			return &Block{BlockHeight: 0}, nil
+		}
 		return nil, fmt.Errorf("unable to get latest block: %v", err)
 	}
 
