@@ -84,7 +84,6 @@ func (vf *Verifier) ProcessNBlocks(ctx context.Context, n int) error {
 		if n > 0 && vf.currHeight == vf.startHeight + uint64(n - 1) {
 			break
 		}
-		fmt.Printf("polling for new block at height %d\n", vf.currHeight + 1)
 		block, err := vf.getBlockByNumber(ctx, int64(vf.currHeight + 1))
 		if err != nil {
 			fmt.Printf("error getting new block: %v\n", err)
@@ -105,7 +104,6 @@ func (vf *Verifier) startService(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("error getting last finalized block: %v", err)
 	}
-	fmt.Printf("[ProcessBlocks] last finalized block: %d\n", block.Height)
 
 	// Query local DB for last block processed
 	localBlock, err := vf.Pg.GetLatestBlock(ctx)
@@ -131,7 +129,6 @@ func (vf *Verifier) startService(ctx context.Context) error {
 	
 		// Check the block is finalized using sdk client
 		isFinal, err := vf.queryIsBlockBabylonFinalized(ctx, block)
-		fmt.Printf("[ProcessBlocks] is block %d finalized: %v\n", block.Height, isFinal)
 		// If not finalized, throw error
 		if !isFinal {
 			return fmt.Errorf("block %d should be finalized according to client but is not", block.Height)
@@ -140,7 +137,6 @@ func (vf *Verifier) startService(ctx context.Context) error {
 			return fmt.Errorf("error checking block %d: %v", block.Height, err)
 		}
 		// If finalised, store the block in DB and set the last finalized block
-		fmt.Printf("[ProcessBlocks] storing block %d\n", block.Height)
 		err = vf.insertBlock(ctx, block)
 		if err != nil {
 			return fmt.Errorf("error storing block %d: %v", block.Height, err)
@@ -179,7 +175,6 @@ func (vf *Verifier) handleBlock(ctx context.Context, block *BlockInfo) {
 	// while block is not finalized, recheck if block is finalized every `retryInterval` seconds
 	// if finalized, store the block in DB and set the last finalized block
 	for {
-		fmt.Printf("checking finality of block %d\n", block.Height)
 		// Check if block is finalized
 		isFinal, err := vf.queryIsBlockBabylonFinalized(ctx, block)
 		if err != nil {
