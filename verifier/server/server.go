@@ -12,8 +12,8 @@ import (
 )
 
 type Server struct {
-	port 			string
 	pg 				*db.PostgresHandler
+	port 			string
 }
 
 type ServerConfig struct {

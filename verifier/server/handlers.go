@@ -42,7 +42,9 @@ func (s *Server) getBlockStatusByHeight(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(jsonResponse)
+	if _, err := w.Write(jsonResponse); err != nil {
+		http.Error(w, "unable to write JSON response", http.StatusInternalServerError)
+	}
 }
 
 func (s *Server) getBlockStatusByHash(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +69,9 @@ func (s *Server) getBlockStatusByHash(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(jsonResponse)
+	if _, err := w.Write(jsonResponse); err != nil {
+		http.Error(w, "unable to write JSON response", http.StatusInternalServerError)
+	}
 }
 
 func (s *Server) getLatestConsecutivelyFinalizedBlock(w http.ResponseWriter, r *http.Request) {
@@ -87,6 +91,8 @@ func (s *Server) getLatestConsecutivelyFinalizedBlock(w http.ResponseWriter, r *
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(jsonResponse)
+	if _, err := w.Write(jsonResponse); err != nil {
+		http.Error(w, "unable to write JSON response", http.StatusInternalServerError)
+	}
 }
 

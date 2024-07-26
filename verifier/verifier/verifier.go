@@ -48,10 +48,14 @@ func NewVerifier(ctx context.Context, cfg *Config) (*Verifier, error) {
 	}
 
 	// Start server
-	go server.StartServer(ctx, &server.ServerConfig{
-		Port:       cfg.ServerPort,
-		ConnString: cfg.PGConnectionString,
-	})
+	go func() {
+    if _, err := server.StartServer(ctx, &server.ServerConfig{
+			Port:       cfg.ServerPort,
+			ConnString: cfg.PGConnectionString,
+		}); err != nil {
+			fmt.Printf("error starting server: %v\n", err)
+    }
+	}()
 
 	// Create verifier
 	return &Verifier{

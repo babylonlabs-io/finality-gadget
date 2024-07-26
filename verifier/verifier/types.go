@@ -33,7 +33,7 @@ type Config struct {
 }
 
 type BlockInfo struct {
-	Height      uint64
 	Hash        string
+	Height      uint64
 	Timestamp		uint64
 }
