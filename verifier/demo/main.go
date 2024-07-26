@@ -11,6 +11,7 @@ import (
 	"github.com/babylonchain/babylon-finality-gadget/verifier/verifier"
 	"github.com/joho/godotenv"
 )
+
 func main() {
 	ctx := context.Background()
 

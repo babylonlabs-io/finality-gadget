@@ -17,7 +17,8 @@ type Verifier struct {
 	Mutex 				sync.Mutex
 
 	PollInterval 	time.Duration
-	blockHeight 	uint64
+	startHeight 	uint64
+	currHeight 	uint64
 }
 
 type Config struct {

@@ -31,6 +31,9 @@ const (
 		SELECT is_finalized FROM blocks WHERE block_hash = $1
 	`
 	getLatestBlockSql = `
+		SELECT block_height, block_hash, block_timestamp, is_finalized FROM blocks ORDER BY block_height DESC LIMIT 1
+	`
+	getLatestConsecutivelyFinalizedBlockSql = `
     SELECT b.block_height, b.block_hash, b.block_timestamp, b.is_finalized
     FROM blocks b
     JOIN blocks prev ON b.block_height = prev.block_height + 1
@@ -118,9 +121,19 @@ func (pg *PostgresHandler) GetBlockStatusByHash(ctx context.Context, blockHash s
 	return isFinalized
 }
 
-func (pg *PostgresHandler) GetLatestConsecutivelyFinalizedBlock(ctx context.Context) (*Block, error) {
+func (pg *PostgresHandler) GetLatestBlock(ctx context.Context) (*Block, error) {
 	var block Block
 	err := pg.conn.QueryRow(ctx, getLatestBlockSql).Scan(&block.BlockHeight, &block.BlockHash, &block.BlockTimestamp, &block.IsFinalized)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get latest block: %v", err)
+	}
+
+	return &block, nil
+}
+
+func (pg *PostgresHandler) GetLatestConsecutivelyFinalizedBlock(ctx context.Context) (*Block, error) {
+	var block Block
+	err := pg.conn.QueryRow(ctx, getLatestConsecutivelyFinalizedBlockSql).Scan(&block.BlockHeight, &block.BlockHash, &block.BlockTimestamp, &block.IsFinalized)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get latest consecutively finalized block: %v", err)
 	}

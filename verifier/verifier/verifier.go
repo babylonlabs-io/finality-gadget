@@ -62,7 +62,44 @@ func NewVerifier(ctx context.Context, cfg *Config) (*Verifier, error) {
 	}, nil
 }
 
+// This function process blocks indefinitely, starting from the last finalized block.
 func (vf *Verifier) ProcessBlocks(ctx context.Context) error {
+	return vf.ProcessNBlocks(ctx, -1)
+}
+
+// This function process n blocks, starting from the last finalized block.
+// n is the number of blocks to process, pass in -1 to process blocks indefinitely.
+// Passing in non-negative n is useful for testing.
+func (vf *Verifier) ProcessNBlocks(ctx context.Context, n int) error {
+	// Start service at last finalized block
+	err := vf.startService(ctx)
+	if err != nil {
+		return fmt.Errorf("%v", err)
+	}
+
+	// Start polling for new blocks at set interval
+	ticker := time.NewTicker(vf.PollInterval)
+	for range ticker.C {
+		// If n is positive and we have processed n blocks, stop the process
+		if n > 0 && vf.currHeight == vf.startHeight + uint64(n - 1) {
+			break
+		}
+		fmt.Printf("polling for new block at height %d\n", vf.currHeight + 1)
+		block, err := vf.getBlockByNumber(ctx, int64(vf.currHeight + 1))
+		if err != nil {
+			fmt.Printf("error getting new block: %v\n", err)
+			continue
+		}
+		go func() {
+			vf.handleBlock(ctx, block)
+		}()
+	}
+
+	return nil
+}
+
+// Start service at last finalized block
+func (vf *Verifier) startService(ctx context.Context) error {
 	// Query L2 node for last finalized block
 	block, err := vf.getLatestFinalizedBlock(ctx)
 	if err != nil {
@@ -70,18 +107,28 @@ func (vf *Verifier) ProcessBlocks(ctx context.Context) error {
 	}
 	fmt.Printf("[ProcessBlocks] last finalized block: %d\n", block.Height)
 
-	// If block height is 0, replace it with block height 1
-	if block.Height == 0 {
-		block, err = vf.getBlockByNumber(ctx, 1)
-		if err != nil {
-			return fmt.Errorf("error getting block 1: %v", err)
-		}
+	// Query local DB for last block processed
+	localBlock, err := vf.Pg.GetLatestBlock(ctx)
+	if err != nil {
+		return fmt.Errorf("error getting latest block from db: %v", err)
 	}
+
+	// if local chain tip is ahead of node, start service at latest block
+	if localBlock.BlockHeight >= block.Height {
+		block = &BlockInfo{
+			Height: 		localBlock.BlockHeight,
+			Hash:   		localBlock.BlockHash,
+			Timestamp: 	localBlock.BlockTimestamp,
+		}
+	} else {
+		// If block height is 0, replace it with block height 1
+		if block.Height == 0 {
+			block, err = vf.getBlockByNumber(ctx, 1)
+			if err != nil {
+				return fmt.Errorf("error getting block 1: %v", err)
+			}
+		}
 	
-	// If this block already exists in our DB, skip the finality check
-	exists := vf.Pg.GetBlockStatusByHeight(ctx, block.Height)
-	fmt.Printf("[ProcessBlocks] does latest block exist in db: %v\n", exists)
-	if !exists {
 		// Check the block is finalized using sdk client
 		isFinal, err := vf.queryIsBlockBabylonFinalized(ctx, block)
 		fmt.Printf("[ProcessBlocks] is block %d finalized: %v\n", block.Height, isFinal)
@@ -103,22 +150,9 @@ func (vf *Verifier) ProcessBlocks(ctx context.Context) error {
 	// Start service at block height
 	fmt.Printf("starting service at block %d\n", block.Height)
 
-	// Store the last finalized block height in memory
-	vf.blockHeight = block.Height
-
-	// Start polling for new blocks at set interval
-	ticker := time.NewTicker(vf.PollInterval)
-	for range ticker.C {
-		fmt.Printf("polling for new block at height %d\n", vf.blockHeight + 1)
-		block, err := vf.getBlockByNumber(ctx, int64(vf.blockHeight + 1))
-		if err != nil {
-			fmt.Printf("error getting new block: %v\n", err)
-			continue
-		}
-		go func() {
-			vf.handleBlock(ctx, block)
-		}()
-	}
+	// Set the start block and curr finalized block in memory
+	vf.startHeight = block.Height
+	vf.currHeight = block.Height
 
 	return nil
 }
@@ -187,7 +221,7 @@ func (vf *Verifier) insertBlock(ctx context.Context, block *BlockInfo) error {
 		return err
 	}
 	// Set last finalized block in memory
-	vf.blockHeight = block.Height
+	vf.currHeight = block.Height
 	// Unlock mutex
 	vf.Mutex.Unlock()
 
