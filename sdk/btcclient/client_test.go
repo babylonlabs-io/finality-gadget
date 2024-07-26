@@ -7,14 +7,13 @@ import (
 	"go.uber.org/zap"
 )
 
-// TestBtc is an e2e test to call into a stub CosmWasm contract deployed on Osmosis testnet
-// TODO: add more tests for some other edge cases
+// TODO: 1) not rely on mainnet RPC; 2) add more tests for some other edge cases
 func TestBtcClient(t *testing.T) {
 	var blockHeight uint64
 	var err error
 
 	// Create logger.
-	logger, err := zap.NewProduction()
+	logger, err := zap.NewDevelopment()
 	require.Nil(t, err)
 
 	// Create BTC client
