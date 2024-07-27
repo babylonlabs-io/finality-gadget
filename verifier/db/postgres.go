@@ -1,3 +1,5 @@
+// DEPRECATED - use bbolt.go instead
+
 package db
 
 import (

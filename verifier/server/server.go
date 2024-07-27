@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -12,26 +11,20 @@ import (
 )
 
 type Server struct {
-	pg 				*db.PostgresHandler
+	db 				*db.BBoltHandler
 	port 			string
 }
 
 type ServerConfig struct {
-	Port 				string
-	ConnString 	string
+	Db  			*db.BBoltHandler
+	Port 			string
 }
 
 func StartServer(ctx context.Context, cfg *ServerConfig) (*Server, error) {
-	// Create Postgres handler.
-	pg, err := db.NewPostgresHandler(ctx, cfg.ConnString)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create postgres handler: %w", err)
-	}
-
 	// Define server.
 	s := &Server{
 		port: cfg.Port,
-		pg:   pg,
+		db:   cfg.Db,
 	}
 
 	// Create router.

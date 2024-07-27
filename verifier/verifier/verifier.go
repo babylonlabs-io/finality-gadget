@@ -38,20 +38,21 @@ func NewVerifier(ctx context.Context, cfg *Config) (*Verifier, error) {
 	}
 
 	// Create local DB for storing and querying blocks
-	pg, err := db.NewPostgresHandler(ctx, cfg.PGConnectionString)
+	db, err := db.NewBBoltHandler(ctx, cfg.DBFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create postgres handler: %w", err)
+		return nil, fmt.Errorf("failed to create DB handler: %w", err)
 	}
-	err = pg.TryCreateInitialTables(ctx)
+	defer db.Close()
+	err = db.TryCreateInitialBuckets(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("create initial tables error: %w", err)
+		return nil, fmt.Errorf("create initial buckets error: %w", err)
 	}
 
 	// Start server
 	go func() {
     if _, err := server.StartServer(ctx, &server.ServerConfig{
-			Port:       cfg.ServerPort,
-			ConnString: cfg.PGConnectionString,
+			Port:   cfg.ServerPort,
+			Db: 		db,
 		}); err != nil {
 			fmt.Printf("error starting server: %v\n", err)
     }
@@ -61,7 +62,7 @@ func NewVerifier(ctx context.Context, cfg *Config) (*Verifier, error) {
 	return &Verifier{
 		SdkClient: sdkClient,
 		L2Client: l2Client,
-		Pg: pg,
+		Db: db,
 		PollInterval: cfg.PollInterval,
 	}, nil
 }
@@ -110,7 +111,7 @@ func (vf *Verifier) startService(ctx context.Context) error {
 	}
 
 	// Query local DB for last block processed
-	localBlock, err := vf.Pg.GetLatestBlock(ctx)
+	localBlock, err := vf.Db.GetLatestBlock(ctx)
 	if err != nil {
 		return fmt.Errorf("error getting latest block from db: %v", err)
 	}
@@ -210,7 +211,7 @@ func (vf *Verifier) insertBlock(ctx context.Context, block *BlockInfo) error {
 	// Lock mutex
 	vf.Mutex.Lock()
 	// Store block in DB
-	err := vf.Pg.InsertBlock(ctx, db.Block{
+	err := vf.Db.InsertBlock(ctx, db.Block{
 		BlockHeight: 			block.Height,
 		BlockHash:   			block.Hash,
 		BlockTimestamp:   block.Timestamp,

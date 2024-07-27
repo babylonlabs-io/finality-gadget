@@ -30,7 +30,7 @@ func main() {
 	// Import and parse env vars
 	L2_RPC_HOST := os.Getenv("L2_RPC_HOST")
 	BITCOIN_RPC_HOST := os.Getenv("BITCOIN_RPC_HOST")
-	PG_CONNECTION_STRING := os.Getenv("PG_CONNECTION_STRING")
+	DB_FILE_PATH := os.Getenv("DB_FILE_PATH")
 	FG_CONTRACT_ADDRESS := os.Getenv("FG_CONTRACT_ADDRESS")
 	BBN_CHAIN_ID := os.Getenv("BBN_CHAIN_ID")
 	BBN_RPC_ADDRESS := os.Getenv("BBN_RPC_ADDRESS")
@@ -49,7 +49,7 @@ func main() {
 	vf, err := verifier.NewVerifier(ctx, &verifier.Config{
 		L2RPCHost: L2_RPC_HOST,
 		BitcoinRPCHost: BITCOIN_RPC_HOST,
-		PGConnectionString: PG_CONNECTION_STRING,
+		DBFilePath: DB_FILE_PATH,
 		FGContractAddress:FG_CONTRACT_ADDRESS,
 		BBNChainID: BBN_CHAIN_ID,
 		BBNRPCAddress: BBN_RPC_ADDRESS,

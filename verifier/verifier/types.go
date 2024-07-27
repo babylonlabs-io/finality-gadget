@@ -12,7 +12,7 @@ import (
 type Verifier struct {
 	SdkClient 		*client.SdkClient
 	L2Client 			*ethclient.Client
-	Pg 						*db.PostgresHandler
+	Db 						*db.BBoltHandler
 
 	Mutex 				sync.Mutex
 
@@ -27,7 +27,7 @@ type Config struct {
 	FGContractAddress 	string 					`long:"fg-contract-address" description:"BabylonChain op finality gadget contract address"`
 	BBNChainID 					string 					`long:"bbn-chain-id" description:"BabylonChain chain ID"`
 	BBNRPCAddress 			string 					`long:"bbn-rpc-address" description:"BabylonChain chain RPC address"`
-	PGConnectionString 	string 					`long:"pg-connection-string" description:"Postgres DB connection string"`
+	DBFilePath 					string 					`long:"db-file-path" description:"path to the DB file"`
 	ServerPort				 	string 					`long:"server-port" description:"port to start the verifier server"`
 	PollInterval				time.Duration		`long:"retry-interval" description:"interval in seconds to recheck Babylon finality of block"`
 }

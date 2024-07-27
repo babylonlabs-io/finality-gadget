@@ -31,7 +31,7 @@ func (s *Server) getBlockStatusByHeight(w http.ResponseWriter, r *http.Request) 
 
 	// Fetch status from DB
 	ctx := context.Background()
-	isFinal := s.pg.GetBlockStatusByHeight(ctx, uint64(blockHeight))
+	isFinal := s.db.GetBlockStatusByHeight(ctx, uint64(blockHeight))
 
 	// Marshal and return status
 	jsonResponse, err := json.Marshal(StatusResponse {
@@ -58,7 +58,7 @@ func (s *Server) getBlockStatusByHash(w http.ResponseWriter, r *http.Request) {
 	
 	// Fetch status from DB
 	ctx := context.Background()
-	isFinal := s.pg.GetBlockStatusByHash(ctx, hash)
+	isFinal := s.db.GetBlockStatusByHash(ctx, hash)
 
 	// Marshal and return status
 	jsonResponse, err := json.Marshal(StatusResponse {
@@ -77,7 +77,7 @@ func (s *Server) getBlockStatusByHash(w http.ResponseWriter, r *http.Request) {
 func (s *Server) getLatestConsecutivelyFinalizedBlock(w http.ResponseWriter, r *http.Request) {
 	// Fetch status from DB
 	ctx := context.Background()
-	block, err := s.pg.GetLatestConsecutivelyFinalizedBlock(ctx)
+	block, err := s.db.GetLatestConsecutivelyFinalizedBlock(ctx)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Error getting latest block: %v\n", err)
