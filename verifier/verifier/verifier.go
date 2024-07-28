@@ -124,12 +124,9 @@ func (vf *Verifier) startService(ctx context.Context) error {
 			Timestamp: 	localBlock.BlockTimestamp,
 		}
 	} else {
-		// If block height is 0, replace it with block height 1
+		// throw if block height is 0
 		if block.Height == 0 {
-			block, err = vf.getBlockByNumber(ctx, 1)
-			if err != nil {
-				return fmt.Errorf("error getting block 1: %v", err)
-			}
+			return fmt.Errorf("block height 0")
 		}
 	
 		// Check the block is finalized using sdk client
