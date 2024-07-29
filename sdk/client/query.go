@@ -57,6 +57,15 @@ func (sdkClient *SdkClient) QueryIsBlockBabylonFinalized(
 		return false, err
 	}
 
+	// check whether the btc staking is actived
+	earliestDelHeight, err := sdkClient.bbnClient.QueryEarliestActiveDelBtcHeight(allFpPks)
+	if err != nil {
+		return false, err
+	}
+	if earliestDelHeight == nil || btcblockHeight < *earliestDelHeight {
+		return false, ErrBtcStakingNotActivated
+	}
+
 	// get all FPs voting power at this BTC height
 	allFpPower, err := sdkClient.bbnClient.QueryMultiFpPower(allFpPks, btcblockHeight)
 	if err != nil {

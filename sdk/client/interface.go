@@ -36,4 +36,6 @@ type ISdkClient interface {
 	 * and start from low to high
 	 */
 	QueryBlockRangeBabylonFinalized(queryBlocks []*cwclient.L2Block) (*uint64, error)
+
+	QueryEarliestDelHeight() (*uint64, error)
 }

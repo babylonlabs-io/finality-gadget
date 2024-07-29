@@ -45,6 +45,8 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 
 	const consumerChainID = "consumer-chain-id"
 	const BTCHeight = uint64(111)
+	BTCActivatedHeight := BTCHeight - 1
+	BTCNotActivatedHeight := BTCHeight + 1
 
 	testCases := []struct {
 		name           string
@@ -109,13 +111,22 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 			expectResult:   true,
 		},
 		{
-			name:           "zero voting power, 100% votes, expects false",
+			name:           "FP no delegation, 100% votes, expects false",
 			queryParams:    &blockWithHashUntrimmed,
 			allFpPks:       []string{"pk1", "pk2", "pk3"},
 			fpPowers:       map[string]uint64{"pk1": 0, "pk2": 0, "pk3": 0},
 			votedProviders: []string{"pk1", "pk2", "pk3"},
 			expectResult:   false,
-			expectedErr:    ErrNoFpHasVotingPower,
+			expectedErr:    ErrBtcStakingNotActivated,
+		},
+		{
+			name:           "Btc staking not activated, 100% votes, expects false",
+			queryParams:    &blockWithHashUntrimmed,
+			allFpPks:       []string{"pk1", "pk2", "pk3"},
+			fpPowers:       map[string]uint64{"pk1": 0, "pk2": 0, "pk3": 0},
+			votedProviders: []string{"pk1", "pk2", "pk3"},
+			expectResult:   false,
+			expectedErr:    ErrBtcStakingNotActivated,
 		},
 	}
 
@@ -127,7 +138,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 			mockCwClient := mocks.NewMockICosmWasmClient(ctl)
 			mockCwClient.EXPECT().QueryIsEnabled().Return(true, nil).Times(1)
 			mockCwClient.EXPECT().QueryConsumerId().Return(consumerChainID, nil).Times(1)
-			if tc.expectedErr != ErrNoFpHasVotingPower {
+			if tc.expectedErr != ErrBtcStakingNotActivated {
 				mockCwClient.EXPECT().
 					QueryListOfVotedFinalityProviders(&blockWithHashTrimmed).
 					Return(tc.votedProviders, nil).
@@ -145,10 +156,28 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 				QueryAllFpBtcPubKeys(consumerChainID).
 				Return(tc.allFpPks, nil).
 				Times(1)
-			mockBBNClient.EXPECT().
-				QueryMultiFpPower(tc.allFpPks, BTCHeight).
-				Return(tc.fpPowers, nil).
-				Times(1)
+			if tc.expectedErr != ErrBtcStakingNotActivated {
+				mockBBNClient.EXPECT().
+					QueryMultiFpPower(tc.allFpPks, BTCHeight).
+					Return(tc.fpPowers, nil).
+					Times(1)
+			}
+			if tc.name == "FP no delegation, 100% votes, expects false" {
+				mockBBNClient.EXPECT().
+					QueryEarliestActiveDelBtcHeight(tc.allFpPks).
+					Return(nil, nil).
+					Times(1)
+			} else if tc.name == "Btc staking not activated, 100% votes, expects false" {
+				mockBBNClient.EXPECT().
+					QueryEarliestActiveDelBtcHeight(tc.allFpPks).
+					Return(&BTCNotActivatedHeight, nil).
+					Times(1)
+			} else {
+				mockBBNClient.EXPECT().
+					QueryEarliestActiveDelBtcHeight(tc.allFpPks).
+					Return(&BTCActivatedHeight, nil).
+					Times(1)
+			}
 
 			mockSdkClient := &SdkClient{
 				cwClient:  mockCwClient,
