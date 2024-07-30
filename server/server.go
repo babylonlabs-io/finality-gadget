@@ -6,7 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/babylonchain/babylon-finality-gadget/verifier/db"
+	"github.com/babylonchain/babylon-finality-gadget/db"
 )
 
 type Server struct {

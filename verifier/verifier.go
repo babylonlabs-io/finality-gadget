@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/babylonchain/babylon-finality-gadget/db"
 	"github.com/babylonchain/babylon-finality-gadget/sdk/btcclient"
 	"github.com/babylonchain/babylon-finality-gadget/sdk/client"
 	sdkconfig "github.com/babylonchain/babylon-finality-gadget/sdk/config"
 	"github.com/babylonchain/babylon-finality-gadget/sdk/cwclient"
 	"github.com/babylonchain/babylon-finality-gadget/verifier/config"
-	"github.com/babylonchain/babylon-finality-gadget/verifier/db"
 	"github.com/ethereum/go-ethereum/ethclient"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 )

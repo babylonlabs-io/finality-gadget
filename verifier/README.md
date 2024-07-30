@@ -23,10 +23,10 @@ ServerPort = # Localhost port to serve the API
 PollInterval = # Interval to poll for new L2 blocks
 ```
 
-To start the daemon, navigate to the `/verifier/cmd` directory:
+To start the daemon, navigate to the `/cmd` directory:
 
 ```bash
-cd verifier/cmd
+cd cmd
 go run . start --cfg ../config.toml
 ```
 

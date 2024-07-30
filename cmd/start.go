@@ -10,10 +10,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/spf13/cobra"
 
+	"github.com/babylonchain/babylon-finality-gadget/db"
+	"github.com/babylonchain/babylon-finality-gadget/server"
+	"github.com/babylonchain/babylon-finality-gadget/verifier"
 	"github.com/babylonchain/babylon-finality-gadget/verifier/config"
-	"github.com/babylonchain/babylon-finality-gadget/verifier/db"
-	"github.com/babylonchain/babylon-finality-gadget/verifier/server"
-	"github.com/babylonchain/babylon-finality-gadget/verifier/verifier"
 )
 
 const (
