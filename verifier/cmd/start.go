@@ -89,7 +89,9 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	}
 
 	// Call Stop method when interrupt signal is received
-	s.Stop()
-
+	if err := s.Stop(); err != nil {
+		log.Fatalf("Error stopping server: %v\n", err)
+		return err
+	}
 	return nil
 }
