@@ -1,33 +1,33 @@
-# Babylon Verifier Program
+# Babylon Verifier Daemon
 
-This is a peripheral program that can be run by users of OP stack L2s to track consecutive L2 block quorum and query the BTC-finalised status of blocks via RESTful API endpoints. It is served as a Docker container for local use or hosted on a server.
+This is a peripheral program that can be run by users of OP stack L2s to track consecutive L2 block quorum and query the BTC-finalised status of blocks via RESTful API endpoints.
 
 ## Running the daemon
 
-To get started, clone the repository and navigate to the `/verifier` directory.
+To get started, clone the repository.
 
 ```bash
 git clone https://github.com/babylonchain/babylon-finality-gadget.git
-cd verifier
 ```
 
-Create a `.env` file in the `/verifier` directory with the following content:
+Configure the `config.toml` file with the following content:
 
-```bash
-L2_RPC_HOST=
-BITCOIN_RPC_HOST=
-DB_FILE_PATH=
-FG_CONTRACT_ADDRESS=
-BBN_CHAIN_ID=
-BBN_RPC_ADDRESS=
-POLL_INTERVAL_IN_SECS=
+```toml
+L2RPCHost = # RPC URL of OP stack L2 chain
+BitcoinRPCHost = # Bitcoin RPC URL
+DBFilePath = # Path to local bbolt DB file
+FGContractAddress = # Babylon finality gadget contract address
+BBNChainID = # Babylon chain id
+BBNRPCAddress = # Babylon RPC host URL
+ServerPort = # Localhost port to serve the API
+PollInterval = # Interval to poll for new L2 blocks
 ```
 
-To run the demo program:
+To start the daemon, navigate to the `/verifier/cmd` directory:
 
 ```bash
-cd verifier
-go run demo/main.go
+cd verifier/cmd
+go run . start --cfg ../config.toml
 ```
 
 <!-- ## Running the Docker container -->
