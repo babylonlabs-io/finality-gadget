@@ -214,6 +214,14 @@ func (bb *BBoltHandler) GetLatestConsecutivelyFinalizedBlock() (*Block, error) {
 		return nil
 	})
 	if err != nil {
+		// If no latest block has been stored yet, return empty block (block 0)
+		if errors.Is(err, ErrBlockNotFound) {
+			return &Block{
+				BlockHeight: 0,
+				BlockHash: "",
+				IsFinalized: false,
+			}, nil
+		}
 		log.Fatalf("Error getting latest block: %v\n", err)
 		return nil, err
 	}
