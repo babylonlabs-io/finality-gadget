@@ -38,6 +38,7 @@ func StartServer(cfg *ServerConfig) (*Server, error) {
 	log.Printf("Starting server on port %s...", cfg.Port)
 	if err := http.ListenAndServe(":"+cfg.Port, router); err != nil {
 			log.Fatalf("Could not start server: %s\n", err.Error())
+			return nil, err
 	}
 
 	return s, nil
