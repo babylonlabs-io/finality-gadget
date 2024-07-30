@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/spf13/cobra"
@@ -59,15 +62,33 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	}
 
 	// Start server
+	s, err := server.Start(&server.ServerConfig{
+		Port:   cfg.ServerPort,
+		Db: 		db,
+	})
+	if err != nil {
+		log.Fatalf("Error starting server: %v\n", err)
+	}
+
+	// Set up channel to listen for interrupt signal
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	// Run verifier in a separate goroutine
 	go func() {
-		if _, err := server.StartServer(&server.ServerConfig{
-			Port:   cfg.ServerPort,
-			Db: 		db,
-		}); err != nil {
-			log.Fatalf("Error starting server: %v\n", err)
+		if err := vrf.ProcessBlocks(); err != nil {
+			log.Fatalf("Error processing blocks: %v\n", err)
 		}
 	}()
 
-	// Start processing blocks
-	return vrf.ProcessBlocks()
+	// Wait for interrupt signal
+	sig := <-sigChan
+	if sig == os.Interrupt {
+		fmt.Print("\r")
+	}
+
+	// Call Stop method when interrupt signal is received
+	s.Stop()
+
+	return nil
 }
