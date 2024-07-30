@@ -16,11 +16,11 @@ type BBoltHandler struct {
 }
 
 const (
-	blocksBucket      					= "blocks"
-	blockHeightsBucket					= "block_heights"
-	latestBlockBucket 					= "latest_block"
-	latestBlockKey    					= "latest"
-	latestConsecutiveBlockKey   = "latest_consecutive"
+	blocksBucket              = "blocks"
+	blockHeightsBucket        = "block_heights"
+	latestBlockBucket         = "latest_block"
+	latestBlockKey            = "latest"
+	latestConsecutiveBlockKey = "latest_consecutive"
 )
 
 var (
@@ -62,7 +62,7 @@ func tryCreateBucket(tx *bolt.Tx, bucketName string) error {
 	return err
 }
 
-func (bb *BBoltHandler) InsertBlock(block Block) error {
+func (bb *BBoltHandler) InsertBlock(block *Block) error {
 	log.Printf("Inserting block %d to DB...\n", block.BlockHeight)
 
 	// Store mapping number -> block
@@ -114,7 +114,7 @@ func (bb *BBoltHandler) InsertBlock(block Block) error {
 		return err
 	}
 
-	// Update latest consecutive block if it's the latest and it's consecutive to 
+	// Update latest consecutive block if it's the latest and it's consecutive to
 	// the previous one
 	err = bb.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(latestBlockBucket))
@@ -190,14 +190,14 @@ func (bb *BBoltHandler) GetLatestBlock() (*Block, error) {
 		if errors.Is(err, ErrBlockNotFound) {
 			return &Block{
 				BlockHeight: 0,
-				BlockHash: "",
+				BlockHash:   "",
 				IsFinalized: false,
 			}, nil
 		}
 		log.Fatalf("Error getting latest block: %v\n", err)
 		return nil, err
 	}
-	
+
 	// Fetch latest block by height
 	return bb.GetBlockByHeight(latestBlockHeight)
 }
@@ -218,7 +218,7 @@ func (bb *BBoltHandler) GetLatestConsecutivelyFinalizedBlock() (*Block, error) {
 		if errors.Is(err, ErrBlockNotFound) {
 			return &Block{
 				BlockHeight: 0,
-				BlockHash: "",
+				BlockHash:   "",
 				IsFinalized: false,
 			}, nil
 		}
@@ -239,7 +239,7 @@ func itob(v uint64) []byte {
 		log.Fatalf("Error writing to buffer: %v\n", err)
 	}
 	return buf.Bytes()
-	}
+}
 
 func btoi(b []byte) uint64 {
 	var v uint64

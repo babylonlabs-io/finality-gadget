@@ -11,10 +11,10 @@ import (
 
 func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:               "vrf",
-		Short:             "vrf - Babylon OP Finality Gadget Verifier",
-		Long:              `vrf is a daemon to track consecutive quorum and query the Babylon BTC block finalization status of OP stack chains.`,
-		SilenceErrors:     false,
+		Use:           "vrf",
+		Short:         "vrf - Babylon OP Finality Gadget Verifier",
+		Long:          `vrf is a daemon to track consecutive quorum and query the Babylon BTC block finalization status of OP stack chains.`,
+		SilenceErrors: false,
 	}
 
 	return rootCmd

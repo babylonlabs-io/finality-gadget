@@ -64,8 +64,8 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 
 	// Start server
 	s, err := server.Start(&server.ServerConfig{
-		Port:   cfg.ServerPort,
-		Db: 		db,
+		Port: cfg.ServerPort,
+		Db:   db,
 	})
 	if err != nil {
 		log.Fatalf("Error starting server: %v\n", err)

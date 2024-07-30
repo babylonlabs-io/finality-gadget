@@ -32,7 +32,7 @@ func (s *Server) getBlockStatusByHeight(w http.ResponseWriter, r *http.Request) 
 	isFinal := s.db.GetBlockStatusByHeight(uint64(blockHeight))
 
 	// Marshal and return status
-	jsonResponse, err := json.Marshal(StatusResponse {
+	jsonResponse, err := json.Marshal(StatusResponse{
 		IsFinalized: isFinal,
 	})
 	if err != nil {
@@ -53,12 +53,12 @@ func (s *Server) getBlockStatusByHash(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Missing required params: hash\n")
 		return
 	}
-	
+
 	// Fetch status from DB
 	isFinal := s.db.GetBlockStatusByHash(hash)
 
 	// Marshal and return status
-	jsonResponse, err := json.Marshal(StatusResponse {
+	jsonResponse, err := json.Marshal(StatusResponse{
 		IsFinalized: isFinal,
 	})
 	if err != nil {
@@ -91,4 +91,3 @@ func (s *Server) getLatestConsecutivelyFinalizedBlock(w http.ResponseWriter, r *
 		http.Error(w, "unable to write JSON response", http.StatusInternalServerError)
 	}
 }
-

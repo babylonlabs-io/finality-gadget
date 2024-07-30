@@ -10,13 +10,13 @@ import (
 )
 
 type Server struct {
-	server 			*http.Server
-	db 					*db.BBoltHandler
+	server *http.Server
+	db     *db.BBoltHandler
 }
 
 type ServerConfig struct {
-	Db  			*db.BBoltHandler
-	Port 			string
+	Db   *db.BBoltHandler
+	Port string
 }
 
 func Start(cfg *ServerConfig) (*Server, error) {
@@ -29,7 +29,7 @@ func Start(cfg *ServerConfig) (*Server, error) {
 			Addr:    ":" + cfg.Port,
 			Handler: router,
 		},
-		db:   cfg.Db,
+		db: cfg.Db,
 	}
 
 	// Define routes.

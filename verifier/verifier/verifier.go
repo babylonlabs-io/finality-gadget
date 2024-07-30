@@ -20,21 +20,21 @@ import (
 )
 
 type Verifier struct {
-	SdkClient 		*client.SdkClient
-	L2Client 			*ethclient.Client
-	Db 						*db.BBoltHandler
+	SdkClient *client.SdkClient
+	L2Client  *ethclient.Client
+	Db        *db.BBoltHandler
 
-	Mutex 				sync.Mutex
+	Mutex sync.Mutex
 
-	PollInterval 	time.Duration
-	startHeight 	uint64
-	currHeight 	uint64
+	PollInterval time.Duration
+	startHeight  uint64
+	currHeight   uint64
 }
 
 type BlockInfo struct {
-	Hash        string
-	Height      uint64
-	Timestamp		uint64
+	Hash      string
+	Height    uint64
+	Timestamp uint64
 }
 
 func NewVerifier(cfg *config.Config, db *db.BBoltHandler) (*Verifier, error) {
@@ -44,8 +44,8 @@ func NewVerifier(cfg *config.Config, db *db.BBoltHandler) (*Verifier, error) {
 	sdkClient, err := client.NewClient(&sdkconfig.Config{
 		BTCConfig:    btcConfig,
 		ContractAddr: cfg.FGContractAddress,
-		ChainID: cfg.BBNChainID,
-		RPCAddr: cfg.BBNRPCAddress,
+		ChainID:      cfg.BBNChainID,
+		RPCAddr:      cfg.BBNRPCAddress,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating client: %w", err)
@@ -59,9 +59,9 @@ func NewVerifier(cfg *config.Config, db *db.BBoltHandler) (*Verifier, error) {
 
 	// Create verifier
 	return &Verifier{
-		SdkClient: sdkClient,
-		L2Client: l2Client,
-		Db: db,
+		SdkClient:    sdkClient,
+		L2Client:     l2Client,
+		Db:           db,
 		PollInterval: cfg.PollInterval,
 	}, nil
 }
@@ -107,16 +107,16 @@ func (vf *Verifier) startService() error {
 	// if local chain tip is ahead of node, start service at latest block
 	if localBlock.BlockHeight != 0 && localBlock.BlockHeight >= block.Height {
 		block = &BlockInfo{
-			Height: 		localBlock.BlockHeight,
-			Hash:   		localBlock.BlockHash,
-			Timestamp: 	localBlock.BlockTimestamp,
+			Height:    localBlock.BlockHeight,
+			Hash:      localBlock.BlockHash,
+			Timestamp: localBlock.BlockTimestamp,
 		}
 	} else {
 		// throw if block height is 0
 		if block.Height == 0 {
 			return fmt.Errorf("block height 0")
 		}
-	
+
 		// Check the block is finalized using sdk client
 		isFinal, err := vf.queryIsBlockBabylonFinalized(block)
 		// If not finalized, throw error
@@ -155,9 +155,9 @@ func (vf *Verifier) getBlockByNumber(blockNumber int64) (*BlockInfo, error) {
 		return nil, err
 	}
 	return &BlockInfo{
-		Height: 		header.Number.Uint64(),
-		Hash:   		hex.EncodeToString(header.Hash().Bytes()),
-		Timestamp: 	header.Time,
+		Height:    header.Number.Uint64(),
+		Hash:      hex.EncodeToString(header.Hash().Bytes()),
+		Timestamp: header.Time,
 	}, nil
 }
 
@@ -186,9 +186,9 @@ func (vf *Verifier) handleBlock(block *BlockInfo) {
 
 func (vf *Verifier) queryIsBlockBabylonFinalized(block *BlockInfo) (bool, error) {
 	return vf.SdkClient.QueryIsBlockBabylonFinalized(cwclient.L2Block{
-		BlockHash: 				string(block.Hash),
-		BlockHeight: 			block.Height,
-		BlockTimestamp: 	block.Timestamp,
+		BlockHash:      string(block.Hash),
+		BlockHeight:    block.Height,
+		BlockTimestamp: block.Timestamp,
 	})
 }
 
@@ -196,11 +196,11 @@ func (vf *Verifier) insertBlock(block *BlockInfo) error {
 	// Lock mutex
 	vf.Mutex.Lock()
 	// Store block in DB
-	err := vf.Db.InsertBlock(db.Block{
-		BlockHeight: 			block.Height,
-		BlockHash:   			block.Hash,
-		BlockTimestamp:   block.Timestamp,
-		IsFinalized: 			true,
+	err := vf.Db.InsertBlock(&db.Block{
+		BlockHeight:    block.Height,
+		BlockHash:      block.Hash,
+		BlockTimestamp: block.Timestamp,
+		IsFinalized:    true,
 	})
 	if err != nil {
 		return err
