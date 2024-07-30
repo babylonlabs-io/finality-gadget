@@ -20,7 +20,6 @@ const (
 	blockHeightsBucket        = "block_heights"
 	latestBlockBucket         = "latest_block"
 	latestBlockKey            = "latest"
-	latestConsecutiveBlockKey = "latest_consecutive"
 )
 
 var (
@@ -114,20 +113,6 @@ func (bb *BBoltHandler) InsertBlock(block *Block) error {
 		return err
 	}
 
-	// Update latest consecutive block if it's the latest and it's consecutive to
-	// the previous one
-	err = bb.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(latestBlockBucket))
-		if latestBlock.BlockHeight == block.BlockHeight-1 {
-			return b.Put([]byte(latestConsecutiveBlockKey), itob(block.BlockHeight))
-		}
-		return nil
-	})
-	if err != nil {
-		log.Fatalf("Error updating latest block: %v\n", err)
-		return err
-	}
-
 	return nil
 }
 
@@ -199,32 +184,6 @@ func (bb *BBoltHandler) GetLatestBlock() (*Block, error) {
 	}
 
 	// Fetch latest block by height
-	return bb.GetBlockByHeight(latestBlockHeight)
-}
-
-func (bb *BBoltHandler) GetLatestConsecutivelyFinalizedBlock() (*Block, error) {
-	var latestBlockHeight uint64
-	err := bb.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(latestBlockBucket))
-		v := b.Get([]byte(latestConsecutiveBlockKey))
-		if v == nil {
-			return ErrBlockNotFound
-		}
-		latestBlockHeight = btoi(v)
-		return nil
-	})
-	if err != nil {
-		// If no latest block has been stored yet, return empty block (block 0)
-		if errors.Is(err, ErrBlockNotFound) {
-			return &Block{
-				BlockHeight: 0,
-				BlockHash:   "",
-				IsFinalized: false,
-			}, nil
-		}
-		log.Fatalf("Error getting latest block: %v\n", err)
-		return nil, err
-	}
 	return bb.GetBlockByHeight(latestBlockHeight)
 }
 

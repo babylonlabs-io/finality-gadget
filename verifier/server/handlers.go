@@ -71,9 +71,9 @@ func (s *Server) getBlockStatusByHash(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) getLatestConsecutivelyFinalizedBlock(w http.ResponseWriter, r *http.Request) {
+func (s *Server) getLatestBlock(w http.ResponseWriter, r *http.Request) {
 	// Fetch status from DB
-	block, err := s.db.GetLatestConsecutivelyFinalizedBlock()
+	block, err := s.db.GetLatestBlock()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Error getting latest block: %v\n", err)

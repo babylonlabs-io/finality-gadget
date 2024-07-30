@@ -200,7 +200,6 @@ func (vf *Verifier) insertBlock(block *BlockInfo) error {
 		BlockHeight:    block.Height,
 		BlockHash:      block.Hash,
 		BlockTimestamp: block.Timestamp,
-		IsFinalized:    true,
 	})
 	if err != nil {
 		return err

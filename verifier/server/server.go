@@ -35,7 +35,7 @@ func Start(cfg *ServerConfig) (*Server, error) {
 	// Define routes.
 	router.HandleFunc("/getBlockStatusByHeight", s.getBlockStatusByHeight)
 	router.HandleFunc("/getBlockStatusByHash", s.getBlockStatusByHash)
-	router.HandleFunc("/getLatest", s.getLatestConsecutivelyFinalizedBlock)
+	router.HandleFunc("/getLatest", s.getLatestBlock)
 
 	// Start server in a goroutine.
 	go func() {
