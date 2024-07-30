@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"os"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -15,9 +15,6 @@ func NewRootCmd() *cobra.Command {
 		Short:             "vrf - Babylon OP Finality Gadget Verifier",
 		Long:              `vrf is a daemon to track consecutive quorum and query the Babylon BTC block finalization status of OP stack chains.`,
 		SilenceErrors:     false,
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			viper.BindPFlags(cmd.PersistentFlags())
-		},
 	}
 
 	return rootCmd
@@ -26,13 +23,16 @@ func NewRootCmd() *cobra.Command {
 func main() {
 	cmd := NewRootCmd()
 
-	cmd.PersistentFlags().String("cfg", "config.toml", "config file")
-	viper.BindPFlag("cfg", cmd.PersistentFlags().Lookup("cfg"))
-
 	cmd.AddCommand(CommandStart())
 
+	cmd.PersistentFlags().String("cfg", "config.toml", "config file")
+	if err := viper.BindPFlag("cfg", cmd.PersistentFlags().Lookup("cfg")); err != nil {
+		log.Fatalf("Error binding flag: %s", err)
+		os.Exit(1)
+	}
+
 	if err := cmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "Whoops. There was an error while executing your vrf CLI '%s'", err)
+		log.Fatalf("Error executing your vrf daemon: %s", err)
 		os.Exit(1)
 	}
 }
