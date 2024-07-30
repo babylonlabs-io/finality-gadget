@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"log"
 	"net/http"
 
@@ -20,7 +19,7 @@ type ServerConfig struct {
 	Port 			string
 }
 
-func StartServer(ctx context.Context, cfg *ServerConfig) (*Server, error) {
+func StartServer(cfg *ServerConfig) (*Server, error) {
 	// Define server.
 	s := &Server{
 		port: cfg.Port,

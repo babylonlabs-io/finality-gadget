@@ -2,7 +2,6 @@ package db
 
 import (
 	"bytes"
-	"context"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
@@ -28,7 +27,7 @@ var (
 	ErrBlockNotFound = errors.New("block not found")
 )
 
-func NewBBoltHandler(ctx context.Context, path string) (*BBoltHandler, error) {
+func NewBBoltHandler(path string) (*BBoltHandler, error) {
 	// 0600 = read/write permission for owner only
 	db, err := bolt.Open(path, 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
@@ -41,7 +40,8 @@ func NewBBoltHandler(ctx context.Context, path string) (*BBoltHandler, error) {
 	}, nil
 }
 
-func (bb *BBoltHandler) TryCreateInitialBuckets(ctx context.Context) error {
+func (bb *BBoltHandler) TryCreateInitialBuckets() error {
+	fmt.Println("creating initial buckets...")
 	return bb.db.Update(func(tx *bolt.Tx) error {
 		buckets := []string{blocksBucket, blockHeightsBucket, latestBlockBucket}
 		for _, bucket := range buckets {
@@ -62,7 +62,7 @@ func tryCreateBucket(tx *bolt.Tx, bucketName string) error {
 	return err
 }
 
-func (bb *BBoltHandler) InsertBlock(ctx context.Context, block Block) error {
+func (bb *BBoltHandler) InsertBlock(block Block) error {
 	fmt.Printf("Inserting block %d to DB\n", block.BlockHeight)
 
 	// Store mapping number -> block
@@ -91,7 +91,7 @@ func (bb *BBoltHandler) InsertBlock(ctx context.Context, block Block) error {
 	}
 
 	// Get current latest block
-	latestBlock, err := bb.GetLatestBlock(ctx)
+	latestBlock, err := bb.GetLatestBlock()
 	if err != nil {
 		fmt.Printf("Error getting latest block: %v\n", err)
 		return err
@@ -132,7 +132,7 @@ func (bb *BBoltHandler) InsertBlock(ctx context.Context, block Block) error {
 	return nil
 }
 
-func (bb *BBoltHandler) GetBlockByHeight(ctx context.Context, height uint64) (*Block, error) {
+func (bb *BBoltHandler) GetBlockByHeight(height uint64) (*Block, error) {
 	var block Block
 	err := bb.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
@@ -149,15 +149,15 @@ func (bb *BBoltHandler) GetBlockByHeight(ctx context.Context, height uint64) (*B
 	return &block, nil
 }
 
-func (bb *BBoltHandler) GetBlockStatusByHeight(ctx context.Context, height uint64) bool {
-	block, err := bb.GetBlockByHeight(ctx, height)
+func (bb *BBoltHandler) GetBlockStatusByHeight(height uint64) bool {
+	block, err := bb.GetBlockByHeight(height)
 	if err != nil {
 		return false
 	}
 	return block.IsFinalized
 }
 
-func (bb *BBoltHandler) GetBlockStatusByHash(ctx context.Context, hash string) bool {
+func (bb *BBoltHandler) GetBlockStatusByHash(hash string) bool {
 	// Fetch block number by hash
 	var blockHeight uint64
 	err := bb.db.View(func(tx *bolt.Tx) error {
@@ -170,10 +170,10 @@ func (bb *BBoltHandler) GetBlockStatusByHash(ctx context.Context, hash string) b
 		return false
 	}
 
-	return bb.GetBlockStatusByHeight(ctx, blockHeight)
+	return bb.GetBlockStatusByHeight(blockHeight)
 }
 
-func (bb *BBoltHandler) GetLatestBlock(ctx context.Context) (*Block, error) {
+func (bb *BBoltHandler) GetLatestBlock() (*Block, error) {
 	var latestBlockHeight uint64
 
 	// Fetch latest block height
@@ -200,10 +200,10 @@ func (bb *BBoltHandler) GetLatestBlock(ctx context.Context) (*Block, error) {
 	}
 	
 	// Fetch latest block by height
-	return bb.GetBlockByHeight(ctx, latestBlockHeight)
+	return bb.GetBlockByHeight(latestBlockHeight)
 }
 
-func (bb *BBoltHandler) GetLatestConsecutivelyFinalizedBlock(ctx context.Context) (*Block, error) {
+func (bb *BBoltHandler) GetLatestConsecutivelyFinalizedBlock() (*Block, error) {
 	var latestBlockHeight uint64
 	err := bb.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(latestBlockBucket))
@@ -218,7 +218,7 @@ func (bb *BBoltHandler) GetLatestConsecutivelyFinalizedBlock(ctx context.Context
 		fmt.Printf("Error getting latest block: %v\n", err)
 		return nil, err
 	}
-	return bb.GetBlockByHeight(ctx, latestBlockHeight)
+	return bb.GetBlockByHeight(latestBlockHeight)
 }
 
 func (bb *BBoltHandler) Close() error {

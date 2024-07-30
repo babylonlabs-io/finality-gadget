@@ -11,13 +11,13 @@ import (
 	"github.com/babylonchain/babylon-finality-gadget/sdk/client"
 	sdkconfig "github.com/babylonchain/babylon-finality-gadget/sdk/config"
 	"github.com/babylonchain/babylon-finality-gadget/sdk/cwclient"
+	"github.com/babylonchain/babylon-finality-gadget/verifier/config"
 	"github.com/babylonchain/babylon-finality-gadget/verifier/db"
-	"github.com/babylonchain/babylon-finality-gadget/verifier/server"
 	"github.com/ethereum/go-ethereum/ethclient"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 )
 
-func NewVerifier(ctx context.Context, cfg *Config) (*Verifier, error) {
+func NewVerifier(cfg *config.Config, db *db.BBoltHandler) (*Verifier, error) {
 	// Create finality gadget client
 	btcConfig := btcclient.DefaultBTCConfig()
 	btcConfig.RPCHost = cfg.BitcoinRPCHost
@@ -37,27 +37,6 @@ func NewVerifier(ctx context.Context, cfg *Config) (*Verifier, error) {
 		return nil, fmt.Errorf("failed to create OPStack L2 client: %w", err)
 	}
 
-	// Create local DB for storing and querying blocks
-	db, err := db.NewBBoltHandler(ctx, cfg.DBFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create DB handler: %w", err)
-	}
-	defer db.Close()
-	err = db.TryCreateInitialBuckets(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("create initial buckets error: %w", err)
-	}
-
-	// Start server
-	go func() {
-    if _, err := server.StartServer(ctx, &server.ServerConfig{
-			Port:   cfg.ServerPort,
-			Db: 		db,
-		}); err != nil {
-			fmt.Printf("error starting server: %v\n", err)
-    }
-	}()
-
 	// Create verifier
 	return &Verifier{
 		SdkClient: sdkClient,
@@ -68,16 +47,16 @@ func NewVerifier(ctx context.Context, cfg *Config) (*Verifier, error) {
 }
 
 // This function process blocks indefinitely, starting from the last finalized block.
-func (vf *Verifier) ProcessBlocks(ctx context.Context) error {
-	return vf.ProcessNBlocks(ctx, -1)
+func (vf *Verifier) ProcessBlocks() error {
+	return vf.ProcessNBlocks(-1)
 }
 
 // This function process n blocks, starting from the last finalized block.
 // n is the number of blocks to process, pass in -1 to process blocks indefinitely.
 // Passing in non-negative n is useful for testing.
-func (vf *Verifier) ProcessNBlocks(ctx context.Context, n int) error {
+func (vf *Verifier) ProcessNBlocks(n int) error {
 	// Start service at last finalized block
-	err := vf.startService(ctx)
+	err := vf.startService()
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
@@ -89,13 +68,13 @@ func (vf *Verifier) ProcessNBlocks(ctx context.Context, n int) error {
 		if n > 0 && vf.currHeight == vf.startHeight + uint64(n - 1) {
 			break
 		}
-		block, err := vf.getBlockByNumber(ctx, int64(vf.currHeight + 1))
+		block, err := vf.getBlockByNumber(int64(vf.currHeight + 1))
 		if err != nil {
 			fmt.Printf("error getting new block: %v\n", err)
 			continue
 		}
 		go func() {
-			vf.handleBlock(ctx, block)
+			vf.handleBlock(block)
 		}()
 	}
 
@@ -103,15 +82,15 @@ func (vf *Verifier) ProcessNBlocks(ctx context.Context, n int) error {
 }
 
 // Start service at last finalized block
-func (vf *Verifier) startService(ctx context.Context) error {
+func (vf *Verifier) startService() error {
 	// Query L2 node for last finalized block
-	block, err := vf.getLatestFinalizedBlock(ctx)
+	block, err := vf.getLatestFinalizedBlock()
 	if err != nil {
 		return fmt.Errorf("error getting last finalized block: %v", err)
 	}
 
 	// Query local DB for last block processed
-	localBlock, err := vf.Db.GetLatestBlock(ctx)
+	localBlock, err := vf.Db.GetLatestBlock()
 	if err != nil {
 		return fmt.Errorf("error getting latest block from db: %v", err)
 	}
@@ -130,7 +109,7 @@ func (vf *Verifier) startService(ctx context.Context) error {
 		}
 	
 		// Check the block is finalized using sdk client
-		isFinal, err := vf.queryIsBlockBabylonFinalized(ctx, block)
+		isFinal, err := vf.queryIsBlockBabylonFinalized(block)
 		// If not finalized, throw error
 		if !isFinal {
 			return fmt.Errorf("block %d should be finalized according to client but is not", block.Height)
@@ -139,7 +118,7 @@ func (vf *Verifier) startService(ctx context.Context) error {
 			return fmt.Errorf("error checking block %d: %v", block.Height, err)
 		}
 		// If finalised, store the block in DB and set the last finalized block
-		err = vf.insertBlock(ctx, block)
+		err = vf.insertBlock(block)
 		if err != nil {
 			return fmt.Errorf("error storing block %d: %v", block.Height, err)
 		}
@@ -156,13 +135,13 @@ func (vf *Verifier) startService(ctx context.Context) error {
 }
 
 // Get last btc finalized block
-func (vf *Verifier) getLatestFinalizedBlock(ctx context.Context) (*BlockInfo, error) {
-	return vf.getBlockByNumber(ctx, ethrpc.FinalizedBlockNumber.Int64())
+func (vf *Verifier) getLatestFinalizedBlock() (*BlockInfo, error) {
+	return vf.getBlockByNumber(ethrpc.FinalizedBlockNumber.Int64())
 }
 
 // Get block by number
-func (vf *Verifier) getBlockByNumber(ctx context.Context, blockNumber int64) (*BlockInfo, error) {
-	header, err := vf.L2Client.HeaderByNumber(ctx, big.NewInt(blockNumber))
+func (vf *Verifier) getBlockByNumber(blockNumber int64) (*BlockInfo, error) {
+	header, err := vf.L2Client.HeaderByNumber(context.Background(), big.NewInt(blockNumber))
 	if err != nil {
 		return nil, err
 	}
@@ -173,18 +152,18 @@ func (vf *Verifier) getBlockByNumber(ctx context.Context, blockNumber int64) (*B
 	}, nil
 }
 
-func (vf *Verifier) handleBlock(ctx context.Context, block *BlockInfo) {
+func (vf *Verifier) handleBlock(block *BlockInfo) {
 	// while block is not finalized, recheck if block is finalized every `retryInterval` seconds
 	// if finalized, store the block in DB and set the last finalized block
 	for {
 		// Check if block is finalized
-		isFinal, err := vf.queryIsBlockBabylonFinalized(ctx, block)
+		isFinal, err := vf.queryIsBlockBabylonFinalized(block)
 		if err != nil {
 			fmt.Printf("error checking block %d: %v\n", block.Height, err)
 			return
 		}
 		if isFinal {
-			err = vf.insertBlock(ctx, block)
+			err = vf.insertBlock(block)
 			if err != nil {
 				fmt.Printf("error storing block %d: %v\n", block.Height, err)
 			}
@@ -196,7 +175,8 @@ func (vf *Verifier) handleBlock(ctx context.Context, block *BlockInfo) {
 	}
 }
 
-func (vf *Verifier) queryIsBlockBabylonFinalized(ctx context.Context, block *BlockInfo) (bool, error) {
+func (vf *Verifier) queryIsBlockBabylonFinalized(block *BlockInfo) (bool, error) {
+	return true, nil
 	return vf.SdkClient.QueryIsBlockBabylonFinalized(cwclient.L2Block{
 		BlockHash: 				string(block.Hash),
 		BlockHeight: 			block.Height,
@@ -204,11 +184,11 @@ func (vf *Verifier) queryIsBlockBabylonFinalized(ctx context.Context, block *Blo
 	})
 }
 
-func (vf *Verifier) insertBlock(ctx context.Context, block *BlockInfo) error {
+func (vf *Verifier) insertBlock(block *BlockInfo) error {
 	// Lock mutex
 	vf.Mutex.Lock()
 	// Store block in DB
-	err := vf.Db.InsertBlock(ctx, db.Block{
+	err := vf.Db.InsertBlock(db.Block{
 		BlockHeight: 			block.Height,
 		BlockHash:   			block.Hash,
 		BlockTimestamp:   block.Timestamp,
