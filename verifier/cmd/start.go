@@ -60,6 +60,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("error creating verifier: %v", err)
 	}
+	defer vrf.Close()
 
 	// Start server
 	s, err := server.Start(&server.ServerConfig{

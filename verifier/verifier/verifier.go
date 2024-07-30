@@ -223,3 +223,7 @@ func (vf *Verifier) insertBlock(block *BlockInfo) error {
 
 	return nil
 }
+
+func (vf *Verifier) Close() {
+	vf.L2Client.Close()
+}
