@@ -68,13 +68,6 @@ func NewVerifier(cfg *config.Config, db *db.BBoltHandler) (*Verifier, error) {
 
 // This function process blocks indefinitely, starting from the last finalized block.
 func (vf *Verifier) ProcessBlocks() error {
-	return vf.ProcessNBlocks(-1)
-}
-
-// This function process n blocks, starting from the last finalized block.
-// n is the number of blocks to process, pass in -1 to process blocks indefinitely.
-// Passing in non-negative n is useful for testing.
-func (vf *Verifier) ProcessNBlocks(n int) error {
 	// Start service at last finalized block
 	err := vf.startService()
 	if err != nil {
@@ -84,10 +77,6 @@ func (vf *Verifier) ProcessNBlocks(n int) error {
 	// Start polling for new blocks at set interval
 	ticker := time.NewTicker(vf.PollInterval)
 	for range ticker.C {
-		// If n is positive and we have processed n blocks, stop the process
-		if n > 0 && vf.currHeight == vf.startHeight + uint64(n - 1) {
-			break
-		}
 		block, err := vf.getBlockByNumber(int64(vf.currHeight + 1))
 		if err != nil {
 			log.Fatalf("error getting new block: %v\n", err)
