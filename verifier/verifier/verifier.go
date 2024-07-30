@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"sync"
 	"time"
 
 	"github.com/babylonchain/babylon-finality-gadget/sdk/btcclient"
@@ -17,6 +18,24 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 )
+
+type Verifier struct {
+	SdkClient 		*client.SdkClient
+	L2Client 			*ethclient.Client
+	Db 						*db.BBoltHandler
+
+	Mutex 				sync.Mutex
+
+	PollInterval 	time.Duration
+	startHeight 	uint64
+	currHeight 	uint64
+}
+
+type BlockInfo struct {
+	Hash        string
+	Height      uint64
+	Timestamp		uint64
+}
 
 func NewVerifier(cfg *config.Config, db *db.BBoltHandler) (*Verifier, error) {
 	// Create finality gadget client
