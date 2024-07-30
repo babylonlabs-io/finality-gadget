@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"fmt"
+	"log"
 	"time"
 
 	bolt "go.etcd.io/bbolt"
@@ -31,7 +31,7 @@ func NewBBoltHandler(path string) (*BBoltHandler, error) {
 	// 0600 = read/write permission for owner only
 	db, err := bolt.Open(path, 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
-		fmt.Printf("Error opening DB: %v\n", err)
+		log.Fatalf("Error opening DB: %v\n", err)
 		return nil, err
 	}
 
@@ -41,12 +41,12 @@ func NewBBoltHandler(path string) (*BBoltHandler, error) {
 }
 
 func (bb *BBoltHandler) TryCreateInitialBuckets() error {
-	fmt.Println("creating initial buckets...")
+	log.Printf("Creating initial DB buckets...")
 	return bb.db.Update(func(tx *bolt.Tx) error {
 		buckets := []string{blocksBucket, blockHeightsBucket, latestBlockBucket}
 		for _, bucket := range buckets {
 			if err := tryCreateBucket(tx, bucket); err != nil {
-				fmt.Printf("Error creating bucket: %v\n", err)
+				log.Fatalf("Error creating bucket: %v\n", err)
 				return err
 			}
 		}
@@ -57,13 +57,13 @@ func (bb *BBoltHandler) TryCreateInitialBuckets() error {
 func tryCreateBucket(tx *bolt.Tx, bucketName string) error {
 	_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
 	if err != nil {
-		fmt.Printf("Error creating bucket: %v\n", err)
+		log.Fatalf("Error creating bucket: %v\n", err)
 	}
 	return err
 }
 
 func (bb *BBoltHandler) InsertBlock(block Block) error {
-	fmt.Printf("Inserting block %d to DB\n", block.BlockHeight)
+	log.Printf("Inserting block %d to DB...\n", block.BlockHeight)
 
 	// Store mapping number -> block
 	err := bb.db.Update(func(tx *bolt.Tx) error {
@@ -76,7 +76,7 @@ func (bb *BBoltHandler) InsertBlock(block Block) error {
 		return b.Put(key, blockBytes)
 	})
 	if err != nil {
-		fmt.Printf("Error inserting block: %v\n", err)
+		log.Fatalf("Error inserting block: %v\n", err)
 		return err
 	}
 
@@ -86,14 +86,14 @@ func (bb *BBoltHandler) InsertBlock(block Block) error {
 		return b.Put([]byte(block.BlockHash), itob(block.BlockHeight))
 	})
 	if err != nil {
-		fmt.Printf("Error inserting block: %v\n", err)
+		log.Fatalf("Error inserting block: %v\n", err)
 		return err
 	}
 
 	// Get current latest block
 	latestBlock, err := bb.GetLatestBlock()
 	if err != nil {
-		fmt.Printf("Error getting latest block: %v\n", err)
+		log.Fatalf("Error getting latest block: %v\n", err)
 		return err
 	}
 
@@ -101,17 +101,16 @@ func (bb *BBoltHandler) InsertBlock(block Block) error {
 	err = bb.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(latestBlockBucket))
 		if err != nil {
-			fmt.Printf("Error getting latest block: %v\n", err)
+			log.Fatalf("Error getting latest block: %v\n", err)
 			return err
 		}
 		if latestBlock.BlockHeight < block.BlockHeight {
-			fmt.Printf("Updating latest block: %v\n", block.BlockHeight)
 			return b.Put([]byte(latestBlockKey), itob(block.BlockHeight))
 		}
 		return nil
 	})
 	if err != nil {
-		fmt.Printf("Error updating latest block: %v\n", err)
+		log.Fatalf("Error updating latest block: %v\n", err)
 		return err
 	}
 
@@ -125,7 +124,7 @@ func (bb *BBoltHandler) InsertBlock(block Block) error {
 		return nil
 	})
 	if err != nil {
-		fmt.Printf("Error updating latest block: %v\n", err)
+		log.Fatalf("Error updating latest block: %v\n", err)
 		return err
 	}
 
@@ -143,7 +142,7 @@ func (bb *BBoltHandler) GetBlockByHeight(height uint64) (*Block, error) {
 		return json.Unmarshal(v, &block)
 	})
 	if err != nil {
-		fmt.Printf("Error getting block by %d\n", err)
+		log.Fatalf("Error getting block by %d\n", err)
 		return nil, err
 	}
 	return &block, nil
@@ -166,7 +165,7 @@ func (bb *BBoltHandler) GetBlockStatusByHash(hash string) bool {
 		return nil
 	})
 	if err != nil {
-		fmt.Printf("Error getting block by hash: %v\n", err)
+		log.Fatalf("Error getting block by hash: %v\n", err)
 		return false
 	}
 
@@ -195,7 +194,7 @@ func (bb *BBoltHandler) GetLatestBlock() (*Block, error) {
 				IsFinalized: false,
 			}, nil
 		}
-		fmt.Printf("Error getting latest block: %v\n", err)
+		log.Fatalf("Error getting latest block: %v\n", err)
 		return nil, err
 	}
 	
@@ -215,7 +214,7 @@ func (bb *BBoltHandler) GetLatestConsecutivelyFinalizedBlock() (*Block, error) {
 		return nil
 	})
 	if err != nil {
-		fmt.Printf("Error getting latest block: %v\n", err)
+		log.Fatalf("Error getting latest block: %v\n", err)
 		return nil, err
 	}
 	return bb.GetBlockByHeight(latestBlockHeight)
@@ -229,7 +228,7 @@ func itob(v uint64) []byte {
 	buf := new(bytes.Buffer)
 	err := binary.Write(buf, binary.BigEndian, v)
 	if err != nil {
-		fmt.Printf("Error writing to buffer: %v\n", err)
+		log.Fatalf("Error writing to buffer: %v\n", err)
 	}
 	return buf.Bytes()
 	}
@@ -239,7 +238,7 @@ func btoi(b []byte) uint64 {
 	buf := bytes.NewReader(b)
 	err := binary.Read(buf, binary.BigEndian, &v)
 	if err != nil {
-		fmt.Printf("Error reading from buffer: %v\n", err)
+		log.Fatalf("Error reading from buffer: %v\n", err)
 	}
 	return v
 }

@@ -5,6 +5,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -67,7 +68,7 @@ func (pg *PostgresHandler) TryCreateInitialTables(ctx context.Context) error {
 }
 
 func (pg *PostgresHandler) InsertBlock(ctx context.Context, block Block) error {
-	fmt.Printf("Inserting block %d into DB\n", block.BlockHeight)
+	log.Printf("Inserting block %d into DB\n", block.BlockHeight)
 
 	// Start atomic insert tx
 	tx, err := pg.conn.Begin(ctx)
@@ -104,7 +105,7 @@ func (pg *PostgresHandler) GetBlockStatusByHeight(ctx context.Context, blockHeig
 	var isFinalized bool
 	err := pg.conn.QueryRow(ctx, getBlockStatusByHeightSql, blockHeight).Scan(&isFinalized)
 	if err != nil {
-		fmt.Printf("GetBlockStatusByHeight: %v\n", err)
+		log.Fatalf("GetBlockStatusByHeight: %v\n", err)
 		return false
 	}
 
@@ -116,7 +117,7 @@ func (pg *PostgresHandler) GetBlockStatusByHash(ctx context.Context, blockHash s
 	err := pg.conn.QueryRow(ctx, getBlockStatusByHashSql, blockHash).Scan(&isFinalized) 
 
 	if err != nil {
-		fmt.Printf("GetBlockStatusByHash: %v\n", err)
+		log.Fatalf("GetBlockStatusByHash: %v\n", err)
 		return false
 	}
 

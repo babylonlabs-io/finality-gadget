@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"math/big"
 	"time"
 
@@ -70,7 +71,7 @@ func (vf *Verifier) ProcessNBlocks(n int) error {
 		}
 		block, err := vf.getBlockByNumber(int64(vf.currHeight + 1))
 		if err != nil {
-			fmt.Printf("error getting new block: %v\n", err)
+			log.Fatalf("error getting new block: %v\n", err)
 			continue
 		}
 		go func() {
@@ -125,7 +126,7 @@ func (vf *Verifier) startService() error {
 	}
 
 	// Start service at block height
-	fmt.Printf("starting service at block %d\n", block.Height)
+	log.Printf("Starting verifier at block %d...\n", block.Height)
 
 	// Set the start block and curr finalized block in memory
 	vf.startHeight = block.Height
@@ -159,13 +160,13 @@ func (vf *Verifier) handleBlock(block *BlockInfo) {
 		// Check if block is finalized
 		isFinal, err := vf.queryIsBlockBabylonFinalized(block)
 		if err != nil {
-			fmt.Printf("error checking block %d: %v\n", block.Height, err)
+			log.Fatalf("Error checking block %d: %v\n", block.Height, err)
 			return
 		}
 		if isFinal {
 			err = vf.insertBlock(block)
 			if err != nil {
-				fmt.Printf("error storing block %d: %v\n", block.Height, err)
+				log.Fatalf("Error storing block %d: %v\n", block.Height, err)
 			}
 			return
 		}
@@ -176,7 +177,6 @@ func (vf *Verifier) handleBlock(block *BlockInfo) {
 }
 
 func (vf *Verifier) queryIsBlockBabylonFinalized(block *BlockInfo) (bool, error) {
-	return true, nil
 	return vf.SdkClient.QueryIsBlockBabylonFinalized(cwclient.L2Block{
 		BlockHash: 				string(block.Hash),
 		BlockHeight: 			block.Height,

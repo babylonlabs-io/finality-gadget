@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/spf13/cobra"
@@ -63,7 +64,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 			Port:   cfg.ServerPort,
 			Db: 		db,
 		}); err != nil {
-			fmt.Printf("error starting server: %v\n", err)
+			log.Fatalf("Error starting server: %v\n", err)
 		}
 	}()
 
