@@ -134,11 +134,8 @@ func (bb *BBoltHandler) GetBlockByHeight(height uint64) (*Block, error) {
 }
 
 func (bb *BBoltHandler) GetBlockStatusByHeight(height uint64) bool {
-	block, err := bb.GetBlockByHeight(height)
-	if err != nil {
-		return false
-	}
-	return block.IsFinalized
+	_, err := bb.GetBlockByHeight(height)
+	return err == nil
 }
 
 func (bb *BBoltHandler) GetBlockStatusByHash(hash string) bool {
@@ -176,7 +173,7 @@ func (bb *BBoltHandler) GetLatestBlock() (*Block, error) {
 			return &Block{
 				BlockHeight: 0,
 				BlockHash:   "",
-				IsFinalized: false,
+				BlockTimestamp: 0,
 			}, nil
 		}
 		log.Fatalf("Error getting latest block: %v\n", err)
