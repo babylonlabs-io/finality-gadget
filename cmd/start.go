@@ -10,10 +10,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/spf13/cobra"
 
+	rpcclient "github.com/babylonchain/babylon-finality-gadget/client"
 	"github.com/babylonchain/babylon-finality-gadget/db"
+	"github.com/babylonchain/babylon-finality-gadget/finalitygadget"
+	"github.com/babylonchain/babylon-finality-gadget/finalitygadget/config"
 	"github.com/babylonchain/babylon-finality-gadget/server"
-	"github.com/babylonchain/babylon-finality-gadget/verifier"
-	"github.com/babylonchain/babylon-finality-gadget/verifier/config"
+	sig "github.com/lightningnetwork/lnd/signal"
 )
 
 const (
@@ -55,20 +57,32 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("create initial buckets error: %w", err)
 	}
 
-	// Create verifier
-	vrf, err := verifier.NewVerifier(cfg, db)
+	// Create finality gadget
+	fg, err := finalitygadget.NewFinalityGadget(cfg, db)
 	if err != nil {
-		return fmt.Errorf("error creating verifier: %v", err)
+		log.Fatalf("Error creating finality gadget: %v\n", err)
+		return fmt.Errorf("error creating finality gadget: %v", err)
 	}
-	defer vrf.Close()
 
-	// Start server
-	s, err := server.Start(&server.ServerConfig{
-		Port: cfg.ServerPort,
-		Db:   db,
-	})
+	// Start grpc server
+	// Hook interceptor for os signals.
+	shutdownInterceptor, err := sig.Intercept()
 	if err != nil {
-		log.Fatalf("Error starting server: %v\n", err)
+		return err
+	}
+	srv := server.NewFinalityGadgetServer(cfg, db, fg, shutdownInterceptor)
+	go func() {
+		if err := srv.RunUntilShutdown(); err != nil {
+			log.Fatalf("Finality gadget server error: %v\n", err)
+		}
+	}()
+
+	// Create grpc client
+	hostAddr := "localhost:" + cfg.GRPCServerPort
+	client, err := rpcclient.NewFinalityGadgetGrpcClient(db, hostAddr)
+	if err != nil {
+		log.Fatalf("Error creating grpc client: %v\n", err)
+		return fmt.Errorf("error creating grpc client: %v", err)
 	}
 
 	// Set up channel to listen for interrupt signal
@@ -77,7 +91,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 
 	// Run verifier in a separate goroutine
 	go func() {
-		if err := vrf.ProcessBlocks(); err != nil {
+		if err := fg.ProcessBlocks(); err != nil {
 			log.Fatalf("Error processing blocks: %v\n", err)
 		}
 	}()
@@ -88,10 +102,13 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 		fmt.Print("\r")
 	}
 
-	// Call Stop method when interrupt signal is received
-	if err := s.Stop(); err != nil {
-		log.Fatalf("Error stopping server: %v\n", err)
+	// Call Close method when interrupt signal is received
+	log.Printf("Closing finality gadget server...")
+	if err := client.Close(); err != nil {
+		log.Fatalf("Error stopping grpc client: %v\n", err)
 		return err
 	}
+	fg.Close()
+
 	return nil
 }

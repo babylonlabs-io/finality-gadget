@@ -1,4 +1,4 @@
-package db
+package types
 
 type Block struct {
 	BlockHash      string `json:"block_hash" description:"block hash"`

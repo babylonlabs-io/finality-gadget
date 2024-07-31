@@ -8,6 +8,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/babylonchain/babylon-finality-gadget/types"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -16,10 +17,10 @@ type BBoltHandler struct {
 }
 
 const (
-	blocksBucket              = "blocks"
-	blockHeightsBucket        = "block_heights"
-	latestBlockBucket         = "latest_block"
-	latestBlockKey            = "latest"
+	blocksBucket       = "blocks"
+	blockHeightsBucket = "block_heights"
+	latestBlockBucket  = "latest_block"
+	latestBlockKey     = "latest"
 )
 
 var (
@@ -40,7 +41,7 @@ func NewBBoltHandler(path string) (*BBoltHandler, error) {
 }
 
 func (bb *BBoltHandler) TryCreateInitialBuckets() error {
-	log.Printf("Creating initial DB buckets...")
+	log.Printf("Initialising DB...")
 	return bb.db.Update(func(tx *bolt.Tx) error {
 		buckets := []string{blocksBucket, blockHeightsBucket, latestBlockBucket}
 		for _, bucket := range buckets {
@@ -61,7 +62,7 @@ func tryCreateBucket(tx *bolt.Tx, bucketName string) error {
 	return err
 }
 
-func (bb *BBoltHandler) InsertBlock(block *Block) error {
+func (bb *BBoltHandler) InsertBlock(block *types.Block) error {
 	log.Printf("Inserting block %d to DB...\n", block.BlockHeight)
 
 	// Store mapping number -> block
@@ -116,8 +117,8 @@ func (bb *BBoltHandler) InsertBlock(block *Block) error {
 	return nil
 }
 
-func (bb *BBoltHandler) GetBlockByHeight(height uint64) (*Block, error) {
-	var block Block
+func (bb *BBoltHandler) GetBlockByHeight(height uint64) (*types.Block, error) {
+	var block types.Block
 	err := bb.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
 		v := b.Get(itob(height))
@@ -133,12 +134,18 @@ func (bb *BBoltHandler) GetBlockByHeight(height uint64) (*Block, error) {
 	return &block, nil
 }
 
-func (bb *BBoltHandler) GetBlockStatusByHeight(height uint64) bool {
+func (bb *BBoltHandler) GetBlockStatusByHeight(height uint64) (bool, error) {
 	_, err := bb.GetBlockByHeight(height)
-	return err == nil
+	if err != nil {
+		if errors.Is(err, ErrBlockNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
 
-func (bb *BBoltHandler) GetBlockStatusByHash(hash string) bool {
+func (bb *BBoltHandler) GetBlockStatusByHash(hash string) (bool, error) {
 	// Fetch block number by hash
 	var blockHeight uint64
 	err := bb.db.View(func(tx *bolt.Tx) error {
@@ -148,13 +155,13 @@ func (bb *BBoltHandler) GetBlockStatusByHash(hash string) bool {
 	})
 	if err != nil {
 		log.Fatalf("Error getting block by hash: %v\n", err)
-		return false
+		return false, err
 	}
 
 	return bb.GetBlockStatusByHeight(blockHeight)
 }
 
-func (bb *BBoltHandler) GetLatestBlock() (*Block, error) {
+func (bb *BBoltHandler) GetLatestBlock() (*types.Block, error) {
 	var latestBlockHeight uint64
 
 	// Fetch latest block height
@@ -170,9 +177,9 @@ func (bb *BBoltHandler) GetLatestBlock() (*Block, error) {
 	if err != nil {
 		// If no latest block has been stored yet, return empty block (block 0)
 		if errors.Is(err, ErrBlockNotFound) {
-			return &Block{
-				BlockHeight: 0,
-				BlockHash:   "",
+			return &types.Block{
+				BlockHeight:    0,
+				BlockHash:      "",
 				BlockTimestamp: 0,
 			}, nil
 		}

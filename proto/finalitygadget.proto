@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "github.com/babylonchain/babylon-finality-gadget/proto";
+
+service FinalityGadget {
+  rpc Ping(PingRequest) returns (PingResponse);
+
+  // InsertBlock inserts a new block into the finality gadget db
+  rpc InsertBlock(BlockInfo) returns (InsertBlockResponse);
+
+  // GetBlockStatusByHeight returns the finality status of a block at given
+  // height
+  rpc GetBlockStatusByHeight(GetBlockStatusByHeightRequest)
+      returns (GetBlockStatusResponse);
+
+  // GetBlockStatusByHash returns the finality status of a block with given hash
+  rpc GetBlockStatusByHash(GetBlockStatusByHashRequest)
+      returns (GetBlockStatusResponse);
+
+  // GetLatestBlock returns the latest consecutively finalized block
+  rpc GetLatestBlock(GetLatestBlockRequest) returns (BlockInfo);
+}
+
+message PingRequest {}
+
+message PingResponse {}
+
+message BlockInfo {
+  // block_hash is the hash of the block
+  string block_hash = 1;
+  // block_height is the height of the block
+  uint64 block_height = 2;
+  // block_timestamp is the unix timestamp of the block
+  uint64 block_timestamp = 3;
+}
+
+message InsertBlockResponse {
+  // success is true if the block is successfully inserted
+  bool success = 1;
+}
+
+message GetBlockStatusByHeightRequest {
+  // block_height is the height of the block
+  uint64 block_height = 1;
+}
+
+message GetBlockStatusByHashRequest {
+  // block_hash is the hash of the block
+  string block_hash = 1;
+}
+
+message GetBlockStatusResponse {
+  // is_finalized is true if the block is finalized
+  bool is_finalized = 1;
+}
+
+message GetLatestBlockRequest {}

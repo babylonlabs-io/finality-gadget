@@ -19,7 +19,7 @@ DBFilePath = # Path to local bbolt DB file
 FGContractAddress = # Babylon finality gadget contract address
 BBNChainID = # Babylon chain id
 BBNRPCAddress = # Babylon RPC host URL
-ServerPort = # Localhost port to serve the API
+GRPCServerPort = # Port to run the gRPC server on
 PollInterval = # Interval to poll for new L2 blocks
 ```
 

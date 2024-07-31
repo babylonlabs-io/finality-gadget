@@ -13,7 +13,7 @@ type Config struct {
 	BBNChainID        string        `long:"bbn-chain-id" description:"BabylonChain chain ID"`
 	BBNRPCAddress     string        `long:"bbn-rpc-address" description:"BabylonChain chain RPC address"`
 	DBFilePath        string        `long:"db-file-path" description:"path to the DB file"`
-	ServerPort        string        `long:"server-port" description:"port to start the verifier server"`
+	GRPCServerPort    string        `long:"grpc-server-port" description:"port of the gRPC server"`
 	PollInterval      time.Duration `long:"retry-interval" description:"interval in seconds to recheck Babylon finality of block"`
 }
 
