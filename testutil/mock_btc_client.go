@@ -22,9 +22,17 @@ func NewMockBTCClient(cfg *btcclient.BTCConfig, logger *zap.Logger) (*MockBtcCli
 
 // GetBlockHeightByTimestamp overrides the BTCClient's GetBlockHeightByTimestamp method.
 func (c *MockBtcClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint64, error) {
-	// has to be a small number so when FP e2e tests use it, the test can finish quickly
-	// if it's too large, it will result in unbounding of the delegation
-	return 10, nil
+	// by default, kValue is 6 and wValue is 20
+	//
+	// in out test, the two mock delegations has:
+	// - btcDel.StartHeight: is 1, btcDel.EndHeight: 101
+	// - btcDel.StartHeight: is 8, btcDel.EndHeight: 108
+	//
+	// so to avoid `QueryIsBlockBabylonFinalized` returning `ErrBtcStakingNotActivated` in test,
+	// we should return a height that's between [8+6, 101-20]
+	//
+	// so here we choose a number around the middle
+	return 50, nil
 }
 
 // this is used to determine when the BTC staking is activated. return 0 to
