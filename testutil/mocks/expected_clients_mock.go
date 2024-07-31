@@ -57,10 +57,10 @@ func (mr *MockIBabylonClientMockRecorder) QueryAllFpBtcPubKeys(consumerId any) *
 }
 
 // QueryEarliestActiveDelBtcHeight mocks base method.
-func (m *MockIBabylonClient) QueryEarliestActiveDelBtcHeight(fpPubkeyHexList []string) (*uint64, error) {
+func (m *MockIBabylonClient) QueryEarliestActiveDelBtcHeight(fpPubkeyHexList []string) (uint64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "QueryEarliestActiveDelBtcHeight", fpPubkeyHexList)
-	ret0, _ := ret[0].(*uint64)
+	ret0, _ := ret[0].(uint64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -182,6 +182,21 @@ func (m *MockIBitcoinClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (
 func (mr *MockIBitcoinClientMockRecorder) GetBlockHeightByTimestamp(targetTimestamp any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockHeightByTimestamp", reflect.TypeOf((*MockIBitcoinClient)(nil).GetBlockHeightByTimestamp), targetTimestamp)
+}
+
+// GetBlockTimestampByHeight mocks base method.
+func (m *MockIBitcoinClient) GetBlockTimestampByHeight(height uint64) (uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBlockTimestampByHeight", height)
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBlockTimestampByHeight indicates an expected call of GetBlockTimestampByHeight.
+func (mr *MockIBitcoinClientMockRecorder) GetBlockTimestampByHeight(height any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockTimestampByHeight", reflect.TypeOf((*MockIBitcoinClient)(nil).GetBlockTimestampByHeight), height)
 }
 
 // MockICosmWasmClient is a mock of ICosmWasmClient interface.

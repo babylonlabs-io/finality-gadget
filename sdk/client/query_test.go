@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/babylonchain/babylon-finality-gadget/sdk/cwclient"
+	"github.com/babylonchain/babylon-finality-gadget/testutil"
 	"github.com/babylonchain/babylon-finality-gadget/testutil/mocks"
-	"github.com/babylonchain/babylon-finality-gadget/testutils"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -165,17 +165,17 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 			if tc.name == "FP no delegation, 100% votes, expects false" {
 				mockBBNClient.EXPECT().
 					QueryEarliestActiveDelBtcHeight(tc.allFpPks).
-					Return(nil, nil).
+					Return(uint64(0), nil).
 					Times(1)
 			} else if tc.name == "Btc staking not activated, 100% votes, expects false" {
 				mockBBNClient.EXPECT().
 					QueryEarliestActiveDelBtcHeight(tc.allFpPks).
-					Return(&BTCNotActivatedHeight, nil).
+					Return(BTCNotActivatedHeight, nil).
 					Times(1)
 			} else {
 				mockBBNClient.EXPECT().
 					QueryEarliestActiveDelBtcHeight(tc.allFpPks).
-					Return(&BTCActivatedHeight, nil).
+					Return(BTCActivatedHeight, nil).
 					Times(1)
 			}
 
@@ -196,13 +196,13 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	l2BlockTime := uint64(2)
-	blockA, blockAWithHashTrimmed := testutils.RandomL2Block(rng)
-	blockB, blockBWithHashTrimmed := testutils.GenL2Block(rng, &blockA, l2BlockTime, 1)
-	blockC, blockCWithHashTrimmed := testutils.GenL2Block(rng, &blockB, l2BlockTime, 1)
-	blockD, blockDWithHashTrimmed := testutils.GenL2Block(rng, &blockC, l2BlockTime, 300) // 10 minutes later
-	blockE, blockEWithHashTrimmed := testutils.GenL2Block(rng, &blockD, l2BlockTime, 1)
-	blockF, blockFWithHashTrimmed := testutils.GenL2Block(rng, &blockE, l2BlockTime, 300)
-	blockG, blockGWithHashTrimmed := testutils.GenL2Block(rng, &blockF, l2BlockTime, 1)
+	blockA, blockAWithHashTrimmed := testutil.RandomL2Block(rng)
+	blockB, blockBWithHashTrimmed := testutil.GenL2Block(rng, &blockA, l2BlockTime, 1)
+	blockC, blockCWithHashTrimmed := testutil.GenL2Block(rng, &blockB, l2BlockTime, 1)
+	blockD, blockDWithHashTrimmed := testutil.GenL2Block(rng, &blockC, l2BlockTime, 300) // 10 minutes later
+	blockE, blockEWithHashTrimmed := testutil.GenL2Block(rng, &blockD, l2BlockTime, 1)
+	blockF, blockFWithHashTrimmed := testutil.GenL2Block(rng, &blockE, l2BlockTime, 300)
+	blockG, blockGWithHashTrimmed := testutil.GenL2Block(rng, &blockF, l2BlockTime, 1)
 
 	testCases := []struct {
 		name         string
@@ -252,6 +252,7 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 			mockBTCClient.EXPECT().GetBlockHeightByTimestamp(blockF.BlockTimestamp).Return(uint64(113), nil).AnyTimes()
 			mockBTCClient.EXPECT().GetBlockHeightByTimestamp(blockG.BlockTimestamp).Return(uint64(113), fmt.Errorf("RPC rate limit error")).AnyTimes()
 
+			mockBBNClient.EXPECT().QueryEarliestActiveDelBtcHeight(gomock.Any()).Return(uint64(1), nil).AnyTimes()
 			mockBBNClient.EXPECT().QueryAllFpBtcPubKeys("consumer-chain-id").Return([]string{"pk1", "pk2", "pk3"}, nil).AnyTimes()
 			mockBBNClient.EXPECT().QueryMultiFpPower([]string{"pk1", "pk2", "pk3"}, gomock.Any()).Return(map[string]uint64{"pk1": 100, "pk2": 200, "pk3": 300}, nil).AnyTimes()
 

@@ -54,19 +54,19 @@ func (mr *MockISdkClientMockRecorder) QueryBlockRangeBabylonFinalized(queryBlock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryBlockRangeBabylonFinalized", reflect.TypeOf((*MockISdkClient)(nil).QueryBlockRangeBabylonFinalized), queryBlocks)
 }
 
-// QueryEarliestDelHeight mocks base method.
-func (m *MockISdkClient) QueryEarliestDelHeight() (*uint64, error) {
+// QueryBtcStakingActivatedTimestamp mocks base method.
+func (m *MockISdkClient) QueryBtcStakingActivatedTimestamp() (uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "QueryEarliestDelHeight")
-	ret0, _ := ret[0].(*uint64)
+	ret := m.ctrl.Call(m, "QueryBtcStakingActivatedTimestamp")
+	ret0, _ := ret[0].(uint64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// QueryEarliestDelHeight indicates an expected call of QueryEarliestDelHeight.
-func (mr *MockISdkClientMockRecorder) QueryEarliestDelHeight() *gomock.Call {
+// QueryBtcStakingActivatedTimestamp indicates an expected call of QueryBtcStakingActivatedTimestamp.
+func (mr *MockISdkClientMockRecorder) QueryBtcStakingActivatedTimestamp() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryEarliestDelHeight", reflect.TypeOf((*MockISdkClient)(nil).QueryEarliestDelHeight))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryBtcStakingActivatedTimestamp", reflect.TypeOf((*MockISdkClient)(nil).QueryBtcStakingActivatedTimestamp))
 }
 
 // QueryIsBlockBabylonFinalized mocks base method.

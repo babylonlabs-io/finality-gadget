@@ -3,13 +3,13 @@ package client
 import (
 	"fmt"
 
-	"github.com/babylonchain/babylon-finality-gadget/testutils"
 	bbncfg "github.com/babylonchain/babylon/client/config"
 	"go.uber.org/zap"
 
 	"github.com/babylonchain/babylon-finality-gadget/sdk/bbnclient"
 	"github.com/babylonchain/babylon-finality-gadget/sdk/btcclient"
 	sdkconfig "github.com/babylonchain/babylon-finality-gadget/sdk/config"
+	"github.com/babylonchain/babylon-finality-gadget/testutil"
 
 	babylonClient "github.com/babylonchain/babylon/client/client"
 
@@ -55,7 +55,7 @@ func NewClient(config *sdkconfig.Config) (*SdkClient, error) {
 	switch config.ChainID {
 	// TODO: once we set up our own local BTC devnet, we don't need to use this mock BTC client
 	case sdkconfig.BabylonLocalnet:
-		btcClient, err = testutils.NewMockBTCClient(config.BTCConfig, logger)
+		btcClient, err = testutil.NewMockBTCClient(config.BTCConfig, logger)
 	default:
 		btcClient, err = btcclient.NewBTCClient(config.BTCConfig, logger)
 	}

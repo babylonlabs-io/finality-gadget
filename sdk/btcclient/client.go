@@ -90,19 +90,10 @@ func (c *BTCClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint64, e
 	for lowerBound <= upperBound {
 		midHeight := (lowerBound + upperBound) / 2
 
-		// get block hash by height
-		blockHash, err := c.GetBlockHashByHeight(midHeight)
+		blockTimestamp, err := c.GetBlockTimestampByHeight(midHeight)
 		if err != nil {
 			return 0, err
 		}
-
-		// get block header by hash. the header contains info such as the block time expressed in UNIX epoch time
-		blockHeader, err := c.GetBlockHeaderByHash(blockHash)
-		if err != nil {
-			return 0, err
-		}
-
-		blockTimestamp := uint64(blockHeader.Timestamp.Unix())
 
 		if blockTimestamp < targetTimestamp {
 			lowerBound = midHeight + 1
@@ -120,6 +111,22 @@ func (c *BTCClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint64, e
 	}
 
 	return lowerBound - 1, nil
+}
+
+func (c *BTCClient) GetBlockTimestampByHeight(height uint64) (uint64, error) {
+	// get block hash by height
+	blockHash, err := c.GetBlockHashByHeight(height)
+	if err != nil {
+		return 0, err
+	}
+
+	// get block header by hash. the header contains info such as the block time expressed in UNIX epoch time
+	blockHeader, err := c.GetBlockHeaderByHash(blockHash)
+	if err != nil {
+		return 0, err
+	}
+
+	return uint64(blockHeader.Timestamp.Unix()), nil
 }
 
 func clientCallWithRetry[T any](

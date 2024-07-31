@@ -1,4 +1,4 @@
-package testutils
+package testutil
 
 import (
 	"github.com/babylonchain/babylon-finality-gadget/sdk/btcclient"
@@ -25,4 +25,10 @@ func (c *MockBtcClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint6
 	// has to be a small number so when FP e2e tests use it, the test can finish quickly
 	// if it's too large, it will result in unbounding of the delegation
 	return 10, nil
+}
+
+// this is used to determine when the BTC staking is activated. return 0 to
+// simulate that the BTC staking is always activated
+func (c *MockBtcClient) GetBlockTimestampByHeight(height uint64) (uint64, error) {
+	return 0, nil
 }
