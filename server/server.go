@@ -19,14 +19,13 @@ import (
 // spinning up the RPC sever, the database, and any other components that the
 // EOTS manager server needs to function.
 type Server struct {
-	started int32
+	rpcServer *rpcServer
+	cfg       *config.Config
+	db        *db.BBoltHandler
 
-	rpcServer   *rpcServer
-	cfg         *config.Config
-	db          *db.BBoltHandler
+	quit        chan struct{}
 	interceptor signal.Interceptor
-
-	quit chan struct{}
+	started     int32
 }
 
 // NewEOTSManagerServer creates a new server with the given config.

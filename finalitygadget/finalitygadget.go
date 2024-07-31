@@ -182,7 +182,6 @@ func (s *FinalityGadget) handleBlock(block *types.Block) {
 }
 
 func (vf *FinalityGadget) queryIsBlockBabylonFinalized(block *types.Block) (bool, error) {
-	return true, nil
 	return vf.SdkClient.QueryIsBlockBabylonFinalized(cwclient.L2Block{
 		BlockHash:      string(block.BlockHash),
 		BlockHeight:    block.BlockHeight,

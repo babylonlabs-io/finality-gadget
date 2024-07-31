@@ -72,7 +72,8 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	}
 	srv := server.NewFinalityGadgetServer(cfg, db, fg, shutdownInterceptor)
 	go func() {
-		if err := srv.RunUntilShutdown(); err != nil {
+		err = srv.RunUntilShutdown()
+		if err != nil {
 			log.Fatalf("Finality gadget server error: %v\n", err)
 		}
 	}()
