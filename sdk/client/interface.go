@@ -1,6 +1,6 @@
 package client
 
-import "github.com/babylonchain/babylon-finality-gadget/sdk/cwclient"
+import "github.com/babylonlabs-io/babylon-finality-gadget/sdk/cwclient"
 
 type ISdkClient interface {
 	/* QueryIsBlockBabylonFinalized checks if the given L2 block is finalized by the Babylon finality gadget

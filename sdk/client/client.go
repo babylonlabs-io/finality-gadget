@@ -6,14 +6,14 @@ import (
 	bbncfg "github.com/babylonchain/babylon/client/config"
 	"go.uber.org/zap"
 
-	"github.com/babylonchain/babylon-finality-gadget/sdk/bbnclient"
-	"github.com/babylonchain/babylon-finality-gadget/sdk/btcclient"
-	sdkconfig "github.com/babylonchain/babylon-finality-gadget/sdk/config"
-	"github.com/babylonchain/babylon-finality-gadget/testutil"
+	"github.com/babylonlabs-io/babylon-finality-gadget/sdk/bbnclient"
+	"github.com/babylonlabs-io/babylon-finality-gadget/sdk/btcclient"
+	sdkconfig "github.com/babylonlabs-io/babylon-finality-gadget/sdk/config"
+	"github.com/babylonlabs-io/babylon-finality-gadget/testutil"
 
 	babylonClient "github.com/babylonchain/babylon/client/client"
 
-	"github.com/babylonchain/babylon-finality-gadget/sdk/cwclient"
+	"github.com/babylonlabs-io/babylon-finality-gadget/sdk/cwclient"
 )
 
 // SdkClient is a client that can only perform queries to a Babylon node
