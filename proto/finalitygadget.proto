@@ -5,8 +5,6 @@ package proto;
 option go_package = "github.com/babylonlabs-io/babylon-finality-gadget/proto";
 
 service FinalityGadget {
-  rpc Ping(PingRequest) returns (PingResponse);
-
   // InsertBlock inserts a new block into the finality gadget db
   rpc InsertBlock(BlockInfo) returns (InsertBlockResponse);
 
@@ -22,10 +20,6 @@ service FinalityGadget {
   // GetLatestBlock returns the latest consecutively finalized block
   rpc GetLatestBlock(GetLatestBlockRequest) returns (BlockInfo);
 }
-
-message PingRequest {}
-
-message PingResponse {}
 
 message BlockInfo {
   // block_hash is the hash of the block

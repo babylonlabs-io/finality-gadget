@@ -19,7 +19,6 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	FinalityGadget_Ping_FullMethodName                   = "/proto.FinalityGadget/Ping"
 	FinalityGadget_InsertBlock_FullMethodName            = "/proto.FinalityGadget/InsertBlock"
 	FinalityGadget_GetBlockStatusByHeight_FullMethodName = "/proto.FinalityGadget/GetBlockStatusByHeight"
 	FinalityGadget_GetBlockStatusByHash_FullMethodName   = "/proto.FinalityGadget/GetBlockStatusByHash"
@@ -30,7 +29,6 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FinalityGadgetClient interface {
-	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 	// InsertBlock inserts a new block into the finality gadget db
 	InsertBlock(ctx context.Context, in *BlockInfo, opts ...grpc.CallOption) (*InsertBlockResponse, error)
 	// GetBlockStatusByHeight returns the finality status of a block at given
@@ -48,15 +46,6 @@ type finalityGadgetClient struct {
 
 func NewFinalityGadgetClient(cc grpc.ClientConnInterface) FinalityGadgetClient {
 	return &finalityGadgetClient{cc}
-}
-
-func (c *finalityGadgetClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
-	out := new(PingResponse)
-	err := c.cc.Invoke(ctx, FinalityGadget_Ping_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *finalityGadgetClient) InsertBlock(ctx context.Context, in *BlockInfo, opts ...grpc.CallOption) (*InsertBlockResponse, error) {
@@ -99,7 +88,6 @@ func (c *finalityGadgetClient) GetLatestBlock(ctx context.Context, in *GetLatest
 // All implementations must embed UnimplementedFinalityGadgetServer
 // for forward compatibility
 type FinalityGadgetServer interface {
-	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	// InsertBlock inserts a new block into the finality gadget db
 	InsertBlock(context.Context, *BlockInfo) (*InsertBlockResponse, error)
 	// GetBlockStatusByHeight returns the finality status of a block at given
@@ -116,9 +104,6 @@ type FinalityGadgetServer interface {
 type UnimplementedFinalityGadgetServer struct {
 }
 
-func (UnimplementedFinalityGadgetServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
-}
 func (UnimplementedFinalityGadgetServer) InsertBlock(context.Context, *BlockInfo) (*InsertBlockResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InsertBlock not implemented")
 }
@@ -142,24 +127,6 @@ type UnsafeFinalityGadgetServer interface {
 
 func RegisterFinalityGadgetServer(s grpc.ServiceRegistrar, srv FinalityGadgetServer) {
 	s.RegisterService(&FinalityGadget_ServiceDesc, srv)
-}
-
-func _FinalityGadget_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PingRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(FinalityGadgetServer).Ping(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: FinalityGadget_Ping_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FinalityGadgetServer).Ping(ctx, req.(*PingRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _FinalityGadget_InsertBlock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -241,10 +208,6 @@ var FinalityGadget_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.FinalityGadget",
 	HandlerType: (*FinalityGadgetServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Ping",
-			Handler:    _FinalityGadget_Ping_Handler,
-		},
 		{
 			MethodName: "InsertBlock",
 			Handler:    _FinalityGadget_InsertBlock_Handler,

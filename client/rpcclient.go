@@ -32,22 +32,7 @@ func NewFinalityGadgetGrpcClient(
 		db:     db,
 	}
 
-	if err := gClient.Ping(); err != nil {
-		return nil, fmt.Errorf("the finality gadget server is not responding: %w", err)
-	}
-
 	return gClient, nil
-}
-
-func (c *FinalityGadgetGrpcClient) Ping() error {
-	req := &proto.PingRequest{}
-
-	_, err := c.client.Ping(context.Background(), req)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (c *FinalityGadgetGrpcClient) InsertBlock(block *types.Block) (bool, error) {

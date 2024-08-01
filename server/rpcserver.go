@@ -35,10 +35,6 @@ func (r *rpcServer) RegisterWithGrpcServer(grpcServer *grpc.Server) error {
 	return nil
 }
 
-func (r *rpcServer) Ping(ctx context.Context, req *proto.PingRequest) (*proto.PingResponse, error) {
-	return &proto.PingResponse{}, nil
-}
-
 // InsertBlock is an RPC method that inserts a block into the database.
 func (r *rpcServer) InsertBlock(ctx context.Context, req *proto.BlockInfo) (*proto.InsertBlockResponse, error) {
 	err := r.fg.InsertBlock(&types.Block{
