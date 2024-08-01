@@ -1,14 +1,14 @@
-module github.com/babylonchain/babylon-finality-gadget
+module github.com/babylonlabs-io/babylon-finality-gadget
 
 go 1.21
 
 require (
 	github.com/CosmWasm/wasmd v0.51.0
 	github.com/avast/retry-go/v4 v4.5.1
-	github.com/babylonchain/babylon v0.8.6
+	github.com/babylonlabs-io/babylon v0.8.6
 	github.com/btcsuite/btcd v0.24.2
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
-	github.com/cometbft/cometbft v0.38.6
+	github.com/cometbft/cometbft v0.38.7
 	github.com/cosmos/cosmos-sdk v0.50.6
 	github.com/ethereum/go-ethereum v1.13.15
 	github.com/lightningnetwork/lnd v0.16.4-beta.rc1
@@ -45,7 +45,7 @@ require (
 	filippo.io/edwards25519 v1.0.0 // indirect
 	github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // indirect
 	github.com/99designs/keyring v1.2.1 // indirect
-	github.com/CosmWasm/wasmvm/v2 v2.0.0 // indirect
+	github.com/CosmWasm/wasmvm/v2 v2.0.1 // indirect
 	github.com/DataDog/datadog-go v3.2.0+incompatible // indirect
 	github.com/DataDog/zstd v1.5.5 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
@@ -84,7 +84,8 @@ require (
 	github.com/cosmos/gogoproto v1.4.12 // indirect
 	github.com/cosmos/iavl v1.1.2 // indirect
 	github.com/cosmos/ibc-go/modules/capability v1.0.0 // indirect
-	github.com/cosmos/ibc-go/v8 v8.2.0 // indirect
+	github.com/cosmos/ibc-go/modules/light-clients/08-wasm v0.0.0-20240429153234-e1e6da7e4ead // indirect
+	github.com/cosmos/ibc-go/v8 v8.3.0 // indirect
 	github.com/cosmos/ics23/go v0.10.0 // indirect
 	github.com/cosmos/ledger-cosmos-go v0.13.3 // indirect
 	github.com/cosmos/relayer/v2 v2.5.2 // indirect
@@ -248,7 +249,7 @@ require (
 replace (
 	// use cosmos fork of keyring
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
-	github.com/babylonchain/babylon => github.com/babylonchain/babylon-private v0.8.6-0.20240715110001-5cdf5bb3bbd9
+	github.com/babylonlabs-io/babylon => github.com/babylonlabs-io/babylon-private v0.9.0-rc.3.0.20240801001431-74a24c962ce2
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 )

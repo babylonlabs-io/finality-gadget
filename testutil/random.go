@@ -1,10 +1,10 @@
-package testutils
+package testutil
 
 import (
 	"math/rand"
 	"strings"
 
-	"github.com/babylonchain/babylon-finality-gadget/sdk/cwclient"
+	"github.com/babylonlabs-io/babylon-finality-gadget/sdk/cwclient"
 	"github.com/ethereum/go-ethereum/common"
 )
 

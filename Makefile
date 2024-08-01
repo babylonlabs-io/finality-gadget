@@ -1,7 +1,6 @@
 .PHONY: lint test mock-gen
 
-CUR_DIR := $(shell pwd)
-MOCKS_DIR=$(CUR_DIR)/testutil/mocks
+MOCKS_DIR=./testutil/mocks
 
 mock-gen:
 	go install go.uber.org/mock/mockgen@latest

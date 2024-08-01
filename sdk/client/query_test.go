@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/babylonchain/babylon-finality-gadget/sdk/cwclient"
-	"github.com/babylonchain/babylon-finality-gadget/testutil/mocks"
-	"github.com/babylonchain/babylon-finality-gadget/testutils"
+	"github.com/babylonlabs-io/babylon-finality-gadget/sdk/cwclient"
+	"github.com/babylonlabs-io/babylon-finality-gadget/testutil"
+	"github.com/babylonlabs-io/babylon-finality-gadget/testutil/mocks"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -47,75 +47,94 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 	const BTCHeight = uint64(111)
 
 	testCases := []struct {
-		name           string
-		expectedErr    error
-		queryParams    *cwclient.L2Block
-		allFpPks       []string
-		fpPowers       map[string]uint64
-		votedProviders []string
-		expectResult   bool
+		name                    string
+		expectedErr             error
+		queryParams             *cwclient.L2Block
+		allFpPks                []string
+		fpPowers                map[string]uint64
+		votedProviders          []string
+		stakingActivationHeight uint64
+		expectResult            bool
 	}{
 		{
-			name:           "0% votes, expects false",
-			queryParams:    &blockWithHashTrimmed,
-			allFpPks:       []string{"pk1", "pk2"},
-			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 300},
-			votedProviders: []string{},
-			expectResult:   false,
-			expectedErr:    nil,
+			name:                    "0% votes, expects false",
+			queryParams:             &blockWithHashTrimmed,
+			allFpPks:                []string{"pk1", "pk2"},
+			fpPowers:                map[string]uint64{"pk1": 100, "pk2": 300},
+			votedProviders:          []string{},
+			stakingActivationHeight: BTCHeight - 1,
+			expectResult:            false,
+			expectedErr:             nil,
 		},
 		{
-			name:           "25% votes, expects false",
-			queryParams:    &blockWithHashTrimmed,
-			allFpPks:       []string{"pk1", "pk2"},
-			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 300},
-			votedProviders: []string{"pk1"},
-			expectResult:   false,
-			expectedErr:    nil,
+			name:                    "25% votes, expects false",
+			queryParams:             &blockWithHashTrimmed,
+			allFpPks:                []string{"pk1", "pk2"},
+			fpPowers:                map[string]uint64{"pk1": 100, "pk2": 300},
+			votedProviders:          []string{"pk1"},
+			stakingActivationHeight: BTCHeight - 1,
+			expectResult:            false,
+			expectedErr:             nil,
 		},
 		{
-			name:           "exact 2/3 votes, expects true",
-			queryParams:    &blockWithHashTrimmed,
-			allFpPks:       []string{"pk1", "pk2", "pk3"},
-			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 100, "pk3": 100},
-			votedProviders: []string{"pk1", "pk2"},
-			expectResult:   true,
-			expectedErr:    nil,
+			name:                    "exact 2/3 votes, expects true",
+			queryParams:             &blockWithHashTrimmed,
+			allFpPks:                []string{"pk1", "pk2", "pk3"},
+			fpPowers:                map[string]uint64{"pk1": 100, "pk2": 100, "pk3": 100},
+			votedProviders:          []string{"pk1", "pk2"},
+			stakingActivationHeight: BTCHeight - 1,
+			expectResult:            true,
+			expectedErr:             nil,
 		},
 		{
-			name:           "75% votes, expects true",
-			queryParams:    &blockWithHashTrimmed,
-			allFpPks:       []string{"pk1", "pk2"},
-			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 300},
-			votedProviders: []string{"pk2"},
-			expectResult:   true,
-			expectedErr:    nil,
+			name:                    "75% votes, expects true",
+			queryParams:             &blockWithHashTrimmed,
+			allFpPks:                []string{"pk1", "pk2"},
+			fpPowers:                map[string]uint64{"pk1": 100, "pk2": 300},
+			votedProviders:          []string{"pk2"},
+			stakingActivationHeight: BTCHeight - 1,
+			expectResult:            true,
+			expectedErr:             nil,
 		},
 		{
-			name:           "100% votes, expects true",
-			queryParams:    &blockWithHashTrimmed,
-			allFpPks:       []string{"pk1", "pk2", "pk3"},
-			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 100, "pk3": 100},
-			votedProviders: []string{"pk1", "pk2", "pk3"},
-			expectResult:   true,
-			expectedErr:    nil,
+			name:                    "100% votes, expects true",
+			queryParams:             &blockWithHashTrimmed,
+			allFpPks:                []string{"pk1", "pk2", "pk3"},
+			fpPowers:                map[string]uint64{"pk1": 100, "pk2": 100, "pk3": 100},
+			votedProviders:          []string{"pk1", "pk2", "pk3"},
+			stakingActivationHeight: BTCHeight - 1,
+			expectResult:            true,
+			expectedErr:             nil,
 		},
 		{
-			name:           "untrimmed block hash in input params, 75% votes, expects true",
-			queryParams:    &blockWithHashUntrimmed,
-			allFpPks:       []string{"pk1", "pk2", "pk3", "pk4"},
-			fpPowers:       map[string]uint64{"pk1": 100, "pk2": 100, "pk3": 100, "pk4": 100},
-			votedProviders: []string{"pk1", "pk2", "pk3"},
-			expectResult:   true,
+			name:                    "untrimmed block hash in input params, 75% votes, expects true",
+			queryParams:             &blockWithHashUntrimmed,
+			allFpPks:                []string{"pk1", "pk2", "pk3", "pk4"},
+			fpPowers:                map[string]uint64{"pk1": 100, "pk2": 100, "pk3": 100, "pk4": 100},
+			votedProviders:          []string{"pk1", "pk2", "pk3"},
+			stakingActivationHeight: BTCHeight - 1,
+			expectResult:            true,
+			expectedErr:             nil,
 		},
 		{
-			name:           "zero voting power, 100% votes, expects false",
-			queryParams:    &blockWithHashUntrimmed,
-			allFpPks:       []string{"pk1", "pk2", "pk3"},
-			fpPowers:       map[string]uint64{"pk1": 0, "pk2": 0, "pk3": 0},
-			votedProviders: []string{"pk1", "pk2", "pk3"},
-			expectResult:   false,
-			expectedErr:    ErrNoFpHasVotingPower,
+			name:                    "zero voting power, 100% votes, expects false",
+			queryParams:             &blockWithHashUntrimmed,
+			allFpPks:                []string{"pk1", "pk2", "pk3"},
+			fpPowers:                map[string]uint64{"pk1": 0, "pk2": 0, "pk3": 0},
+			votedProviders:          []string{"pk1", "pk2", "pk3"},
+			stakingActivationHeight: BTCHeight - 1,
+			expectResult:            false,
+			expectedErr:             ErrNoFpHasVotingPower,
+		},
+		{
+			name:                    "Btc staking not activated, 100% votes, expects false",
+			queryParams:             &blockWithHashUntrimmed,
+			allFpPks:                []string{"pk1", "pk2", "pk3"},
+			fpPowers:                map[string]uint64{"pk1": 100, "pk2": 100, "pk3": 100},
+			votedProviders:          []string{"pk1", "pk2", "pk3"},
+			stakingActivationHeight: BTCHeight + 1,
+			expectResult:            false,
+			expectedErr:             ErrBtcStakingNotActivated,
 		},
 	}
 
@@ -127,13 +146,6 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 			mockCwClient := mocks.NewMockICosmWasmClient(ctl)
 			mockCwClient.EXPECT().QueryIsEnabled().Return(true, nil).Times(1)
 			mockCwClient.EXPECT().QueryConsumerId().Return(consumerChainID, nil).Times(1)
-			if tc.expectedErr != ErrNoFpHasVotingPower {
-				mockCwClient.EXPECT().
-					QueryListOfVotedFinalityProviders(&blockWithHashTrimmed).
-					Return(tc.votedProviders, nil).
-					Times(1)
-			}
-
 			mockBTCClient := mocks.NewMockIBitcoinClient(ctl)
 			mockBTCClient.EXPECT().
 				GetBlockHeightByTimestamp(tc.queryParams.BlockTimestamp).
@@ -146,9 +158,23 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 				Return(tc.allFpPks, nil).
 				Times(1)
 			mockBBNClient.EXPECT().
-				QueryMultiFpPower(tc.allFpPks, BTCHeight).
-				Return(tc.fpPowers, nil).
+				QueryEarliestActiveDelBtcHeight(tc.allFpPks).
+				Return(tc.stakingActivationHeight, nil).
 				Times(1)
+
+			if tc.expectedErr != ErrBtcStakingNotActivated {
+				mockBBNClient.EXPECT().
+					QueryMultiFpPower(tc.allFpPks, BTCHeight).
+					Return(tc.fpPowers, nil).
+					Times(1)
+
+				if tc.expectedErr != ErrNoFpHasVotingPower {
+					mockCwClient.EXPECT().
+						QueryListOfVotedFinalityProviders(&blockWithHashTrimmed).
+						Return(tc.votedProviders, tc.expectedErr).
+						Times(1)
+				}
+			}
 
 			mockSdkClient := &SdkClient{
 				cwClient:  mockCwClient,
@@ -167,13 +193,13 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	l2BlockTime := uint64(2)
-	blockA, blockAWithHashTrimmed := testutils.RandomL2Block(rng)
-	blockB, blockBWithHashTrimmed := testutils.GenL2Block(rng, &blockA, l2BlockTime, 1)
-	blockC, blockCWithHashTrimmed := testutils.GenL2Block(rng, &blockB, l2BlockTime, 1)
-	blockD, blockDWithHashTrimmed := testutils.GenL2Block(rng, &blockC, l2BlockTime, 300) // 10 minutes later
-	blockE, blockEWithHashTrimmed := testutils.GenL2Block(rng, &blockD, l2BlockTime, 1)
-	blockF, blockFWithHashTrimmed := testutils.GenL2Block(rng, &blockE, l2BlockTime, 300)
-	blockG, blockGWithHashTrimmed := testutils.GenL2Block(rng, &blockF, l2BlockTime, 1)
+	blockA, blockAWithHashTrimmed := testutil.RandomL2Block(rng)
+	blockB, blockBWithHashTrimmed := testutil.GenL2Block(rng, &blockA, l2BlockTime, 1)
+	blockC, blockCWithHashTrimmed := testutil.GenL2Block(rng, &blockB, l2BlockTime, 1)
+	blockD, blockDWithHashTrimmed := testutil.GenL2Block(rng, &blockC, l2BlockTime, 300) // 10 minutes later
+	blockE, blockEWithHashTrimmed := testutil.GenL2Block(rng, &blockD, l2BlockTime, 1)
+	blockF, blockFWithHashTrimmed := testutil.GenL2Block(rng, &blockE, l2BlockTime, 300)
+	blockG, blockGWithHashTrimmed := testutil.GenL2Block(rng, &blockF, l2BlockTime, 1)
 
 	testCases := []struct {
 		name         string
@@ -223,6 +249,7 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 			mockBTCClient.EXPECT().GetBlockHeightByTimestamp(blockF.BlockTimestamp).Return(uint64(113), nil).AnyTimes()
 			mockBTCClient.EXPECT().GetBlockHeightByTimestamp(blockG.BlockTimestamp).Return(uint64(113), fmt.Errorf("RPC rate limit error")).AnyTimes()
 
+			mockBBNClient.EXPECT().QueryEarliestActiveDelBtcHeight(gomock.Any()).Return(uint64(1), nil).AnyTimes()
 			mockBBNClient.EXPECT().QueryAllFpBtcPubKeys("consumer-chain-id").Return([]string{"pk1", "pk2", "pk3"}, nil).AnyTimes()
 			mockBBNClient.EXPECT().QueryMultiFpPower([]string{"pk1", "pk2", "pk3"}, gomock.Any()).Return(map[string]uint64{"pk1": 100, "pk2": 200, "pk3": 300}, nil).AnyTimes()
 
