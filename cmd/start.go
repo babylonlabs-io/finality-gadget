@@ -10,11 +10,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/spf13/cobra"
 
-	rpcclient "github.com/babylonchain/babylon-finality-gadget/client"
-	"github.com/babylonchain/babylon-finality-gadget/db"
-	"github.com/babylonchain/babylon-finality-gadget/finalitygadget"
-	"github.com/babylonchain/babylon-finality-gadget/finalitygadget/config"
-	"github.com/babylonchain/babylon-finality-gadget/server"
+	rpcclient "github.com/babylonlabs-io/babylon-finality-gadget/client"
+	"github.com/babylonlabs-io/babylon-finality-gadget/db"
+	"github.com/babylonlabs-io/babylon-finality-gadget/finalitygadget"
+	"github.com/babylonlabs-io/babylon-finality-gadget/finalitygadget/config"
+	"github.com/babylonlabs-io/babylon-finality-gadget/server"
 	sig "github.com/lightningnetwork/lnd/signal"
 )
 

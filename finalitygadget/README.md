@@ -7,7 +7,7 @@ This is a peripheral program that can be run by users of OP stack L2s to track c
 To get started, clone the repository.
 
 ```bash
-git clone https://github.com/babylonchain/babylon-finality-gadget.git
+git clone https://github.com/babylonlabs-io/babylon-finality-gadget.git
 ```
 
 Configure the `config.toml` file with the following content:

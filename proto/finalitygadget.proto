@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package proto;
 
-option go_package = "github.com/babylonchain/babylon-finality-gadget/proto";
+option go_package = "github.com/babylonlabs-io/babylon-finality-gadget/proto";
 
 service FinalityGadget {
   rpc Ping(PingRequest) returns (PingResponse);

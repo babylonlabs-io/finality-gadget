@@ -5,9 +5,9 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/babylonchain/babylon-finality-gadget/finalitygadget"
-	"github.com/babylonchain/babylon-finality-gadget/proto"
-	"github.com/babylonchain/babylon-finality-gadget/types"
+	"github.com/babylonlabs-io/babylon-finality-gadget/finalitygadget"
+	"github.com/babylonlabs-io/babylon-finality-gadget/proto"
+	"github.com/babylonlabs-io/babylon-finality-gadget/types"
 )
 
 // rpcServer is the main RPC server for the finality gadget daemon that handles
