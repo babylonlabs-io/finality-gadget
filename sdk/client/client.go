@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 
-	bbncfg "github.com/babylonchain/babylon/client/config"
+	bbncfg "github.com/babylonlabs-io/babylon/client/config"
 	"go.uber.org/zap"
 
 	"github.com/babylonlabs-io/babylon-finality-gadget/sdk/bbnclient"
@@ -11,7 +11,7 @@ import (
 	sdkconfig "github.com/babylonlabs-io/babylon-finality-gadget/sdk/config"
 	"github.com/babylonlabs-io/babylon-finality-gadget/testutil"
 
-	babylonClient "github.com/babylonchain/babylon/client/client"
+	babylonClient "github.com/babylonlabs-io/babylon/client/client"
 
 	"github.com/babylonlabs-io/babylon-finality-gadget/sdk/cwclient"
 )
