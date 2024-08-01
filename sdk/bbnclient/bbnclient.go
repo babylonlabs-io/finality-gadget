@@ -3,8 +3,8 @@ package bbnclient
 import (
 	"math"
 
-	"github.com/babylonchain/babylon/client/query"
-	"github.com/babylonchain/babylon/x/btcstaking/types"
+	"github.com/babylonlabs-io/babylon/client/query"
+	"github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	sdkquerytypes "github.com/cosmos/cosmos-sdk/types/query"
 )
 
