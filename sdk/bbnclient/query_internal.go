@@ -3,7 +3,7 @@ package bbnclient
 import btcstakingtypes "github.com/babylonchain/babylon/x/btcstaking/types"
 
 // we implemented exact logic as in GetStatus
-// https://github.com/babylonchain/babylon-private/blob/c5a8d317091e2965e20ea56fa10e98d34aaa3547/x/btcstaking/types/btc_delegation.go#L88-L109
+// https://github.com/babylonlabs-io/babylon-private/blob/3d8f190c9b0c0795f6546806e3b8582de716cd60/x/btcstaking/types/btc_delegation.go#L90-L111
 func (bbnClient *Client) isDelegationActive(
 	btcDel *btcstakingtypes.BTCDelegationResponse,
 	btcHeight uint64,
@@ -30,7 +30,7 @@ func (bbnClient *Client) isDelegationActive(
 	//
 	// But the msg handler performs both checks 1) ensure staking tx is k-deep, and 2) ensure the
 	// staking tx's timelock has at least w BTC blocks left.
-	// (https://github.com/babylonchain/babylon-private/blob/d64ddc97d1c8b9f695b814b7b1b92ce133f2547b/x/btcstaking/keeper/msg_server.go#L266-L278)
+	// (https://github.com/babylonlabs-io/babylon-private/blob/3d8f190c9b0c0795f6546806e3b8582de716cd60/x/btcstaking/keeper/msg_server.go#L283-L292)
 	//
 	// So after the msg handler accepts BTC delegation the 1st check is no longer needed
 	// the k-value check is added per

@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/babylonchain/babylon-finality-gadget/sdk/btcclient"
+	"github.com/babylonlabs-io/babylon-finality-gadget/sdk/btcclient"
 )
 
 const (
