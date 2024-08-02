@@ -12,7 +12,7 @@ package mocks
 import (
 	reflect "reflect"
 
-	cwclient "github.com/babylonlabs-io/babylon-finality-gadget/sdk/cwclient"
+	cwclient "github.com/babylonlabs-io/finality-gadget/sdk/cwclient"
 	gomock "go.uber.org/mock/gomock"
 )
 
