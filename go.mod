@@ -1,4 +1,4 @@
-module github.com/babylonlabs-io/babylon-finality-gadget
+module github.com/babylonlabs-io/finality-gadget
 
 go 1.21
 

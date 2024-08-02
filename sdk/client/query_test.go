@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/babylonlabs-io/babylon-finality-gadget/sdk/cwclient"
-	"github.com/babylonlabs-io/babylon-finality-gadget/testutil"
-	"github.com/babylonlabs-io/babylon-finality-gadget/testutil/mocks"
+	"github.com/babylonlabs-io/finality-gadget/sdk/cwclient"
+	"github.com/babylonlabs-io/finality-gadget/testutil"
+	"github.com/babylonlabs-io/finality-gadget/testutil/mocks"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )

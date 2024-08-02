@@ -1,7 +1,7 @@
 package client
 
 import (
-	"github.com/babylonlabs-io/babylon-finality-gadget/sdk/cwclient"
+	"github.com/babylonlabs-io/finality-gadget/sdk/cwclient"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
 )
