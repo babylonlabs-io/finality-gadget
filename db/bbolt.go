@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"os"
 	"time"
 
 	"github.com/babylonlabs-io/babylon-finality-gadget/types"
@@ -189,6 +190,10 @@ func (bb *BBoltHandler) GetLatestBlock() (*types.Block, error) {
 
 	// Fetch latest block by height
 	return bb.GetBlockByHeight(latestBlockHeight)
+}
+
+func (bb *BBoltHandler) DeleteDB() error {
+	return os.Remove(bb.db.Path())
 }
 
 func (bb *BBoltHandler) Close() error {

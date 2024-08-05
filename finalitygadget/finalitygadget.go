@@ -221,6 +221,10 @@ func (s *FinalityGadget) GetLatestBlock() (*types.Block, error) {
 	return s.Db.GetLatestBlock()
 }
 
+func (s *FinalityGadget) DeleteDB() error {
+	return s.Db.DeleteDB()
+}
+
 func (s *FinalityGadget) Close() {
 	s.L2Client.Close()
 }
