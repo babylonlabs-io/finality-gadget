@@ -5,8 +5,10 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/babylonlabs-io/babylon-finality-gadget/types"
@@ -193,7 +195,14 @@ func (bb *BBoltHandler) GetLatestBlock() (*types.Block, error) {
 }
 
 func (bb *BBoltHandler) DeleteDB() error {
-	return os.Remove(bb.db.Path())
+	absPath, err := filepath.Abs(bb.db.Path())
+	fmt.Println("absPath: ", absPath)
+	if err != nil {
+		log.Fatalf("failed to get db absolute path: %v\n", err)
+		return fmt.Errorf("failed to get db absolute path: %w", err)
+	}
+
+	return os.Remove(absPath)
 }
 
 func (bb *BBoltHandler) Close() error {

@@ -110,6 +110,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 		return err
 	}
 	fg.Close()
+	fg.DeleteDB()
 
 	return nil
 }
