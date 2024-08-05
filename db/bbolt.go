@@ -49,7 +49,6 @@ func (bb *BBoltHandler) TryCreateInitialBuckets() error {
 		buckets := []string{blocksBucket, blockHeightsBucket, latestBlockBucket}
 		for _, bucket := range buckets {
 			if err := tryCreateBucket(tx, bucket); err != nil {
-				log.Fatalf("Error creating bucket: %v\n", err)
 				return err
 			}
 		}
@@ -131,7 +130,6 @@ func (bb *BBoltHandler) GetBlockByHeight(height uint64) (*types.Block, error) {
 		return json.Unmarshal(v, &block)
 	})
 	if err != nil {
-		log.Fatalf("Error getting block by %d\n", err)
 		return nil, err
 	}
 	return &block, nil
@@ -153,11 +151,17 @@ func (bb *BBoltHandler) GetBlockStatusByHash(hash string) (bool, error) {
 	var blockHeight uint64
 	err := bb.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blockHeightsBucket))
-		blockHeight = btoi(b.Get([]byte(hash)))
+		res := b.Get([]byte(hash))
+		if len(res) == 0 {
+			return ErrBlockNotFound
+		}
+		blockHeight = btoi(res)
 		return nil
 	})
 	if err != nil {
-		log.Fatalf("Error getting block by hash: %v\n", err)
+		if errors.Is(err, ErrBlockNotFound) {
+			return false, nil
+		}
 		return false, err
 	}
 
