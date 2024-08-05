@@ -30,6 +30,7 @@ type Server struct {
 
 // NewEOTSManagerServer creates a new server with the given config.
 func NewFinalityGadgetServer(cfg *config.Config, db *db.BBoltHandler, fg finalitygadget.IFinalityGadget, sig signal.Interceptor) *Server {
+	log.Println("[server] NewFinalityGadgetServer()")
 	return &Server{
 		cfg:         cfg,
 		rpcServer:   newRPCServer(fg),
@@ -42,6 +43,7 @@ func NewFinalityGadgetServer(cfg *config.Config, db *db.BBoltHandler, fg finalit
 // RunUntilShutdown runs the main finality gadget server loop until a signal is
 // received to shut down the process.
 func (s *Server) RunUntilShutdown() error {
+	log.Println("[server] RunUntilShutdown()")
 	if atomic.AddInt32(&s.started, 1) != 1 {
 		return nil
 	}
@@ -85,7 +87,7 @@ func (s *Server) RunUntilShutdown() error {
 
 // startGrpcListen starts the GRPC server on the passed listeners.
 func (s *Server) startGrpcListen(grpcServer *grpc.Server, listeners []net.Listener) error {
-
+	log.Println("[server] startGrpcListen()")
 	// Use a WaitGroup so we can be sure the instructions on how to input the
 	// password is the last thing to be printed to the console.
 	var wg sync.WaitGroup
