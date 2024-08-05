@@ -22,7 +22,7 @@ func NewFinalityGadgetGrpcClient(
 	db *db.BBoltHandler,
 	remoteAddr string,
 ) (*FinalityGadgetGrpcClient, error) {
-	log.Println("[rpcclient] NewFinalityGadgetGrpcClient()")
+	fmt.Println("[rpcclient] NewFinalityGadgetGrpcClient()")
 	conn, err := grpc.NewClient(remoteAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Printf("failed to build gRPC connection to %s: %v\n", remoteAddr, err)
@@ -39,7 +39,7 @@ func NewFinalityGadgetGrpcClient(
 }
 
 func (c *FinalityGadgetGrpcClient) InsertBlock(block *types.Block) (bool, error) {
-	log.Println("[rpcclient] InsertBlock()")
+	fmt.Println("[rpcclient] InsertBlock()")
 	req := &proto.BlockInfo{
 		BlockHash:      block.BlockHash,
 		BlockHeight:    block.BlockHeight,
@@ -56,7 +56,7 @@ func (c *FinalityGadgetGrpcClient) InsertBlock(block *types.Block) (bool, error)
 }
 
 func (c *FinalityGadgetGrpcClient) GetBlockStatusByHeight(height uint64) (bool, error) {
-	log.Println("[rpcclient] GetBlockStatusByHeight()")
+	fmt.Println("[rpcclient] GetBlockStatusByHeight()")
 	req := &proto.GetBlockStatusByHeightRequest{
 		BlockHeight: height,
 	}
@@ -71,7 +71,7 @@ func (c *FinalityGadgetGrpcClient) GetBlockStatusByHeight(height uint64) (bool, 
 }
 
 func (c *FinalityGadgetGrpcClient) GetBlockStatusByHash(hash string) (bool, error) {
-	log.Println("[rpcclient] GetBlockStatusByHash()")
+	fmt.Println("[rpcclient] GetBlockStatusByHash()")
 	req := &proto.GetBlockStatusByHashRequest{
 		BlockHash: hash,
 	}
@@ -86,7 +86,7 @@ func (c *FinalityGadgetGrpcClient) GetBlockStatusByHash(hash string) (bool, erro
 }
 
 func (c *FinalityGadgetGrpcClient) GetLatestBlock() (*types.Block, error) {
-	log.Println("[rpcclient] GetLatestBlock()")
+	fmt.Println("[rpcclient] GetLatestBlock()")
 	req := &proto.GetLatestBlockRequest{}
 
 	res, err := c.client.GetLatestBlock(context.Background(), req)
@@ -103,6 +103,6 @@ func (c *FinalityGadgetGrpcClient) GetLatestBlock() (*types.Block, error) {
 }
 
 func (c *FinalityGadgetGrpcClient) Close() error {
-	log.Println("[rpcclient] Close()")
+	fmt.Println("[rpcclient] Close()")
 	return c.conn.Close()
 }

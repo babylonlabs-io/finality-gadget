@@ -65,7 +65,7 @@ func NewFinalityGadget(cfg *config.Config, db *db.BBoltHandler) (*FinalityGadget
 
 // This function process blocks indefinitely, starting from the last finalized block.
 func (s *FinalityGadget) ProcessBlocks() error {
-	log.Println("[finalitygadget] ProcessBlocks()")
+	fmt.Println("[finalitygadget] ProcessBlocks()")
 	// Start service at last finalized block
 	err := s.startService()
 	if err != nil {
@@ -93,7 +93,7 @@ func (s *FinalityGadget) ProcessBlocks() error {
 
 // Start service at last finalized block
 func (s *FinalityGadget) startService() error {
-	log.Println("[finalitygadget] startService()")
+	fmt.Println("[finalitygadget] startService()")
 	// Query L2 node for last finalized block
 	block, err := s.getLatestFinalizedBlock()
 	if err != nil {
@@ -149,13 +149,13 @@ func (s *FinalityGadget) startService() error {
 
 // Get last btc finalized block
 func (s *FinalityGadget) getLatestFinalizedBlock() (*types.Block, error) {
-	log.Println("[finalitygadget] getLatestFinalizedBlock()")
+	fmt.Println("[finalitygadget] getLatestFinalizedBlock()")
 	return s.getBlockByNumber(ethrpc.FinalizedBlockNumber.Int64())
 }
 
 // Get block by number
 func (s *FinalityGadget) getBlockByNumber(blockNumber int64) (*types.Block, error) {
-	log.Println("[finalitygadget] getBlockByNumber()")
+	fmt.Println("[finalitygadget] getBlockByNumber()")
 	header, err := s.L2Client.HeaderByNumber(context.Background(), big.NewInt(blockNumber))
 	if err != nil {
 		return nil, err
@@ -168,7 +168,7 @@ func (s *FinalityGadget) getBlockByNumber(blockNumber int64) (*types.Block, erro
 }
 
 func (s *FinalityGadget) handleBlock(block *types.Block) {
-	log.Println("[finalitygadget] handleBlock()")
+	fmt.Println("[finalitygadget] handleBlock()")
 	// while block is not finalized, recheck if block is finalized every `retryInterval` seconds
 	// if finalized, store the block in DB and set the last finalized block
 	for {
@@ -192,7 +192,7 @@ func (s *FinalityGadget) handleBlock(block *types.Block) {
 }
 
 func (vf *FinalityGadget) queryIsBlockBabylonFinalized(block *types.Block) (bool, error) {
-	log.Println("[finalitygadget] queryIsBlockBabylonFinalized()")
+	fmt.Println("[finalitygadget] queryIsBlockBabylonFinalized()")
 	return true, nil
 	return vf.SdkClient.QueryIsBlockBabylonFinalized(cwclient.L2Block{
 		BlockHash:      string(block.BlockHash),
@@ -202,7 +202,7 @@ func (vf *FinalityGadget) queryIsBlockBabylonFinalized(block *types.Block) (bool
 }
 
 func (s *FinalityGadget) InsertBlock(block *types.Block) error {
-	log.Println("[finalitygadget] InsertBlock()")
+	fmt.Println("[finalitygadget] InsertBlock()")
 	// Lock mutex
 	s.Mutex.Lock()
 	// Store block in DB
@@ -223,21 +223,21 @@ func (s *FinalityGadget) InsertBlock(block *types.Block) error {
 }
 
 func (s *FinalityGadget) GetBlockStatusByHeight(height uint64) (bool, error) {
-	log.Println("[finalitygadget] GetBlockStatusByHeight()")
+	fmt.Println("[finalitygadget] GetBlockStatusByHeight()")
 	return s.Db.GetBlockStatusByHeight(height)
 }
 
 func (s *FinalityGadget) GetBlockStatusByHash(hash string) (bool, error) {
-	log.Println("[finalitygadget] GetBlockStatusByHash()")
+	fmt.Println("[finalitygadget] GetBlockStatusByHash()")
 	return s.Db.GetBlockStatusByHash(hash)
 }
 
 func (s *FinalityGadget) GetLatestBlock() (*types.Block, error) {
-	log.Println("[finalitygadget] GetLatestBlock()")
+	fmt.Println("[finalitygadget] GetLatestBlock()")
 	return s.Db.GetLatestBlock()
 }
 
 func (s *FinalityGadget) Close() {
-	log.Println("[finalitygadget] Close()")
+	fmt.Println("[finalitygadget] Close()")
 	s.L2Client.Close()
 }
