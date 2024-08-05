@@ -25,6 +25,7 @@ func NewFinalityGadgetGrpcClient(
 	log.Println("[rpcclient] NewFinalityGadgetGrpcClient()")
 	conn, err := grpc.NewClient(remoteAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
+		log.Printf("failed to build gRPC connection to %s: %v\n", remoteAddr, err)
 		return nil, fmt.Errorf("failed to build gRPC connection to %s: %w", remoteAddr, err)
 	}
 
@@ -47,6 +48,7 @@ func (c *FinalityGadgetGrpcClient) InsertBlock(block *types.Block) (bool, error)
 
 	res, err := c.client.InsertBlock(context.Background(), req)
 	if err != nil {
+		log.Printf("failed to insert block %d: %v\n", block.BlockHeight, err)
 		return false, err
 	}
 
@@ -61,6 +63,7 @@ func (c *FinalityGadgetGrpcClient) GetBlockStatusByHeight(height uint64) (bool, 
 
 	res, err := c.client.GetBlockStatusByHeight(context.Background(), req)
 	if err != nil {
+		log.Printf("failed to get block status by height %d: %v\n", height, err)
 		return false, err
 	}
 
@@ -75,6 +78,7 @@ func (c *FinalityGadgetGrpcClient) GetBlockStatusByHash(hash string) (bool, erro
 
 	res, err := c.client.GetBlockStatusByHash(context.Background(), req)
 	if err != nil {
+		log.Printf("failed to get block status by hash %s: %v\n", hash, err)
 		return false, err
 	}
 
@@ -87,6 +91,7 @@ func (c *FinalityGadgetGrpcClient) GetLatestBlock() (*types.Block, error) {
 
 	res, err := c.client.GetLatestBlock(context.Background(), req)
 	if err != nil {
+		log.Printf("failed to get latest block: %v\n", err)
 		return nil, err
 	}
 
