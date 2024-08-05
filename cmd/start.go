@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -92,7 +93,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 
 	// Run verifier in a separate goroutine
 	go func() {
-		if err := fg.ProcessBlocks(); err != nil {
+		if err := fg.ProcessBlocks(context.Background()); err != nil {
 			log.Fatalf("Error processing blocks: %v\n", err)
 		}
 	}()

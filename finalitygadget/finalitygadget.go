@@ -64,7 +64,7 @@ func NewFinalityGadget(cfg *config.Config, db *db.BBoltHandler) (*FinalityGadget
 }
 
 // This function process blocks indefinitely, starting from the last finalized block.
-func (s *FinalityGadget) ProcessBlocks() error {
+func (s *FinalityGadget) ProcessBlocks(ctx context.Context) error {
 	// Start service at last finalized block
 	err := s.startService()
 	if err != nil {
@@ -73,18 +73,22 @@ func (s *FinalityGadget) ProcessBlocks() error {
 
 	// Start polling for new blocks at set interval
 	ticker := time.NewTicker(s.PollInterval)
-	for range ticker.C {
-		block, err := s.getBlockByNumber(int64(s.currHeight + 1))
-		if err != nil {
-			log.Fatalf("error getting new block: %v\n", err)
-			continue
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+			block, err := s.getBlockByNumber(int64(s.currHeight + 1))
+			if err != nil {
+				log.Fatalf("error getting new block: %v\n", err)
+				continue
+			}
+			go func() {
+				s.handleBlock(block)
+			}()
 		}
-		go func() {
-			s.handleBlock(block)
-		}()
 	}
-
-	return nil
 }
 
 // Start service at last finalized block
