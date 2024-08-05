@@ -196,7 +196,6 @@ func (bb *BBoltHandler) GetLatestBlock() (*types.Block, error) {
 
 func (bb *BBoltHandler) DeleteDB() error {
 	absPath, err := filepath.Abs(bb.db.Path())
-	fmt.Println("absPath: ", absPath)
 	if err != nil {
 		log.Fatalf("failed to get db absolute path: %v\n", err)
 		return fmt.Errorf("failed to get db absolute path: %w", err)
