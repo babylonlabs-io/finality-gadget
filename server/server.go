@@ -7,9 +7,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/babylonlabs-io/babylon-finality-gadget/db"
-	"github.com/babylonlabs-io/babylon-finality-gadget/finalitygadget"
-	"github.com/babylonlabs-io/babylon-finality-gadget/finalitygadget/config"
+	"github.com/babylonlabs-io/finality-gadget/db"
+	"github.com/babylonlabs-io/finality-gadget/finalitygadget"
+	"github.com/babylonlabs-io/finality-gadget/finalitygadget/config"
 	"github.com/lightningnetwork/lnd/signal"
 
 	"google.golang.org/grpc"

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package proto;
 
-option go_package = "github.com/babylonlabs-io/babylon-finality-gadget/proto";
+option go_package = "github.com/babylonlabs-io/finality-gadget/proto";
 
 service FinalityGadget {
   // InsertBlock inserts a new block into the finality gadget db

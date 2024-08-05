@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/babylonlabs-io/babylon-finality-gadget/types"
+	"github.com/babylonlabs-io/finality-gadget/types"
 	bolt "go.etcd.io/bbolt"
 )
 

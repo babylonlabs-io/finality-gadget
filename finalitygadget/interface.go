@@ -1,6 +1,6 @@
 package finalitygadget
 
-import "github.com/babylonlabs-io/babylon-finality-gadget/types"
+import "github.com/babylonlabs-io/finality-gadget/types"
 
 type IFinalityGadget interface {
 	InsertBlock(block *types.Block) error

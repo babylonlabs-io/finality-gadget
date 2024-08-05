@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/babylonlabs-io/babylon-finality-gadget/db"
-	"github.com/babylonlabs-io/babylon-finality-gadget/proto"
-	"github.com/babylonlabs-io/babylon-finality-gadget/types"
+	"github.com/babylonlabs-io/finality-gadget/db"
+	"github.com/babylonlabs-io/finality-gadget/proto"
+	"github.com/babylonlabs-io/finality-gadget/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
