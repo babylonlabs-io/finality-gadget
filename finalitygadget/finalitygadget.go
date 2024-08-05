@@ -69,23 +69,20 @@ func (s *FinalityGadget) ProcessBlocks() error {
 	// Start service at last finalized block
 	err := s.startService()
 	if err != nil {
-		log.Fatalf("error starting service: %v\n", err)
 		return fmt.Errorf("%v", err)
 	}
 
 	// Start polling for new blocks at set interval
 	ticker := time.NewTicker(s.PollInterval)
-	defer ticker.Stop()
 	for range ticker.C {
-		log.Println("Processing new block...")
 		block, err := s.getBlockByNumber(int64(s.currHeight + 1))
 		if err != nil {
 			log.Fatalf("error getting new block: %v\n", err)
 			continue
 		}
-		go func(block *types.Block) {
+		go func() {
 			s.handleBlock(block)
-		}(block)
+		}()
 	}
 
 	return nil
@@ -97,14 +94,12 @@ func (s *FinalityGadget) startService() error {
 	// Query L2 node for last finalized block
 	block, err := s.getLatestFinalizedBlock()
 	if err != nil {
-		log.Fatalf("error getting last finalized block: %v\n", err)
 		return fmt.Errorf("error getting last finalized block: %v", err)
 	}
 
 	// Query local DB for last block processed
 	localBlock, err := s.Db.GetLatestBlock()
 	if err != nil {
-		log.Fatalf("error getting latest block from db: %v\n", err)
 		return fmt.Errorf("error getting latest block from db: %v", err)
 	}
 
@@ -155,7 +150,6 @@ func (s *FinalityGadget) getLatestFinalizedBlock() (*types.Block, error) {
 
 // Get block by number
 func (s *FinalityGadget) getBlockByNumber(blockNumber int64) (*types.Block, error) {
-	log.Println("[finalitygadget] getBlockByNumber()")
 	header, err := s.L2Client.HeaderByNumber(context.Background(), big.NewInt(blockNumber))
 	if err != nil {
 		return nil, err
