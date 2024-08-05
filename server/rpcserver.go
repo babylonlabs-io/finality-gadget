@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"log"
 
 	"google.golang.org/grpc"
 
@@ -23,7 +22,6 @@ type rpcServer struct {
 func newRPCServer(
 	fg finalitygadget.IFinalityGadget,
 ) *rpcServer {
-	log.Println("[rpcserver] newRPCServer()")
 	return &rpcServer{
 		fg: fg,
 	}
@@ -32,7 +30,6 @@ func newRPCServer(
 // RegisterWithGrpcServer registers the rpcServer with the passed root gRPC
 // server.
 func (r *rpcServer) RegisterWithGrpcServer(grpcServer *grpc.Server) error {
-	log.Println("[rpcserver] RegisterWithGrpcServer()")
 	// Register the main RPC server.
 	proto.RegisterFinalityGadgetServer(grpcServer, r)
 	return nil
@@ -40,7 +37,6 @@ func (r *rpcServer) RegisterWithGrpcServer(grpcServer *grpc.Server) error {
 
 // InsertBlock is an RPC method that inserts a block into the database.
 func (r *rpcServer) InsertBlock(ctx context.Context, req *proto.BlockInfo) (*proto.InsertBlockResponse, error) {
-	log.Println("[rpcserver] InsertBlock()")
 	err := r.fg.InsertBlock(&types.Block{
 		BlockHash:      req.BlockHash,
 		BlockHeight:    req.BlockHeight,
@@ -56,7 +52,6 @@ func (r *rpcServer) InsertBlock(ctx context.Context, req *proto.BlockInfo) (*pro
 
 // GetBlockStatusByHeight is an RPC method that returns the status of a block at a given height.
 func (r *rpcServer) GetBlockStatusByHeight(ctx context.Context, req *proto.GetBlockStatusByHeightRequest) (*proto.GetBlockStatusResponse, error) {
-	log.Println("[rpcserver] GetBlockStatusByHeight()")
 	isFinalized, err := r.fg.GetBlockStatusByHeight(req.BlockHeight)
 
 	if err != nil {
@@ -68,7 +63,6 @@ func (r *rpcServer) GetBlockStatusByHeight(ctx context.Context, req *proto.GetBl
 
 // GetBlockStatusByHeight is an RPC method that returns the status of a block at a given height.
 func (r *rpcServer) GetBlockStatusByHash(ctx context.Context, req *proto.GetBlockStatusByHashRequest) (*proto.GetBlockStatusResponse, error) {
-	log.Println("[rpcserver] GetBlockStatusByHash()")
 	isFinalized, err := r.fg.GetBlockStatusByHash(req.BlockHash)
 
 	if err != nil {
@@ -80,7 +74,6 @@ func (r *rpcServer) GetBlockStatusByHash(ctx context.Context, req *proto.GetBloc
 
 // GetLatestBlock is an RPC method that returns the latest consecutively finalized block.
 func (r *rpcServer) GetLatestBlock(ctx context.Context, req *proto.GetLatestBlockRequest) (*proto.BlockInfo, error) {
-	log.Println("[rpcserver] GetLatestBlock()")
 	block, err := r.fg.GetLatestBlock()
 
 	if err != nil {

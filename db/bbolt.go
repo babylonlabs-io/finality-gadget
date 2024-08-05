@@ -28,7 +28,6 @@ var (
 )
 
 func NewBBoltHandler(path string) (*BBoltHandler, error) {
-	log.Println("[bbolt] NewBBoltHandler()")
 	// 0600 = read/write permission for owner only
 	db, err := bolt.Open(path, 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
@@ -42,7 +41,6 @@ func NewBBoltHandler(path string) (*BBoltHandler, error) {
 }
 
 func (bb *BBoltHandler) TryCreateInitialBuckets() error {
-	log.Println("[bbolt] TryCreateInitialBuckets()")
 	log.Printf("Initialising DB...")
 	return bb.db.Update(func(tx *bolt.Tx) error {
 		buckets := []string{blocksBucket, blockHeightsBucket, latestBlockBucket}
@@ -65,7 +63,6 @@ func tryCreateBucket(tx *bolt.Tx, bucketName string) error {
 }
 
 func (bb *BBoltHandler) InsertBlock(block *types.Block) error {
-	log.Println("[bbolt] InsertBlock()")
 	log.Printf("Inserting block %d to DB...\n", block.BlockHeight)
 
 	// Store mapping number -> block
@@ -121,7 +118,6 @@ func (bb *BBoltHandler) InsertBlock(block *types.Block) error {
 }
 
 func (bb *BBoltHandler) GetBlockByHeight(height uint64) (*types.Block, error) {
-	log.Println("[bbolt] GetBlockByHeight()")
 	var block types.Block
 	err := bb.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
@@ -139,7 +135,6 @@ func (bb *BBoltHandler) GetBlockByHeight(height uint64) (*types.Block, error) {
 }
 
 func (bb *BBoltHandler) GetBlockStatusByHeight(height uint64) (bool, error) {
-	log.Println("[bbolt] GetBlockStatusByHeight()")
 	_, err := bb.GetBlockByHeight(height)
 	if err != nil {
 		if errors.Is(err, ErrBlockNotFound) {
@@ -151,7 +146,6 @@ func (bb *BBoltHandler) GetBlockStatusByHeight(height uint64) (bool, error) {
 }
 
 func (bb *BBoltHandler) GetBlockStatusByHash(hash string) (bool, error) {
-	log.Println("[bbolt] GetBlockStatusByHash()")
 	// Fetch block number by hash
 	var blockHeight uint64
 	err := bb.db.View(func(tx *bolt.Tx) error {
@@ -168,7 +162,6 @@ func (bb *BBoltHandler) GetBlockStatusByHash(hash string) (bool, error) {
 }
 
 func (bb *BBoltHandler) GetLatestBlock() (*types.Block, error) {
-	log.Println("[bbolt] GetLatestBlock()")
 	var latestBlockHeight uint64
 
 	// Fetch latest block height
@@ -199,7 +192,6 @@ func (bb *BBoltHandler) GetLatestBlock() (*types.Block, error) {
 }
 
 func (bb *BBoltHandler) Close() error {
-	log.Println("[bbolt] Close()")
 	return bb.db.Close()
 }
 
