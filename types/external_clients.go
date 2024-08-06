@@ -1,9 +1,12 @@
-package client
+package types
 
 import (
-	"github.com/babylonlabs-io/finality-gadget/sdk/cwclient"
+	"context"
+	"math/big"
+
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/wire"
+	eth "github.com/ethereum/go-ethereum/core/types"
 )
 
 type IBabylonClient interface {
@@ -22,7 +25,12 @@ type IBitcoinClient interface {
 }
 
 type ICosmWasmClient interface {
-	QueryListOfVotedFinalityProviders(queryParams *cwclient.L2Block) ([]string, error)
+	QueryListOfVotedFinalityProviders(queryParams *Block) ([]string, error)
 	QueryConsumerId() (string, error)
 	QueryIsEnabled() (bool, error)
+}
+
+type IEthL2Client interface {
+	HeaderByNumber(ctx context.Context, number *big.Int) (*eth.Header, error)
+	Close()
 }

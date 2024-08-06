@@ -18,7 +18,7 @@ func TestBtcClient(t *testing.T) {
 
 	// Create BTC client
 	btcConfig := DefaultBTCConfig()
-	btc, err := NewBTCClient(btcConfig, logger)
+	btc, err := NewBitcoinClient(btcConfig, logger)
 	require.Nil(t, err)
 
 	// timestmap between block 848682 and 848683

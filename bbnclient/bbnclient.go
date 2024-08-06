@@ -4,15 +4,18 @@ import (
 	"math"
 
 	"github.com/babylonlabs-io/babylon/client/query"
-	"github.com/babylonlabs-io/babylon/x/btcstaking/types"
+	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+	"github.com/babylonlabs-io/finality-gadget/types"
 	sdkquerytypes "github.com/cosmos/cosmos-sdk/types/query"
 )
 
-type Client struct {
+type BabylonClient struct {
 	*query.QueryClient
 }
 
-func (bbnClient *Client) QueryAllFpBtcPubKeys(consumerId string) ([]string, error) {
+var _ types.IBabylonClient = &BabylonClient{}
+
+func (bbnClient *BabylonClient) QueryAllFpBtcPubKeys(consumerId string) ([]string, error) {
 	pagination := &sdkquerytypes.PageRequest{}
 	resp, err := bbnClient.QueryClient.QueryConsumerFinalityProviders(consumerId, pagination)
 	if err != nil {
@@ -27,7 +30,7 @@ func (bbnClient *Client) QueryAllFpBtcPubKeys(consumerId string) ([]string, erro
 	return pkArr, nil
 }
 
-func (bbnClient *Client) QueryFpPower(fpPubkeyHex string, btcHeight uint64) (uint64, error) {
+func (bbnClient *BabylonClient) QueryFpPower(fpPubkeyHex string, btcHeight uint64) (uint64, error) {
 	totalPower := uint64(0)
 	pagination := &sdkquerytypes.PageRequest{}
 	// queries the BTCStaking module for all delegations of a finality provider
@@ -58,7 +61,7 @@ func (bbnClient *Client) QueryFpPower(fpPubkeyHex string, btcHeight uint64) (uin
 	return totalPower, nil
 }
 
-func (bbnClient *Client) QueryMultiFpPower(
+func (bbnClient *BabylonClient) QueryMultiFpPower(
 	fpPubkeyHexList []string,
 	btcHeight uint64,
 ) (map[string]uint64, error) {
@@ -76,7 +79,7 @@ func (bbnClient *Client) QueryMultiFpPower(
 }
 
 // QueryEarliestActiveDelBtcHeight returns the earliest active BTC staking height
-func (bbnClient *Client) QueryEarliestActiveDelBtcHeight(fpPkHexList []string) (uint64, error) {
+func (bbnClient *BabylonClient) QueryEarliestActiveDelBtcHeight(fpPkHexList []string) (uint64, error) {
 	allFpEarliestDelBtcHeight := uint64(math.MaxUint64)
 
 	for _, fpPkHex := range fpPkHexList {
@@ -92,7 +95,7 @@ func (bbnClient *Client) QueryEarliestActiveDelBtcHeight(fpPkHexList []string) (
 	return allFpEarliestDelBtcHeight, nil
 }
 
-func (bbnClient *Client) QueryFpEarliestActiveDelBtcHeight(fpPubkeyHex string) (uint64, error) {
+func (bbnClient *BabylonClient) QueryFpEarliestActiveDelBtcHeight(fpPubkeyHex string) (uint64, error) {
 	pagination := &sdkquerytypes.PageRequest{
 		Limit: 100,
 	}
@@ -151,7 +154,7 @@ func (bbnClient *Client) QueryFpEarliestActiveDelBtcHeight(fpPubkeyHex string) (
 // return math.MaxUint64 if the delegation is not active
 //
 // Note: the delegation can be unbounded and that's totally fine and shouldn't affect when the chain was activated
-func getDelFirstActiveHeight(btcDel *types.BTCDelegationResponse, latestBtcHeight, kValue uint64, covQuorum uint32) uint64 {
+func getDelFirstActiveHeight(btcDel *bbntypes.BTCDelegationResponse, latestBtcHeight, kValue uint64, covQuorum uint32) uint64 {
 	activationHeight := btcDel.StartHeight + kValue
 	// not activated yet
 	if latestBtcHeight < activationHeight || uint32(len(btcDel.CovenantSigs)) < covQuorum {

@@ -12,9 +12,9 @@ import (
 	"github.com/spf13/cobra"
 
 	rpcclient "github.com/babylonlabs-io/finality-gadget/client"
+	"github.com/babylonlabs-io/finality-gadget/config"
 	"github.com/babylonlabs-io/finality-gadget/db"
 	"github.com/babylonlabs-io/finality-gadget/finalitygadget"
-	"github.com/babylonlabs-io/finality-gadget/finalitygadget/config"
 	"github.com/babylonlabs-io/finality-gadget/server"
 	sig "github.com/lightningnetwork/lnd/signal"
 )

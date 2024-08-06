@@ -2,51 +2,77 @@ package finalitygadget
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"log"
-	"math/big"
 	"sync"
 	"time"
 
+	bbnClient "github.com/babylonlabs-io/babylon/client/client"
+	bbncfg "github.com/babylonlabs-io/babylon/client/config"
+	"github.com/babylonlabs-io/finality-gadget/bbnclient"
+	"github.com/babylonlabs-io/finality-gadget/btcclient"
+	"github.com/babylonlabs-io/finality-gadget/config"
+	"github.com/babylonlabs-io/finality-gadget/cwclient"
 	"github.com/babylonlabs-io/finality-gadget/db"
-	"github.com/babylonlabs-io/finality-gadget/finalitygadget/config"
-	"github.com/babylonlabs-io/finality-gadget/sdk/btcclient"
-	"github.com/babylonlabs-io/finality-gadget/sdk/client"
-	sdkconfig "github.com/babylonlabs-io/finality-gadget/sdk/config"
-	"github.com/babylonlabs-io/finality-gadget/sdk/cwclient"
+	"github.com/babylonlabs-io/finality-gadget/testutil"
 	"github.com/babylonlabs-io/finality-gadget/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	ethrpc "github.com/ethereum/go-ethereum/rpc"
+	"go.uber.org/zap"
 )
 
-var _ IFinalityGadget = &FinalityGadget{}
+var _ types.IFinalityGadget = &FinalityGadget{}
 
 type FinalityGadget struct {
-	SdkClient *client.SdkClient
-	L2Client  *ethclient.Client
-	Db        *db.BBoltHandler
+	btcClient types.IBitcoinClient
+	bbnClient types.IBabylonClient
+	cwClient  types.ICosmWasmClient
+	l2Client  *ethclient.Client
 
-	Mutex sync.Mutex
+	db    *db.BBoltHandler
+	mutex sync.Mutex
 
-	PollInterval time.Duration
+	pollInterval time.Duration
 	startHeight  uint64
 	currHeight   uint64
 }
 
 func NewFinalityGadget(cfg *config.Config, db *db.BBoltHandler) (*FinalityGadget, error) {
-	// Create finality gadget client
+	// Create logger
+	logger, err := zap.NewProduction()
+	if err != nil {
+		return nil, err
+	}
+
+	// Create bitcoin client
 	btcConfig := btcclient.DefaultBTCConfig()
 	btcConfig.RPCHost = cfg.BitcoinRPCHost
-	sdkClient, err := client.NewClient(&sdkconfig.Config{
-		BTCConfig:    btcConfig,
-		ContractAddr: cfg.FGContractAddress,
-		ChainID:      cfg.BBNChainID,
-		RPCAddr:      cfg.BBNRPCAddress,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("error creating client: %w", err)
+	var btcClient types.IBitcoinClient
+	// Create BTC client
+	switch cfg.BBNChainID {
+	// TODO: once we set up our own local BTC devnet, we don't need to use this mock BTC client
+	case config.BabylonLocalnetChainID:
+		btcClient, err = testutil.NewMockBitcoinClient(btcConfig, logger)
+	default:
+		btcClient, err = btcclient.NewBitcoinClient(btcConfig, logger)
 	}
+	if err != nil {
+		return nil, err
+	}
+
+	// Create babylon client
+	bbnConfig := bbncfg.DefaultBabylonConfig()
+	bbnConfig.RPCAddr = cfg.BBNRPCAddress
+	bbnConfig.ChainID = cfg.BBNChainID
+	babylonClient, err := bbnClient.New(
+		&bbnConfig,
+		logger,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Babylon client: %w", err)
+	}
+
+	// Create cosmwasm client
+	cwClient := cwclient.NewClient(babylonClient.QueryClient.RPCClient, cfg.FGContractAddress)
 
 	// Create L2 client
 	l2Client, err := ethclient.Dial(cfg.L2RPCHost)
@@ -56,10 +82,12 @@ func NewFinalityGadget(cfg *config.Config, db *db.BBoltHandler) (*FinalityGadget
 
 	// Create finality gadget
 	return &FinalityGadget{
-		SdkClient:    sdkClient,
-		L2Client:     l2Client,
-		Db:           db,
-		PollInterval: cfg.PollInterval,
+		btcClient:    btcClient,
+		bbnClient:    &bbnclient.BabylonClient{QueryClient: babylonClient.QueryClient},
+		cwClient:     cwClient,
+		l2Client:     l2Client,
+		db:           db,
+		pollInterval: cfg.PollInterval,
 	}, nil
 }
 
@@ -72,7 +100,7 @@ func (fg *FinalityGadget) ProcessBlocks(ctx context.Context) error {
 	}
 
 	// Start polling for new blocks at set interval
-	ticker := time.NewTicker(fg.PollInterval)
+	ticker := time.NewTicker(fg.pollInterval)
 	defer ticker.Stop()
 	for {
 		select {
@@ -100,7 +128,7 @@ func (fg *FinalityGadget) startService() error {
 	}
 
 	// Query local DB for last block processed
-	localBlock, err := fg.Db.GetLatestBlock()
+	localBlock, err := fg.db.GetLatestBlock()
 	if err != nil {
 		return fmt.Errorf("error getting latest block from db: %v", err)
 	}
@@ -119,7 +147,7 @@ func (fg *FinalityGadget) startService() error {
 		}
 
 		// Check the block is finalized using sdk client
-		isFinal, err := fg.queryIsBlockBabylonFinalized(block)
+		isFinal, err := fg.QueryIsBlockBabylonFinalized(block)
 		// If not finalized, throw error
 		if !isFinal {
 			return fmt.Errorf("block %d should be finalized according to client but is not", block.BlockHeight)
@@ -144,30 +172,12 @@ func (fg *FinalityGadget) startService() error {
 	return nil
 }
 
-// Get last btc finalized block
-func (fg *FinalityGadget) getLatestFinalizedBlock() (*types.Block, error) {
-	return fg.getBlockByNumber(ethrpc.FinalizedBlockNumber.Int64())
-}
-
-// Get block by number
-func (fg *FinalityGadget) getBlockByNumber(blockNumber int64) (*types.Block, error) {
-	header, err := fg.L2Client.HeaderByNumber(context.Background(), big.NewInt(blockNumber))
-	if err != nil {
-		return nil, err
-	}
-	return &types.Block{
-		BlockHeight:    header.Number.Uint64(),
-		BlockHash:      hex.EncodeToString(header.Hash().Bytes()),
-		BlockTimestamp: header.Time,
-	}, nil
-}
-
 func (fg *FinalityGadget) handleBlock(block *types.Block) {
 	// while block is not finalized, recheck if block is finalized every `retryInterval` seconds
 	// if finalized, store the block in DB and set the last finalized block
 	for {
 		// Check if block is finalized
-		isFinal, err := fg.queryIsBlockBabylonFinalized(block)
+		isFinal, err := fg.QueryIsBlockBabylonFinalized(block)
 		if err != nil {
 			log.Fatalf("Error checking block %d: %v\n", block.BlockHeight, err)
 			return
@@ -181,23 +191,15 @@ func (fg *FinalityGadget) handleBlock(block *types.Block) {
 		}
 
 		// Sleep for `PollInterval` seconds
-		time.Sleep(fg.PollInterval * time.Second)
+		time.Sleep(fg.pollInterval * time.Second)
 	}
-}
-
-func (fg *FinalityGadget) queryIsBlockBabylonFinalized(block *types.Block) (bool, error) {
-	return fg.SdkClient.QueryIsBlockBabylonFinalized(cwclient.L2Block{
-		BlockHash:      string(block.BlockHash),
-		BlockHeight:    block.BlockHeight,
-		BlockTimestamp: block.BlockTimestamp,
-	})
 }
 
 func (fg *FinalityGadget) InsertBlock(block *types.Block) error {
 	// Lock mutex
-	fg.Mutex.Lock()
+	fg.mutex.Lock()
 	// Store block in DB
-	err := fg.Db.InsertBlock(&types.Block{
+	err := fg.db.InsertBlock(&types.Block{
 		BlockHeight:    block.BlockHeight,
 		BlockHash:      normalizeBlockHash(block.BlockHash),
 		BlockTimestamp: block.BlockTimestamp,
@@ -208,27 +210,15 @@ func (fg *FinalityGadget) InsertBlock(block *types.Block) error {
 	// Set last finalized block in memory
 	fg.currHeight = block.BlockHeight
 	// Unlock mutex
-	fg.Mutex.Unlock()
+	fg.mutex.Unlock()
 
 	return nil
 }
 
-func (fg *FinalityGadget) GetBlockStatusByHeight(height uint64) (bool, error) {
-	return fg.Db.GetBlockStatusByHeight(height)
-}
-
-func (fg *FinalityGadget) GetBlockStatusByHash(hash string) (bool, error) {
-	return fg.Db.GetBlockStatusByHash(normalizeBlockHash(hash))
-}
-
-func (fg *FinalityGadget) GetLatestBlock() (*types.Block, error) {
-	return fg.Db.GetLatestBlock()
-}
-
 func (fg *FinalityGadget) DeleteDB() error {
-	return fg.Db.DeleteDB()
+	return fg.db.DeleteDB()
 }
 
 func (fg *FinalityGadget) Close() {
-	fg.L2Client.Close()
+	fg.l2Client.Close()
 }

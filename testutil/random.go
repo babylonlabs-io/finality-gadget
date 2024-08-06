@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"strings"
 
-	"github.com/babylonlabs-io/finality-gadget/sdk/cwclient"
+	"github.com/babylonlabs-io/finality-gadget/types"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -13,7 +13,7 @@ func RandomHash(rng *rand.Rand) (out common.Hash) {
 	return
 }
 
-func RandomL2Block(rng *rand.Rand) (out cwclient.L2Block, outWithHashTrimmed cwclient.L2Block) {
+func RandomL2Block(rng *rand.Rand) (out types.Block, outWithHashTrimmed types.Block) {
 	out.BlockHash = RandomHash(rng).String()
 	out.BlockHeight = rng.Uint64()
 	out.BlockTimestamp = rng.Uint64()
@@ -22,7 +22,7 @@ func RandomL2Block(rng *rand.Rand) (out cwclient.L2Block, outWithHashTrimmed cwc
 	return
 }
 
-func GenL2Block(rng *rand.Rand, initBlock *cwclient.L2Block, l2BlockTime uint64, offset uint64) (out cwclient.L2Block, outWithHashTrimmed cwclient.L2Block) {
+func GenL2Block(rng *rand.Rand, initBlock *types.Block, l2BlockTime uint64, offset uint64) (out types.Block, outWithHashTrimmed types.Block) {
 	out.BlockHash = RandomHash(rng).String()
 	out.BlockHeight = initBlock.BlockHeight + offset
 	out.BlockTimestamp = initBlock.BlockTimestamp + offset*l2BlockTime

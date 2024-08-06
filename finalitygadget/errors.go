@@ -1,4 +1,4 @@
-package client
+package finalitygadget
 
 import "fmt"
 

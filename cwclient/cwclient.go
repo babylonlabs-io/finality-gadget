@@ -3,23 +3,26 @@ package cwclient
 import (
 	"encoding/json"
 
+	"github.com/babylonlabs-io/finality-gadget/types"
 	rpcclient "github.com/cometbft/cometbft/rpc/client"
 )
 
-type Client struct {
+type CosmWasmClient struct {
 	rpcclient.Client
 	contractAddr string
 }
 
-func NewClient(rpcClient rpcclient.Client, contractAddr string) *Client {
-	return &Client{
+var _ types.ICosmWasmClient = &CosmWasmClient{}
+
+func NewClient(rpcClient rpcclient.Client, contractAddr string) *CosmWasmClient {
+	return &CosmWasmClient{
 		Client:       rpcClient,
 		contractAddr: contractAddr,
 	}
 }
 
-func (cwClient *Client) QueryListOfVotedFinalityProviders(
-	queryParams *L2Block,
+func (cwClient *CosmWasmClient) QueryListOfVotedFinalityProviders(
+	queryParams *types.Block,
 ) ([]string, error) {
 	queryData, err := createBlockVotersQueryData(queryParams)
 	if err != nil {
@@ -39,7 +42,7 @@ func (cwClient *Client) QueryListOfVotedFinalityProviders(
 	return *votedFpPkHexList, nil
 }
 
-func (cwClient *Client) QueryConsumerId() (string, error) {
+func (cwClient *CosmWasmClient) QueryConsumerId() (string, error) {
 	queryData, err := createConfigQueryData()
 	if err != nil {
 		return "", err
@@ -58,7 +61,7 @@ func (cwClient *Client) QueryConsumerId() (string, error) {
 	return data.ConsumerId, nil
 }
 
-func (cwClient *Client) QueryIsEnabled() (bool, error) {
+func (cwClient *CosmWasmClient) QueryIsEnabled() (bool, error) {
 	queryData, err := createIsEnabledQueryData()
 	if err != nil {
 		return false, err

@@ -1,4 +1,4 @@
-package client
+package finalitygadget
 
 import (
 	"fmt"
@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/babylonlabs-io/finality-gadget/sdk/cwclient"
 	"github.com/babylonlabs-io/finality-gadget/testutil"
 	"github.com/babylonlabs-io/finality-gadget/testutil/mocks"
+	"github.com/babylonlabs-io/finality-gadget/types"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -21,20 +21,20 @@ func TestFinalityGadgetDisabled(t *testing.T) {
 	mockCwClient := mocks.NewMockICosmWasmClient(ctl)
 	mockCwClient.EXPECT().QueryIsEnabled().Return(false, nil).Times(1)
 
-	mockSdkClient := &SdkClient{
+	mockFinalityGadget := &FinalityGadget{
 		cwClient:  mockCwClient,
 		bbnClient: nil,
 		btcClient: nil,
 	}
 
 	// check QueryIsBlockBabylonFinalized always returns true when finality gadget is not enabled
-	res, err := mockSdkClient.QueryIsBlockBabylonFinalized(cwclient.L2Block{})
+	res, err := mockFinalityGadget.QueryIsBlockBabylonFinalized(&types.Block{})
 	require.NoError(t, err)
 	require.True(t, res)
 }
 
 func TestQueryIsBlockBabylonFinalized(t *testing.T) {
-	blockWithHashUntrimmed := cwclient.L2Block{
+	blockWithHashUntrimmed := types.Block{
 		BlockHash:      "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3",
 		BlockHeight:    123,
 		BlockTimestamp: 12345,
@@ -49,7 +49,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 	testCases := []struct {
 		name                    string
 		expectedErr             error
-		queryParams             *cwclient.L2Block
+		block                   *types.Block
 		allFpPks                []string
 		fpPowers                map[string]uint64
 		votedProviders          []string
@@ -58,7 +58,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 	}{
 		{
 			name:                    "0% votes, expects false",
-			queryParams:             &blockWithHashTrimmed,
+			block:                   &blockWithHashTrimmed,
 			allFpPks:                []string{"pk1", "pk2"},
 			fpPowers:                map[string]uint64{"pk1": 100, "pk2": 300},
 			votedProviders:          []string{},
@@ -68,7 +68,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 		},
 		{
 			name:                    "25% votes, expects false",
-			queryParams:             &blockWithHashTrimmed,
+			block:                   &blockWithHashTrimmed,
 			allFpPks:                []string{"pk1", "pk2"},
 			fpPowers:                map[string]uint64{"pk1": 100, "pk2": 300},
 			votedProviders:          []string{"pk1"},
@@ -78,7 +78,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 		},
 		{
 			name:                    "exact 2/3 votes, expects true",
-			queryParams:             &blockWithHashTrimmed,
+			block:                   &blockWithHashTrimmed,
 			allFpPks:                []string{"pk1", "pk2", "pk3"},
 			fpPowers:                map[string]uint64{"pk1": 100, "pk2": 100, "pk3": 100},
 			votedProviders:          []string{"pk1", "pk2"},
@@ -88,7 +88,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 		},
 		{
 			name:                    "75% votes, expects true",
-			queryParams:             &blockWithHashTrimmed,
+			block:                   &blockWithHashTrimmed,
 			allFpPks:                []string{"pk1", "pk2"},
 			fpPowers:                map[string]uint64{"pk1": 100, "pk2": 300},
 			votedProviders:          []string{"pk2"},
@@ -98,7 +98,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 		},
 		{
 			name:                    "100% votes, expects true",
-			queryParams:             &blockWithHashTrimmed,
+			block:                   &blockWithHashTrimmed,
 			allFpPks:                []string{"pk1", "pk2", "pk3"},
 			fpPowers:                map[string]uint64{"pk1": 100, "pk2": 100, "pk3": 100},
 			votedProviders:          []string{"pk1", "pk2", "pk3"},
@@ -108,7 +108,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 		},
 		{
 			name:                    "untrimmed block hash in input params, 75% votes, expects true",
-			queryParams:             &blockWithHashUntrimmed,
+			block:                   &blockWithHashUntrimmed,
 			allFpPks:                []string{"pk1", "pk2", "pk3", "pk4"},
 			fpPowers:                map[string]uint64{"pk1": 100, "pk2": 100, "pk3": 100, "pk4": 100},
 			votedProviders:          []string{"pk1", "pk2", "pk3"},
@@ -118,7 +118,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 		},
 		{
 			name:                    "zero voting power, 100% votes, expects false",
-			queryParams:             &blockWithHashUntrimmed,
+			block:                   &blockWithHashUntrimmed,
 			allFpPks:                []string{"pk1", "pk2", "pk3"},
 			fpPowers:                map[string]uint64{"pk1": 0, "pk2": 0, "pk3": 0},
 			votedProviders:          []string{"pk1", "pk2", "pk3"},
@@ -128,7 +128,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 		},
 		{
 			name:                    "Btc staking not activated, 100% votes, expects false",
-			queryParams:             &blockWithHashUntrimmed,
+			block:                   &blockWithHashUntrimmed,
 			allFpPks:                []string{"pk1", "pk2", "pk3"},
 			fpPowers:                map[string]uint64{"pk1": 100, "pk2": 100, "pk3": 100},
 			votedProviders:          []string{"pk1", "pk2", "pk3"},
@@ -148,7 +148,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 			mockCwClient.EXPECT().QueryConsumerId().Return(consumerChainID, nil).Times(1)
 			mockBTCClient := mocks.NewMockIBitcoinClient(ctl)
 			mockBTCClient.EXPECT().
-				GetBlockHeightByTimestamp(tc.queryParams.BlockTimestamp).
+				GetBlockHeightByTimestamp(tc.block.BlockTimestamp).
 				Return(BTCHeight, nil).
 				Times(1)
 
@@ -176,13 +176,13 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 				}
 			}
 
-			mockSdkClient := &SdkClient{
+			mockFinalityGadget := &FinalityGadget{
 				cwClient:  mockCwClient,
 				bbnClient: mockBBNClient,
 				btcClient: mockBTCClient,
 			}
 
-			res, err := mockSdkClient.QueryIsBlockBabylonFinalized(*tc.queryParams)
+			res, err := mockFinalityGadget.QueryIsBlockBabylonFinalized(tc.block)
 			require.Equal(t, tc.expectResult, res)
 			require.Equal(t, tc.expectedErr, err)
 		})
@@ -205,16 +205,16 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 		name         string
 		expectedErr  error
 		expectResult *uint64
-		queryBlocks  []*cwclient.L2Block
+		queryBlocks  []*types.Block
 	}{
-		{"empty query blocks", fmt.Errorf("no blocks provided"), nil, []*cwclient.L2Block{}},
-		{"single block with finalized", nil, &blockA.BlockHeight, []*cwclient.L2Block{&blockA}},
-		{"single block with error", fmt.Errorf("RPC rate limit error"), nil, []*cwclient.L2Block{&blockD}},
-		{"non-consecutive blocks", fmt.Errorf("blocks are not consecutive"), nil, []*cwclient.L2Block{&blockA, &blockD}},
-		{"the first two blocks are finalized and the last block has error", fmt.Errorf("RPC rate limit error"), &blockB.BlockHeight, []*cwclient.L2Block{&blockA, &blockB, &blockC}},
-		{"all consecutive blocks are finalized", nil, &blockB.BlockHeight, []*cwclient.L2Block{&blockA, &blockB}},
-		{"none of the block is finalized and the first block has error", fmt.Errorf("RPC rate limit error"), nil, []*cwclient.L2Block{&blockD, &blockE}},
-		{"none of the block is finalized and the second block has error", nil, nil, []*cwclient.L2Block{&blockF, &blockG}},
+		{"empty query blocks", fmt.Errorf("no blocks provided"), nil, []*types.Block{}},
+		{"single block with finalized", nil, &blockA.BlockHeight, []*types.Block{&blockA}},
+		{"single block with error", fmt.Errorf("RPC rate limit error"), nil, []*types.Block{&blockD}},
+		{"non-consecutive blocks", fmt.Errorf("blocks are not consecutive"), nil, []*types.Block{&blockA, &blockD}},
+		{"the first two blocks are finalized and the last block has error", fmt.Errorf("RPC rate limit error"), &blockB.BlockHeight, []*types.Block{&blockA, &blockB, &blockC}},
+		{"all consecutive blocks are finalized", nil, &blockB.BlockHeight, []*types.Block{&blockA, &blockB}},
+		{"none of the block is finalized and the first block has error", fmt.Errorf("RPC rate limit error"), nil, []*types.Block{&blockD, &blockE}},
+		{"none of the block is finalized and the second block has error", nil, nil, []*types.Block{&blockF, &blockG}},
 	}
 
 	for _, tc := range testCases {
@@ -225,7 +225,7 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 			mockCwClient := mocks.NewMockICosmWasmClient(ctl)
 			mockBTCClient := mocks.NewMockIBitcoinClient(ctl)
 			mockBBNClient := mocks.NewMockIBabylonClient(ctl)
-			mockSdkClient := &SdkClient{
+			mockFinalityGadget := &FinalityGadget{
 				cwClient:  mockCwClient,
 				bbnClient: mockBBNClient,
 				btcClient: mockBTCClient,
@@ -253,7 +253,7 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 			mockBBNClient.EXPECT().QueryAllFpBtcPubKeys("consumer-chain-id").Return([]string{"pk1", "pk2", "pk3"}, nil).AnyTimes()
 			mockBBNClient.EXPECT().QueryMultiFpPower([]string{"pk1", "pk2", "pk3"}, gomock.Any()).Return(map[string]uint64{"pk1": 100, "pk2": 200, "pk3": 300}, nil).AnyTimes()
 
-			res, err := mockSdkClient.QueryBlockRangeBabylonFinalized(tc.queryBlocks)
+			res, err := mockFinalityGadget.QueryBlockRangeBabylonFinalized(tc.queryBlocks)
 			require.Equal(t, tc.expectResult, res)
 			require.Equal(t, tc.expectedErr, err)
 		})

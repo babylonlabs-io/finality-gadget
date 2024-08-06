@@ -6,13 +6,14 @@ import (
 	"time"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	"github.com/babylonlabs-io/finality-gadget/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 )
 
 // hardcode the timeout to 20 seconds. We can expose it to the params once needed
 const DefaultTimeout = 20 * time.Second
 
-func createBlockVotersQueryData(queryParams *L2Block) ([]byte, error) {
+func createBlockVotersQueryData(queryParams *types.Block) ([]byte, error) {
 	queryData := ContractQueryMsgs{
 		BlockVoters: &blockVotersQuery{
 			Height: queryParams.BlockHeight,
@@ -68,7 +69,7 @@ func createIsEnabledQueryData() ([]byte, error) {
 }
 
 // querySmartContractState queries the smart contract state given the contract address and query data
-func (cwClient *Client) querySmartContractState(
+func (cwClient *CosmWasmClient) querySmartContractState(
 	queryData []byte,
 ) (*wasmtypes.QuerySmartContractStateResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)

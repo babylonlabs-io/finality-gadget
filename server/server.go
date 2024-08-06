@@ -7,9 +7,9 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/babylonlabs-io/finality-gadget/config"
 	"github.com/babylonlabs-io/finality-gadget/db"
-	"github.com/babylonlabs-io/finality-gadget/finalitygadget"
-	"github.com/babylonlabs-io/finality-gadget/finalitygadget/config"
+	"github.com/babylonlabs-io/finality-gadget/types"
 	"github.com/lightningnetwork/lnd/signal"
 
 	"google.golang.org/grpc"
@@ -29,7 +29,7 @@ type Server struct {
 }
 
 // NewEOTSManagerServer creates a new server with the given config.
-func NewFinalityGadgetServer(cfg *config.Config, db *db.BBoltHandler, fg finalitygadget.IFinalityGadget, sig signal.Interceptor) *Server {
+func NewFinalityGadgetServer(cfg *config.Config, db *db.BBoltHandler, fg types.IFinalityGadget, sig signal.Interceptor) *Server {
 	return &Server{
 		cfg:         cfg,
 		rpcServer:   newRPCServer(fg),

@@ -1,8 +1,6 @@
-package client
+package types
 
-import "github.com/babylonlabs-io/finality-gadget/sdk/cwclient"
-
-type ISdkClient interface {
+type IFinalityGadget interface {
 	/* QueryIsBlockBabylonFinalized checks if the given L2 block is finalized by the Babylon finality gadget
 	 *
 	 * - if the finality gadget is not enabled, always return true
@@ -19,7 +17,7 @@ type ISdkClient interface {
 	 *   - calculate voted voting power
 	 *   - check if the voted voting power is more than 2/3 of the total voting power
 	 */
-	QueryIsBlockBabylonFinalized(queryParams cwclient.L2Block) (bool, error)
+	QueryIsBlockBabylonFinalized(block *Block) (bool, error)
 
 	/* QueryBlockRangeBabylonFinalized searches for a row of consecutive finalized blocks in the block range, and returns
 	 * the last finalized block height
@@ -35,7 +33,7 @@ type ISdkClient interface {
 	 * Note: caller needs to make sure the given queryBlocks are consecutive (we don't check hashes inside this method)
 	 * and start from low to high
 	 */
-	QueryBlockRangeBabylonFinalized(queryBlocks []*cwclient.L2Block) (*uint64, error)
+	QueryBlockRangeBabylonFinalized(queryBlocks []*Block) (*uint64, error)
 
 	/* QueryBtcStakingActivatedTimestamp returns the timestamp when the BTC staking is activated
 	 *
@@ -54,4 +52,16 @@ type ISdkClient interface {
 	 * returns math.MaxUint64, ErrBtcStakingNotActivated if the BTC staking is not activated
 	 */
 	QueryBtcStakingActivatedTimestamp() (uint64, error)
+
+	// InsertBlock inserts a btc finalized block into the local db
+	InsertBlock(block *Block) error
+
+	// GetBlockStatusByHeight returns the btc finalization status of a block at given height by querying the local db
+	GetBlockStatusByHeight(height uint64) (bool, error)
+
+	// GetBlockStatusByHash returns the btc finalization status of a block at given hash by querying the local db
+	GetBlockStatusByHash(hash string) (bool, error)
+
+	// GetLatestBlock returns the latest finalized block by querying the local db
+	GetLatestBlock() (*Block, error)
 }

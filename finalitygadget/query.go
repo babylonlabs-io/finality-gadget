@@ -1,12 +1,34 @@
-package client
+package finalitygadget
 
 import (
+	"context"
+	"encoding/hex"
 	"fmt"
 	"math"
+	"math/big"
 	"strings"
 
-	"github.com/babylonlabs-io/finality-gadget/sdk/cwclient"
+	"github.com/babylonlabs-io/finality-gadget/types"
+	ethrpc "github.com/ethereum/go-ethereum/rpc"
 )
+
+// Get last btc finalized block
+func (fg *FinalityGadget) getLatestFinalizedBlock() (*types.Block, error) {
+	return fg.getBlockByNumber(ethrpc.FinalizedBlockNumber.Int64())
+}
+
+// Get block by number
+func (fg *FinalityGadget) getBlockByNumber(blockNumber int64) (*types.Block, error) {
+	header, err := fg.l2Client.HeaderByNumber(context.Background(), big.NewInt(blockNumber))
+	if err != nil {
+		return nil, err
+	}
+	return &types.Block{
+		BlockHeight:    header.Number.Uint64(),
+		BlockHash:      hex.EncodeToString(header.Hash().Bytes()),
+		BlockTimestamp: header.Time,
+	}, nil
+}
 
 /* QueryIsBlockBabylonFinalized checks if the given L2 block is finalized by the Babylon finality gadget
  *
@@ -24,12 +46,10 @@ import (
  *   - calculate voted voting power
  *   - check if the voted voting power is more than 2/3 of the total voting power
  */
-func (sdkClient *SdkClient) QueryIsBlockBabylonFinalized(
-	queryParams cwclient.L2Block,
-) (bool, error) {
+func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(block *types.Block) (bool, error) {
 	// check if the finality gadget is enabled
 	// if not, always return true to pass through op derivation pipeline
-	isEnabled, err := sdkClient.cwClient.QueryIsEnabled()
+	isEnabled, err := fg.cwClient.QueryIsEnabled()
 	if err != nil {
 		return false, err
 	}
@@ -38,22 +58,22 @@ func (sdkClient *SdkClient) QueryIsBlockBabylonFinalized(
 	}
 
 	// trim prefix 0x for the L2 block hash
-	queryParams.BlockHash = strings.TrimPrefix(queryParams.BlockHash, "0x")
+	block.BlockHash = strings.TrimPrefix(block.BlockHash, "0x")
 
 	// get all FPs pubkey for the consumer chain
-	allFpPks, err := sdkClient.queryAllFpBtcPubKeys()
+	allFpPks, err := fg.queryAllFpBtcPubKeys()
 	if err != nil {
 		return false, err
 	}
 
 	// convert the L2 timestamp to BTC height
-	btcblockHeight, err := sdkClient.btcClient.GetBlockHeightByTimestamp(queryParams.BlockTimestamp)
+	btcblockHeight, err := fg.btcClient.GetBlockHeightByTimestamp(block.BlockTimestamp)
 	if err != nil {
 		return false, err
 	}
 
 	// check whether the btc staking is actived
-	earliestDelHeight, err := sdkClient.bbnClient.QueryEarliestActiveDelBtcHeight(allFpPks)
+	earliestDelHeight, err := fg.bbnClient.QueryEarliestActiveDelBtcHeight(allFpPks)
 	if err != nil {
 		return false, err
 	}
@@ -62,7 +82,7 @@ func (sdkClient *SdkClient) QueryIsBlockBabylonFinalized(
 	}
 
 	// get all FPs voting power at this BTC height
-	allFpPower, err := sdkClient.bbnClient.QueryMultiFpPower(allFpPks, btcblockHeight)
+	allFpPower, err := fg.bbnClient.QueryMultiFpPower(allFpPks, btcblockHeight)
 	if err != nil {
 		return false, err
 	}
@@ -79,7 +99,7 @@ func (sdkClient *SdkClient) QueryIsBlockBabylonFinalized(
 	}
 
 	// get all FPs that voted this (L2 block height, L2 block hash) combination
-	votedFpPks, err := sdkClient.cwClient.QueryListOfVotedFinalityProviders(&queryParams)
+	votedFpPks, err := fg.cwClient.QueryListOfVotedFinalityProviders(block)
 	if err != nil {
 		return false, err
 	}
@@ -101,6 +121,18 @@ func (sdkClient *SdkClient) QueryIsBlockBabylonFinalized(
 	return true, nil
 }
 
+func (fg *FinalityGadget) GetBlockStatusByHeight(height uint64) (bool, error) {
+	return fg.db.GetBlockStatusByHeight(height)
+}
+
+func (fg *FinalityGadget) GetBlockStatusByHash(hash string) (bool, error) {
+	return fg.db.GetBlockStatusByHash(normalizeBlockHash(hash))
+}
+
+func (fg *FinalityGadget) GetLatestBlock() (*types.Block, error) {
+	return fg.db.GetLatestBlock()
+}
+
 /* QueryBlockRangeBabylonFinalized searches for a row of consecutive finalized blocks in the block range, and returns
  * the last finalized block height
  *
@@ -115,8 +147,8 @@ func (sdkClient *SdkClient) QueryIsBlockBabylonFinalized(
  * Note: caller needs to make sure the given queryBlocks are consecutive (we don't check hashes inside this method)
  * and start from low to high
  */
-func (sdkClient *SdkClient) QueryBlockRangeBabylonFinalized(
-	queryBlocks []*cwclient.L2Block,
+func (fg *FinalityGadget) QueryBlockRangeBabylonFinalized(
+	queryBlocks []*types.Block,
 ) (*uint64, error) {
 	if len(queryBlocks) == 0 {
 		return nil, fmt.Errorf("no blocks provided")
@@ -129,7 +161,7 @@ func (sdkClient *SdkClient) QueryBlockRangeBabylonFinalized(
 	}
 	var finalizedBlockHeight *uint64
 	for _, block := range queryBlocks {
-		isFinalized, err := sdkClient.QueryIsBlockBabylonFinalized(*block)
+		isFinalized, err := fg.QueryIsBlockBabylonFinalized(block)
 		if err != nil {
 			return finalizedBlockHeight, err
 		}
@@ -158,14 +190,14 @@ func (sdkClient *SdkClient) QueryBlockRangeBabylonFinalized(
  *
  * returns math.MaxUint64, ErrBtcStakingNotActivated if the BTC staking is not activated
  */
-func (sdkClient *SdkClient) QueryBtcStakingActivatedTimestamp() (uint64, error) {
-	allFpPks, err := sdkClient.queryAllFpBtcPubKeys()
+func (fg *FinalityGadget) QueryBtcStakingActivatedTimestamp() (uint64, error) {
+	allFpPks, err := fg.queryAllFpBtcPubKeys()
 	if err != nil {
 		return math.MaxUint64, err
 	}
 
 	// check whether the btc staking is actived
-	earliestDelHeight, err := sdkClient.bbnClient.QueryEarliestActiveDelBtcHeight(allFpPks)
+	earliestDelHeight, err := fg.bbnClient.QueryEarliestActiveDelBtcHeight(allFpPks)
 	if err != nil {
 		return math.MaxUint64, err
 	}
@@ -176,22 +208,22 @@ func (sdkClient *SdkClient) QueryBtcStakingActivatedTimestamp() (uint64, error) 
 	}
 
 	// get the timestamp of the BTC height
-	btcBlockTimestamp, err := sdkClient.btcClient.GetBlockTimestampByHeight(earliestDelHeight)
+	btcBlockTimestamp, err := fg.btcClient.GetBlockTimestampByHeight(earliestDelHeight)
 	if err != nil {
 		return math.MaxUint64, err
 	}
 	return btcBlockTimestamp, nil
 }
 
-func (sdkClient *SdkClient) queryAllFpBtcPubKeys() ([]string, error) {
+func (fg *FinalityGadget) queryAllFpBtcPubKeys() ([]string, error) {
 	// get the consumer chain id
-	consumerId, err := sdkClient.cwClient.QueryConsumerId()
+	consumerId, err := fg.cwClient.QueryConsumerId()
 	if err != nil {
 		return nil, err
 	}
 
 	// get all the FPs pubkey for the consumer chain
-	allFpPks, err := sdkClient.bbnClient.QueryAllFpBtcPubKeys(consumerId)
+	allFpPks, err := fg.bbnClient.QueryAllFpBtcPubKeys(consumerId)
 	if err != nil {
 		return nil, err
 	}

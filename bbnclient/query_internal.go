@@ -4,7 +4,7 @@ import btcstakingtypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 
 // we implemented exact logic as in GetStatus
 // https://github.com/babylonlabs-io/babylon-private/blob/3d8f190c9b0c0795f6546806e3b8582de716cd60/x/btcstaking/types/btc_delegation.go#L90-L111
-func (bbnClient *Client) isDelegationActive(
+func (bbnClient *BabylonClient) isDelegationActive(
 	btcDel *btcstakingtypes.BTCDelegationResponse,
 	btcHeight uint64,
 ) (bool, error) {

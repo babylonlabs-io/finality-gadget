@@ -1,19 +1,64 @@
 # Babylon Finality Gadget
 
-We proposed a [Babylon finality gadget](https://github.com/ethereum-optimism/specs/discussions/218) for OP-stack chains. The finality gadget depends on the EOTS data in a CosmWasm contract deployed on the Babylon chain. 
+The Babylon Finality Gadget is a program that can be run by users of OP stack L2s to track consecutive L2 block quorum and query the BTC-finalised status of blocks.
 
-We have modified the OP-stack codebase to use the SDK in this codebase for additional finalty checks.
+See our [proposal](https://github.com/ethereum-optimism/specs/discussions/218) on Optimism for more details.
 
-In the future, we will also move the CosmWasm contract code here.
+## Downloading and configuring the daemon
 
-## Dependencies
+To get started, clone the repository.
 
-The SDK requires a BTC RPC client defined in https://github.com/btcsuite/btcd/tree/master/rpcclient. We wrap it in our own BTC Client to make it easier to use.
-
-## Usages
-
-To run tests
-
+```bash
+git clone https://github.com/babylonlabs-io/finality-gadget.git
 ```
+
+Configure the `config.toml` file with the following content:
+
+```toml
+L2RPCHost = # RPC URL of OP stack L2 chain
+BitcoinRPCHost = # Bitcoin RPC URL
+DBFilePath = # Path to local bbolt DB file
+FGContractAddress = # Babylon finality gadget contract address
+BBNChainID = # Babylon chain id
+BBNRPCAddress = # Babylon RPC host URL
+GRPCServerPort = # Port to run the gRPC server on
+PollInterval = # Interval to poll for new L2 blocks
+```
+
+### Building and installing the binary
+
+At the top-level directory of the project
+
+```bash
+make install
+```
+
+The above command will build and install the `opfgd` binary to
+`$GOPATH/bin`:
+
+- `eotsd`: The daemon program for the EOTS manager.
+- `fpd`: The daemon program for the finality-provider with overall commands.
+
+If your shell cannot find the installed binaries, make sure `$GOPATH/bin` is in
+the `$PATH` of your shell. Usually these commands will do the job
+
+```bash
+export PATH=$HOME/go/bin:$PATH
+echo 'export PATH=$HOME/go/bin:$PATH' >> ~/.profile
+```
+
+### Running the daemon
+
+To start the daemon, run:
+
+```bash
+opfgd start --cfg config.toml
+```
+
+### Running tests
+
+To run tests:
+
+```bash
 make test
 ```
