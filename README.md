@@ -18,6 +18,7 @@ See our [proposal](https://github.com/ethereum-optimism/specs/discussions/218) o
 - `cwclient` : client to query CosmWasm smart contract deployed on BabylonChain
 - `db` : handler for local database to store finalized block state
 - `types` : common types
+- `log` : custom logger
 - `testutil` : test utilities and helpers
 
 ## Instructions
