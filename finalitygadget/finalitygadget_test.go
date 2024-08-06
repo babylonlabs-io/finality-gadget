@@ -428,16 +428,12 @@ func TestGetBlockByHashForNonExistentBlock(t *testing.T) {
 }
 
 func TestGetBlockStatusByHeight(t *testing.T) {
-	block := &types.Block{
-		BlockHeight:    1,
-		BlockHash:      "0x123",
-		BlockTimestamp: 1000,
-	}
+	blockHeight := uint64(1)
 
 	// mock db and finality gadget
 	ctl := gomock.NewController(t)
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
-	mockDbHandler.EXPECT().GetBlockStatusByHeight(block.BlockHeight).Return(true, nil).Times(1)
+	mockDbHandler.EXPECT().GetBlockStatusByHeight(blockHeight).Return(true, nil).Times(1)
 
 	mockFinalityGadget := &FinalityGadget{
 		db: mockDbHandler,

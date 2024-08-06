@@ -33,13 +33,12 @@ type FinalityGadget struct {
 	cwClient  cwclient.ICosmWasmClient
 	l2Client  ethl2client.IEthL2Client
 
-	db    db.IDatabaseHandler
-	mutex sync.Mutex
+	db     db.IDatabaseHandler
+	logger *zap.Logger
+	mutex  sync.Mutex
 
 	pollInterval time.Duration
 	currHeight   uint64
-
-	logger *zap.Logger
 }
 
 //////////////////////////////
