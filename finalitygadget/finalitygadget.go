@@ -199,7 +199,7 @@ func (fg *FinalityGadget) InsertBlock(block *types.Block) error {
 	// Store block in DB
 	err := fg.Db.InsertBlock(&types.Block{
 		BlockHeight:    block.BlockHeight,
-		BlockHash:      block.BlockHash,
+		BlockHash:      normalizeBlockHash(block.BlockHash),
 		BlockTimestamp: block.BlockTimestamp,
 	})
 	if err != nil {
@@ -218,7 +218,7 @@ func (fg *FinalityGadget) GetBlockStatusByHeight(height uint64) (bool, error) {
 }
 
 func (fg *FinalityGadget) GetBlockStatusByHash(hash string) (bool, error) {
-	return fg.Db.GetBlockStatusByHash(hash)
+	return fg.Db.GetBlockStatusByHash(normalizeBlockHash(hash))
 }
 
 func (fg *FinalityGadget) GetLatestBlock() (*types.Block, error) {
