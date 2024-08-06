@@ -92,7 +92,7 @@ func TestGetBlockByHeightForNonExistentBlock(t *testing.T) {
 
 	block, err := handler.GetBlockByHeight(1)
 	assert.Nil(t, block)
-	assert.Equal(t, ErrBlockNotFound, err)
+	assert.Equal(t, types.ErrBlockNotFound, err)
 }
 
 func TestGetBlockByHash(t *testing.T) {
@@ -122,7 +122,7 @@ func TestGetBlockByHashForNonExistentBlock(t *testing.T) {
 
 	block, err := handler.GetBlockByHash("0x123")
 	assert.Nil(t, block)
-	assert.Equal(t, ErrBlockNotFound, err)
+	assert.Equal(t, types.ErrBlockNotFound, err)
 }
 
 func TestGetBlockStatusByHeight(t *testing.T) {

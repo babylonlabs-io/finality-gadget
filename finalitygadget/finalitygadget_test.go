@@ -1,6 +1,7 @@
 package finalitygadget
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -124,7 +125,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 			votedProviders:          []string{"pk1", "pk2", "pk3"},
 			stakingActivationHeight: BTCHeight - 1,
 			expectResult:            false,
-			expectedErr:             ErrNoFpHasVotingPower,
+			expectedErr:             types.ErrNoFpHasVotingPower,
 		},
 		{
 			name:                    "Btc staking not activated, 100% votes, expects false",
@@ -134,7 +135,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 			votedProviders:          []string{"pk1", "pk2", "pk3"},
 			stakingActivationHeight: BTCHeight + 1,
 			expectResult:            false,
-			expectedErr:             ErrBtcStakingNotActivated,
+			expectedErr:             types.ErrBtcStakingNotActivated,
 		},
 	}
 
@@ -162,13 +163,13 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 				Return(tc.stakingActivationHeight, nil).
 				Times(1)
 
-			if tc.expectedErr != ErrBtcStakingNotActivated {
+			if !errors.Is(tc.expectedErr, types.ErrBtcStakingNotActivated) {
 				mockBBNClient.EXPECT().
 					QueryMultiFpPower(tc.allFpPks, BTCHeight).
 					Return(tc.fpPowers, nil).
 					Times(1)
 
-				if tc.expectedErr != ErrNoFpHasVotingPower {
+				if !errors.Is(tc.expectedErr, types.ErrNoFpHasVotingPower) {
 					mockCwClient.EXPECT().
 						QueryListOfVotedFinalityProviders(&blockWithHashTrimmed).
 						Return(tc.votedProviders, tc.expectedErr).

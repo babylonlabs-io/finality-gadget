@@ -148,7 +148,7 @@ func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(block *types.Block) (bool
 		return false, err
 	}
 	if btcblockHeight < earliestDelHeight {
-		return false, ErrBtcStakingNotActivated
+		return false, types.ErrBtcStakingNotActivated
 	}
 
 	// get all FPs voting power at this BTC height
@@ -165,7 +165,7 @@ func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(block *types.Block) (bool
 
 	// no FP has voting power for the consumer chain
 	if totalPower == 0 {
-		return false, ErrNoFpHasVotingPower
+		return false, types.ErrNoFpHasVotingPower
 	}
 
 	// get all FPs that voted this (L2 block height, L2 block hash) combination
@@ -262,7 +262,7 @@ func (fg *FinalityGadget) QueryBtcStakingActivatedTimestamp() (uint64, error) {
 
 	// not activated yet
 	if earliestDelHeight == math.MaxUint64 {
-		return math.MaxUint64, ErrBtcStakingNotActivated
+		return math.MaxUint64, types.ErrBtcStakingNotActivated
 	}
 
 	// get the timestamp of the BTC height

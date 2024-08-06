@@ -29,10 +29,6 @@ const (
 	latestBlockKey     = "latest"
 )
 
-var (
-	ErrBlockNotFound = errors.New("block not found")
-)
-
 //////////////////////////////
 // CONSTRUCTOR
 //////////////////////////////
@@ -129,7 +125,7 @@ func (bb *BBoltHandler) GetBlockByHeight(height uint64) (*types.Block, error) {
 		b := tx.Bucket([]byte(blocksBucket))
 		v := b.Get(bb.itob(height))
 		if v == nil {
-			return ErrBlockNotFound
+			return types.ErrBlockNotFound
 		}
 		return json.Unmarshal(v, &block)
 	})
@@ -146,7 +142,7 @@ func (bb *BBoltHandler) GetBlockByHash(hash string) (*types.Block, error) {
 		b := tx.Bucket([]byte(blockHeightsBucket))
 		v := b.Get([]byte(hash))
 		if v == nil {
-			return ErrBlockNotFound
+			return types.ErrBlockNotFound
 		}
 		blockHeight = bb.btoi(v)
 		return nil
@@ -160,7 +156,7 @@ func (bb *BBoltHandler) GetBlockByHash(hash string) (*types.Block, error) {
 func (bb *BBoltHandler) GetBlockStatusByHeight(height uint64) (bool, error) {
 	_, err := bb.GetBlockByHeight(height)
 	if err != nil {
-		if errors.Is(err, ErrBlockNotFound) {
+		if errors.Is(err, types.ErrBlockNotFound) {
 			return false, nil
 		}
 		return false, err
@@ -175,13 +171,13 @@ func (bb *BBoltHandler) GetBlockStatusByHash(hash string) (bool, error) {
 		b := tx.Bucket([]byte(blockHeightsBucket))
 		res := b.Get([]byte(hash))
 		if len(res) == 0 {
-			return ErrBlockNotFound
+			return types.ErrBlockNotFound
 		}
 		blockHeight = bb.btoi(res)
 		return nil
 	})
 	if err != nil {
-		if errors.Is(err, ErrBlockNotFound) {
+		if errors.Is(err, types.ErrBlockNotFound) {
 			return false, nil
 		}
 		return false, err
@@ -198,14 +194,14 @@ func (bb *BBoltHandler) GetLatestBlock() (*types.Block, error) {
 		b := tx.Bucket([]byte(latestBlockBucket))
 		v := b.Get([]byte(latestBlockKey))
 		if v == nil {
-			return ErrBlockNotFound
+			return types.ErrBlockNotFound
 		}
 		latestBlockHeight = bb.btoi(v)
 		return nil
 	})
 	if err != nil {
 		// If no latest block has been stored yet, return empty block (block 0)
-		if errors.Is(err, ErrBlockNotFound) {
+		if errors.Is(err, types.ErrBlockNotFound) {
 			return &types.Block{
 				BlockHeight:    0,
 				BlockHash:      "",
