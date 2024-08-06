@@ -19,6 +19,8 @@ type BBoltHandler struct {
 	db *bolt.DB
 }
 
+var _ IDatabaseHandler = &BBoltHandler{}
+
 const (
 	blocksBucket       = "blocks"
 	blockHeightsBucket = "block_heights"
@@ -29,6 +31,10 @@ const (
 var (
 	ErrBlockNotFound = errors.New("block not found")
 )
+
+//////////////////////////////
+// CONSTRUCTOR
+//////////////////////////////
 
 func NewBBoltHandler(path string) (*BBoltHandler, error) {
 	// 0600 = read/write permission for owner only
@@ -43,7 +49,11 @@ func NewBBoltHandler(path string) (*BBoltHandler, error) {
 	}, nil
 }
 
-func (bb *BBoltHandler) TryCreateInitialBuckets() error {
+//////////////////////////////
+// METHODS
+//////////////////////////////
+
+func (bb *BBoltHandler) CreateInitialSchema() error {
 	log.Printf("Initialising DB...")
 	return bb.db.Update(func(tx *bolt.Tx) error {
 		buckets := []string{blocksBucket, blockHeightsBucket, latestBlockBucket}
@@ -54,14 +64,6 @@ func (bb *BBoltHandler) TryCreateInitialBuckets() error {
 		}
 		return nil
 	})
-}
-
-func tryCreateBucket(tx *bolt.Tx, bucketName string) error {
-	_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
-	if err != nil {
-		log.Fatalf("Error creating bucket: %v\n", err)
-	}
-	return err
 }
 
 func (bb *BBoltHandler) InsertBlock(block *types.Block) error {
@@ -210,6 +212,18 @@ func (bb *BBoltHandler) DeleteDB() error {
 
 func (bb *BBoltHandler) Close() error {
 	return bb.db.Close()
+}
+
+//////////////////////////////
+// INTERNAL
+//////////////////////////////
+
+func tryCreateBucket(tx *bolt.Tx, bucketName string) error {
+	_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
+	if err != nil {
+		log.Fatalf("Error creating bucket: %v\n", err)
+	}
+	return err
 }
 
 func itob(v uint64) []byte {

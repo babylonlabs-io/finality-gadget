@@ -23,7 +23,7 @@ func setupDB(t *testing.T) (*BBoltHandler, func()) {
 	}
 
 	// Create initial buckets
-	err = db.TryCreateInitialBuckets()
+	err = db.CreateInitialSchema()
 	if err != nil {
 		t.Fatalf("Failed to create initial buckets: %v", err)
 	}

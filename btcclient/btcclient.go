@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/avast/retry-go/v4"
-	"github.com/babylonlabs-io/finality-gadget/types"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/wire"
@@ -17,7 +16,11 @@ type BitcoinClient struct {
 	cfg    *BTCConfig
 }
 
-var _ types.IBitcoinClient = &BitcoinClient{}
+var _ IBitcoinClient = &BitcoinClient{}
+
+//////////////////////////////
+// CONSTRUCTOR
+//////////////////////////////
 
 func NewBitcoinClient(cfg *BTCConfig, logger *zap.Logger) (*BitcoinClient, error) {
 	c, err := rpcclient.New(cfg.ToConnConfig(), nil)
@@ -31,6 +34,10 @@ func NewBitcoinClient(cfg *BTCConfig, logger *zap.Logger) (*BitcoinClient, error
 		cfg:    cfg,
 	}, nil
 }
+
+//////////////////////////////
+// METHODS
+//////////////////////////////
 
 type BlockCountResponse struct {
 	count int64
@@ -131,6 +138,10 @@ func (c *BitcoinClient) GetBlockTimestampByHeight(height uint64) (uint64, error)
 
 	return uint64(blockHeader.Timestamp.Unix()), nil
 }
+
+//////////////////////////////
+// INTERNAL
+//////////////////////////////
 
 func clientCallWithRetry[T any](
 	call retry.RetryableFuncWithData[*T], logger *zap.Logger, cfg *BTCConfig,

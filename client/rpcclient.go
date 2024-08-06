@@ -14,11 +14,11 @@ import (
 type FinalityGadgetGrpcClient struct {
 	client proto.FinalityGadgetClient
 	conn   *grpc.ClientConn
-	db     *db.BBoltHandler
+	db     db.IDatabaseHandler
 }
 
 func NewFinalityGadgetGrpcClient(
-	db *db.BBoltHandler,
+	db db.IDatabaseHandler,
 	remoteAddr string,
 ) (*FinalityGadgetGrpcClient, error) {
 	conn, err := grpc.NewClient(remoteAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))

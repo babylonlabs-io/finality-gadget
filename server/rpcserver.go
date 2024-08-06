@@ -5,6 +5,7 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/babylonlabs-io/finality-gadget/finalitygadget"
 	"github.com/babylonlabs-io/finality-gadget/proto"
 	"github.com/babylonlabs-io/finality-gadget/types"
 )
@@ -14,12 +15,12 @@ import (
 type rpcServer struct {
 	proto.UnimplementedFinalityGadgetServer
 
-	fg types.IFinalityGadget
+	fg finalitygadget.IFinalityGadget
 }
 
 // newRPCServer creates a new RPC sever from the set of input dependencies.
 func newRPCServer(
-	fg types.IFinalityGadget,
+	fg finalitygadget.IFinalityGadget,
 ) *rpcServer {
 	return &rpcServer{
 		fg: fg,

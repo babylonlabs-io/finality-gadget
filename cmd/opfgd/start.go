@@ -53,7 +53,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to create DB handler: %w", err)
 	}
 	defer db.Close()
-	err = db.TryCreateInitialBuckets()
+	err = db.CreateInitialSchema()
 	if err != nil {
 		return fmt.Errorf("create initial buckets error: %w", err)
 	}
