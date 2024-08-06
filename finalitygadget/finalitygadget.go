@@ -273,6 +273,14 @@ func (fg *FinalityGadget) QueryBtcStakingActivatedTimestamp() (uint64, error) {
 	return btcBlockTimestamp, nil
 }
 
+func (fg *FinalityGadget) GetBlockByHeight(height uint64) (*types.Block, error) {
+	return fg.db.GetBlockByHeight(height)
+}
+
+func (fg *FinalityGadget) GetBlockByHash(hash string) (*types.Block, error) {
+	return fg.db.GetBlockByHash(normalizeBlockHash(hash))
+}
+
 func (fg *FinalityGadget) GetBlockStatusByHeight(height uint64) (bool, error) {
 	return fg.db.GetBlockStatusByHeight(height)
 }

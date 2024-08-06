@@ -58,6 +58,12 @@ type IFinalityGadget interface {
 	// InsertBlock inserts a btc finalized block into the local db
 	InsertBlock(block *types.Block) error
 
+	// GetBlockByHeight returns the btc finalized block at given height by querying the local db
+	GetBlockByHeight(height uint64) (*types.Block, error)
+
+	// GetBlockByHash returns the btc finalized block at given hash by querying the local db
+	GetBlockByHash(hash string) (*types.Block, error)
+
 	// GetBlockStatusByHeight returns the btc finalization status of a block at given height by querying the local db
 	GetBlockStatusByHeight(height uint64) (bool, error)
 
