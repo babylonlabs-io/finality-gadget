@@ -4,9 +4,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/babylonlabs-io/finality-gadget/log"
 	"github.com/babylonlabs-io/finality-gadget/types"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 )
 
 func setupDB(t *testing.T) (*BBoltHandler, func()) {
@@ -18,7 +18,7 @@ func setupDB(t *testing.T) (*BBoltHandler, func()) {
 	tempFile.Close()
 
 	// Create logger.
-	logger, err := zap.NewProduction()
+	logger, err := log.NewRootLogger("console", true)
 	if err != nil {
 		t.Fatalf("Failed to create logger: %v", err)
 	}

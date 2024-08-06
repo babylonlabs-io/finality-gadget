@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -16,6 +15,7 @@ import (
 	"github.com/babylonlabs-io/finality-gadget/config"
 	"github.com/babylonlabs-io/finality-gadget/db"
 	"github.com/babylonlabs-io/finality-gadget/finalitygadget"
+	"github.com/babylonlabs-io/finality-gadget/log"
 	"github.com/babylonlabs-io/finality-gadget/server"
 	sig "github.com/lightningnetwork/lnd/signal"
 )
@@ -49,7 +49,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	}
 
 	// Create logger
-	logger, err := zap.NewProduction()
+	logger, err := log.NewRootLogger("console", true)
 	if err != nil {
 		return fmt.Errorf("failed to create logger: %w", err)
 	}
@@ -68,7 +68,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	// Create finality gadget
 	fg, err := finalitygadget.NewFinalityGadget(cfg, db, logger)
 	if err != nil {
-		log.Fatalf("Error creating finality gadget: %v\n", err)
+		logger.Fatal("Error creating finality gadget", zap.Error(err))
 		return fmt.Errorf("error creating finality gadget: %v", err)
 	}
 
@@ -82,7 +82,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	go func() {
 		err = srv.RunUntilShutdown()
 		if err != nil {
-			log.Fatalf("Finality gadget server error: %v\n", err)
+			logger.Fatal("Finality gadget server error", zap.Error(err))
 		}
 	}()
 
@@ -90,7 +90,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	hostAddr := "localhost:" + cfg.GRPCServerPort
 	client, err := rpcclient.NewFinalityGadgetGrpcClient(db, hostAddr)
 	if err != nil {
-		log.Fatalf("Error creating grpc client: %v\n", err)
+		logger.Fatal("Error creating grpc client", zap.Error(err))
 		return fmt.Errorf("error creating grpc client: %v", err)
 	}
 
@@ -101,7 +101,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	// Run finality gadget in a separate goroutine
 	go func() {
 		if err := fg.ProcessBlocks(context.Background()); err != nil {
-			log.Fatalf("Error processing blocks: %v\n", err)
+			logger.Fatal("Error processing blocks", zap.Error(err))
 		}
 	}()
 
@@ -112,9 +112,9 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	}
 
 	// Call Close method when interrupt signal is received
-	log.Printf("Closing finality gadget server...")
+	logger.Info("Closing finality gadget server...")
 	if err := client.Close(); err != nil {
-		log.Fatalf("Error stopping grpc client: %v\n", err)
+		logger.Fatal("Error closing grpc client", zap.Error(err))
 		return err
 	}
 	fg.Close()
