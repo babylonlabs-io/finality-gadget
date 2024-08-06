@@ -139,6 +139,24 @@ func (bb *BBoltHandler) GetBlockByHeight(height uint64) (*types.Block, error) {
 	return &block, nil
 }
 
+func (bb *BBoltHandler) GetBlockByHash(hash string) (*types.Block, error) {
+	// Fetch block number corresponding to hash
+	var blockHeight uint64
+	err := bb.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(blockHeightsBucket))
+		v := b.Get([]byte(hash))
+		if v == nil {
+			return ErrBlockNotFound
+		}
+		blockHeight = bb.btoi(v)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return bb.GetBlockByHeight(blockHeight)
+}
+
 func (bb *BBoltHandler) GetBlockStatusByHeight(height uint64) (bool, error) {
 	_, err := bb.GetBlockByHeight(height)
 	if err != nil {

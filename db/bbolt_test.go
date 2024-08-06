@@ -95,6 +95,36 @@ func TestGetBlockByHeightForNonExistentBlock(t *testing.T) {
 	assert.Equal(t, ErrBlockNotFound, err)
 }
 
+func TestGetBlockByHash(t *testing.T) {
+	handler, cleanup := setupDB(t)
+	defer cleanup()
+
+	// Insert a block
+	block := &types.Block{
+		BlockHeight:    1,
+		BlockHash:      "0x123",
+		BlockTimestamp: 1000,
+	}
+	err := handler.InsertBlock(block)
+	assert.NoError(t, err)
+
+	// Retrieve block by hash
+	retrievedBlock, err := handler.GetBlockByHash(block.BlockHash)
+	assert.NoError(t, err)
+	assert.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
+	assert.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
+	assert.Equal(t, block.BlockTimestamp, retrievedBlock.BlockTimestamp)
+}
+
+func TestGetBlockByHashForNonExistentBlock(t *testing.T) {
+	handler, cleanup := setupDB(t)
+	defer cleanup()
+
+	block, err := handler.GetBlockByHash("0x123")
+	assert.Nil(t, block)
+	assert.Equal(t, ErrBlockNotFound, err)
+}
+
 func TestGetBlockStatusByHeight(t *testing.T) {
 	handler, cleanup := setupDB(t)
 	defer cleanup()
