@@ -1,8 +1,8 @@
-# Babylon Verifier Daemon
+# Babylon Finality Gadget
 
 This is a peripheral program that can be run by users of OP stack L2s to track consecutive L2 block quorum and query the BTC-finalised status of blocks via RESTful API endpoints.
 
-## Running the daemon
+## Downloading and configuring the daemon
 
 To get started, clone the repository.
 
@@ -23,19 +23,32 @@ GRPCServerPort = # Port to run the gRPC server on
 PollInterval = # Interval to poll for new L2 blocks
 ```
 
-To start the daemon, navigate to the `/cmd` directory:
+### Building and installing the binary
+
+At the top-level directory of the project
 
 ```bash
-cd cmd
-go run . start --cfg ../config.toml
+make install
 ```
 
-<!-- ## Running the Docker container -->
+The above command will build and install the `opfgd` binary to
+`$GOPATH/bin`:
 
-<!-- Make sure you have Docker installed locally. If you don't, you can download it [here](https://www.docker.com/products/docker-desktop).
+- `eotsd`: The daemon program for the EOTS manager.
+- `fpd`: The daemon program for the finality-provider with overall commands.
 
-To run the Docker container, run:
+If your shell cannot find the installed binaries, make sure `$GOPATH/bin` is in
+the `$PATH` of your shell. Usually these commands will do the job
 
 ```bash
-docker compose up
-``` -->
+export PATH=$HOME/go/bin:$PATH
+echo 'export PATH=$HOME/go/bin:$PATH' >> ~/.profile
+```
+
+### Running the daemon
+
+To start the daemon, run:
+
+```bash
+opfgd start --cfg config.toml
+```

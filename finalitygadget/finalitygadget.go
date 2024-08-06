@@ -54,7 +54,7 @@ func NewFinalityGadget(cfg *config.Config, db *db.BBoltHandler) (*FinalityGadget
 		return nil, fmt.Errorf("failed to create OPStack L2 client: %w", err)
 	}
 
-	// Create verifier
+	// Create finality gadget
 	return &FinalityGadget{
 		SdkClient:    sdkClient,
 		L2Client:     l2Client,
@@ -135,7 +135,7 @@ func (s *FinalityGadget) startService() error {
 	}
 
 	// Start service at block height
-	log.Printf("Starting verifier at block %d...\n", block.BlockHeight)
+	log.Printf("Starting finality gadget at block %d...\n", block.BlockHeight)
 
 	// Set the start block and curr finalized block in memory
 	s.startHeight = block.BlockHeight

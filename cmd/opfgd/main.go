@@ -11,9 +11,9 @@ import (
 
 func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:           "vrf",
-		Short:         "vrf - Babylon OP Finality Gadget Verifier",
-		Long:          `vrf is a daemon to track consecutive quorum and query the Babylon BTC block finalization status of OP stack chains.`,
+		Use:           "opfgd",
+		Short:         "opfgd - Babylon OP Finality Gadget",
+		Long:          `opfgd is a daemon to track consecutive quorum and query the Babylon BTC block finalization status of OP stack chains.`,
 		SilenceErrors: false,
 	}
 
@@ -32,7 +32,7 @@ func main() {
 	}
 
 	if err := cmd.Execute(); err != nil {
-		log.Fatalf("Error executing your vrf daemon: %s", err)
+		log.Fatalf("Error executing your opfgd daemon: %s", err)
 		os.Exit(1)
 	}
 }

@@ -27,9 +27,9 @@ const (
 func CommandStart() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:     "start",
-		Short:   "Start the finality gadget verifier daemon",
-		Long:    `Start the finality gadget verifier daemon. Note that a config.toml file is required to start the daemon.`,
-		Example: `vrf start --cfg config.toml`,
+		Short:   "Start the op finality gadget daemon",
+		Long:    `Start the op finality gadget daemon. Note that a config.toml file is required to start the daemon.`,
+		Example: `opfgd start --cfg config.toml`,
 		Args:    cobra.NoArgs,
 		RunE:    runEWithClientCtx(runStartCmd),
 	}
@@ -91,7 +91,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
-	// Run verifier in a separate goroutine
+	// Run finality gadget in a separate goroutine
 	go func() {
 		if err := fg.ProcessBlocks(context.Background()); err != nil {
 			log.Fatalf("Error processing blocks: %v\n", err)
