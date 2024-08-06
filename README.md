@@ -4,7 +4,25 @@ The Babylon Finality Gadget is a program that can be run by users of OP stack L2
 
 See our [proposal](https://github.com/ethereum-optimism/specs/discussions/218) on Optimism for more details.
 
-## Downloading and configuring the daemon
+## Modules
+
+- `cmd` : entry point for `opfgd` finality gadget daemon
+- `finalitygadget` : top-level umbrella module that exposes query methods and coordinates calls to other clients
+- `client` : grpc client to query the finality gadget
+- `server` : grpc server for the finality gadget
+- `proto` : protobuf definitions for the grpc server
+- `config` : configs for the finality gadget
+- `btcclient` : wrapper around Bitcoin RPC client
+- `bbnclient` : wrapper around Babylon RPC client
+- `ethl2client` : wrapper around OP stack L2 ETH RPC client
+- `cwclient` : client to query CosmWasm smart contract deployed on BabylonChain
+- `db` : handler for local database to store finalized block state
+- `types` : common types
+- `testutil` : test utilities and helpers
+
+## Instructions
+
+### Download and configuration
 
 To get started, clone the repository.
 
@@ -12,7 +30,7 @@ To get started, clone the repository.
 git clone https://github.com/babylonlabs-io/finality-gadget.git
 ```
 
-Configure the `config.toml` file with the following content:
+Configure the `config.toml` file:
 
 ```toml
 L2RPCHost = # RPC URL of OP stack L2 chain
@@ -34,10 +52,7 @@ make install
 ```
 
 The above command will build and install the `opfgd` binary to
-`$GOPATH/bin`:
-
-- `eotsd`: The daemon program for the EOTS manager.
-- `fpd`: The daemon program for the finality-provider with overall commands.
+`$GOPATH/bin`.
 
 If your shell cannot find the installed binaries, make sure `$GOPATH/bin` is in
 the `$PATH` of your shell. Usually these commands will do the job
