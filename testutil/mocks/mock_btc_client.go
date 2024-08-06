@@ -1,4 +1,4 @@
-package testutil
+package mocks
 
 import (
 	"github.com/babylonlabs-io/finality-gadget/btcclient"

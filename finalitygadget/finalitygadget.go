@@ -19,7 +19,7 @@ import (
 	"github.com/babylonlabs-io/finality-gadget/cwclient"
 	"github.com/babylonlabs-io/finality-gadget/db"
 	"github.com/babylonlabs-io/finality-gadget/ethl2client"
-	"github.com/babylonlabs-io/finality-gadget/testutil"
+	"github.com/babylonlabs-io/finality-gadget/testutil/mocks"
 	"github.com/babylonlabs-io/finality-gadget/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
@@ -60,7 +60,7 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler) (*FinalityGad
 	switch cfg.BBNChainID {
 	// TODO: once we set up our own local BTC devnet, we don't need to use this mock BTC client
 	case config.BabylonLocalnetChainID:
-		btcClient, err = testutil.NewMockBitcoinClient(btcConfig, logger)
+		btcClient, err = mocks.NewMockBitcoinClient(btcConfig, logger)
 	default:
 		btcClient, err = btcclient.NewBitcoinClient(btcConfig, logger)
 	}
