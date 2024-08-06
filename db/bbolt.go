@@ -94,6 +94,9 @@ func (bb *BBoltHandler) InsertBlock(block *types.Block) error {
 
 	// Get current latest block
 	latestBlock, err := bb.GetLatestBlock()
+	if latestBlock == nil {
+		latestBlock = &types.Block{BlockHeight: 0}
+	}
 	if err != nil {
 		bb.logger.Error("Error getting latest block", zap.Error(err))
 		return err
@@ -202,11 +205,7 @@ func (bb *BBoltHandler) GetLatestBlock() (*types.Block, error) {
 	if err != nil {
 		// If no latest block has been stored yet, return empty block (block 0)
 		if errors.Is(err, types.ErrBlockNotFound) {
-			return &types.Block{
-				BlockHeight:    0,
-				BlockHash:      "",
-				BlockTimestamp: 0,
-			}, nil
+			return nil, nil
 		}
 		bb.logger.Error("Error getting latest block", zap.Error(err))
 		return nil, err

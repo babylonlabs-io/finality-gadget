@@ -260,3 +260,329 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 		})
 	}
 }
+
+func TestInsertBlock(t *testing.T) {
+	block := &types.Block{
+		BlockHeight:    1,
+		BlockHash:      "0x123",
+		BlockTimestamp: 1000,
+	}
+
+	// mock db and finality gadget
+	ctl := gomock.NewController(t)
+	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
+	// note: the block hash is normalized before passing to the db handler
+	mockDbHandler.EXPECT().InsertBlock(normalizedBlock(block)).Return(nil).Times(1)
+	mockDbHandler.EXPECT().GetBlockByHeight(block.BlockHeight).Return(block, nil).Times(1)
+
+	mockFinalityGadget := &FinalityGadget{
+		db: mockDbHandler,
+	}
+
+	// insert block
+	err := mockFinalityGadget.InsertBlock(block)
+	require.NoError(t, err)
+
+	// verify block was inserted
+	retrievedBlock, err := mockFinalityGadget.GetBlockByHeight(1)
+	require.NoError(t, err)
+	require.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
+	require.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
+	require.Equal(t, block.BlockTimestamp, retrievedBlock.BlockTimestamp)
+}
+
+func TestGetBlockByHeight(t *testing.T) {
+	block := &types.Block{
+		BlockHeight:    1,
+		BlockHash:      "0x123",
+		BlockTimestamp: 1000,
+	}
+
+	// mock db and finality gadget
+	ctl := gomock.NewController(t)
+	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
+	// note: the block hash is normalized before passing to the db handler
+	mockDbHandler.EXPECT().InsertBlock(normalizedBlock(block)).Return(nil).Times(1)
+	mockDbHandler.EXPECT().GetBlockByHeight(block.BlockHeight).Return(block, nil).Times(1)
+
+	mockFinalityGadget := &FinalityGadget{
+		db: mockDbHandler,
+	}
+
+	// insert block
+	err := mockFinalityGadget.InsertBlock(block)
+	require.NoError(t, err)
+
+	// fetch block by height
+	retrievedBlock, err := mockFinalityGadget.GetBlockByHeight(1)
+	require.NoError(t, err)
+	require.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
+	require.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
+	require.Equal(t, block.BlockTimestamp, retrievedBlock.BlockTimestamp)
+}
+
+func TestGetBlockByHeightForNonExistentBlock(t *testing.T) {
+	// mock db and finality gadget
+	ctl := gomock.NewController(t)
+	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
+	mockDbHandler.EXPECT().GetBlockByHeight(uint64(1)).Return(nil, types.ErrBlockNotFound).Times(1)
+
+	mockFinalityGadget := &FinalityGadget{
+		db: mockDbHandler,
+	}
+
+	// fetch block by height
+	retrievedBlock, err := mockFinalityGadget.GetBlockByHeight(1)
+	require.Nil(t, retrievedBlock)
+	require.Equal(t, err, types.ErrBlockNotFound)
+}
+
+func TestGetBlockByHashWith0xPrefix(t *testing.T) {
+	block := &types.Block{
+		BlockHeight:    1,
+		BlockHash:      "0x123",
+		BlockTimestamp: 1000,
+	}
+
+	// mock db and finality gadget
+	ctl := gomock.NewController(t)
+	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
+	// note: the block hash is normalized before passing to the db handler
+	mockDbHandler.EXPECT().InsertBlock(normalizedBlock(block)).Return(nil).Times(1)
+	mockDbHandler.EXPECT().GetBlockByHash(normalizeBlockHash(block.BlockHash)).Return(block, nil).Times(2)
+
+	mockFinalityGadget := &FinalityGadget{
+		db: mockDbHandler,
+	}
+
+	// insert block
+	err := mockFinalityGadget.InsertBlock(block)
+	require.NoError(t, err)
+
+	// fetch block by hash including 0x prefix
+	retrievedBlock, err := mockFinalityGadget.GetBlockByHash(block.BlockHash)
+	require.NoError(t, err)
+	require.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
+	require.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
+	require.Equal(t, block.BlockTimestamp, retrievedBlock.BlockTimestamp)
+
+	// fetch block by hash excluding 0x prefix
+	retrievedBlock, err = mockFinalityGadget.GetBlockByHash(strings.TrimPrefix(block.BlockHash, "0x"))
+	require.NoError(t, err)
+	require.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
+	require.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
+	require.Equal(t, block.BlockTimestamp, retrievedBlock.BlockTimestamp)
+}
+
+func TestGetBlockByHashWithout0xPrefix(t *testing.T) {
+	block := &types.Block{
+		BlockHeight:    1,
+		BlockHash:      "123",
+		BlockTimestamp: 1000,
+	}
+
+	// mock db and finality gadget
+	ctl := gomock.NewController(t)
+	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
+	// note: the block hash is normalized before passing to the db handler
+	mockDbHandler.EXPECT().InsertBlock(normalizedBlock(block)).Return(nil).Times(1)
+	mockDbHandler.EXPECT().GetBlockByHash(normalizeBlockHash(block.BlockHash)).Return(block, nil).Times(2)
+
+	mockFinalityGadget := &FinalityGadget{
+		db: mockDbHandler,
+	}
+
+	// insert block
+	err := mockFinalityGadget.InsertBlock(block)
+	require.NoError(t, err)
+
+	// fetch block by hash including 0x prefix
+	retrievedBlock, err := mockFinalityGadget.GetBlockByHash("0x" + block.BlockHash)
+	require.NoError(t, err)
+	require.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
+	require.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
+	require.Equal(t, block.BlockTimestamp, retrievedBlock.BlockTimestamp)
+
+	// fetch block by hash excluding 0x prefix
+	retrievedBlock, err = mockFinalityGadget.GetBlockByHash(block.BlockHash)
+	require.NoError(t, err)
+	require.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
+	require.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
+	require.Equal(t, block.BlockTimestamp, retrievedBlock.BlockTimestamp)
+}
+
+func TestGetBlockByHashForNonExistentBlock(t *testing.T) {
+	// mock db and finality gadget
+	ctl := gomock.NewController(t)
+	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
+	mockDbHandler.EXPECT().GetBlockByHash(normalizeBlockHash("123")).Return(nil, types.ErrBlockNotFound).Times(1)
+
+	mockFinalityGadget := &FinalityGadget{
+		db: mockDbHandler,
+	}
+
+	// fetch block by hash
+	retrievedBlock, err := mockFinalityGadget.GetBlockByHash("123")
+	require.Nil(t, retrievedBlock)
+	require.Equal(t, err, types.ErrBlockNotFound)
+}
+
+func TestGetBlockStatusByHeight(t *testing.T) {
+	block := &types.Block{
+		BlockHeight:    1,
+		BlockHash:      "0x123",
+		BlockTimestamp: 1000,
+	}
+
+	// mock db and finality gadget
+	ctl := gomock.NewController(t)
+	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
+	mockDbHandler.EXPECT().GetBlockStatusByHeight(block.BlockHeight).Return(true, nil).Times(1)
+
+	mockFinalityGadget := &FinalityGadget{
+		db: mockDbHandler,
+	}
+
+	// fetch block status by height
+	isFinalized, err := mockFinalityGadget.GetBlockStatusByHeight(1)
+	require.NoError(t, err)
+	require.True(t, isFinalized)
+}
+
+func TestGetBlockStatusByHeightForNonExistentBlock(t *testing.T) {
+	// mock db and finality gadget
+	ctl := gomock.NewController(t)
+	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
+	mockDbHandler.EXPECT().GetBlockStatusByHeight(uint64(1)).Return(false, types.ErrBlockNotFound).Times(1)
+
+	mockFinalityGadget := &FinalityGadget{
+		db: mockDbHandler,
+	}
+
+	// fetch block status by height
+	isFinalized, err := mockFinalityGadget.GetBlockStatusByHeight(1)
+	require.False(t, isFinalized)
+	require.Equal(t, err, types.ErrBlockNotFound)
+}
+
+func TestGetBlockStatusByHashWith0xPrefix(t *testing.T) {
+	// mock db and finality gadget
+	ctl := gomock.NewController(t)
+	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
+	mockDbHandler.EXPECT().GetBlockStatusByHash(normalizeBlockHash("0x123")).Return(true, nil).Times(2)
+
+	mockFinalityGadget := &FinalityGadget{
+		db: mockDbHandler,
+	}
+
+	// fetch block status by hash including 0x prefix
+	isFinalized, err := mockFinalityGadget.GetBlockStatusByHash("0x123")
+	require.NoError(t, err)
+	require.True(t, isFinalized)
+
+	// fetch block status by hash excluding 0x prefix
+	isFinalized, err = mockFinalityGadget.GetBlockStatusByHash("123")
+	require.NoError(t, err)
+	require.True(t, isFinalized)
+}
+
+func TestGetBlockStatusByHashWithout0xPrefix(t *testing.T) {
+	// mock db and finality gadget
+	ctl := gomock.NewController(t)
+	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
+	mockDbHandler.EXPECT().GetBlockStatusByHash(normalizeBlockHash("123")).Return(true, nil).Times(2)
+
+	mockFinalityGadget := &FinalityGadget{
+		db: mockDbHandler,
+	}
+
+	// fetch block status by hash including 0x prefix
+	isFinalized, err := mockFinalityGadget.GetBlockStatusByHash("0x123")
+	require.NoError(t, err)
+	require.True(t, isFinalized)
+
+	// fetch block status by hash excluding 0x prefix
+	isFinalized, err = mockFinalityGadget.GetBlockStatusByHash("123")
+	require.NoError(t, err)
+	require.True(t, isFinalized)
+}
+
+func TestGetBlockStatusByHashForNonExistentBlock(t *testing.T) {
+	// mock db and finality gadget
+	ctl := gomock.NewController(t)
+	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
+	mockDbHandler.EXPECT().GetBlockStatusByHash(normalizeBlockHash("123")).Return(false, types.ErrBlockNotFound).Times(1)
+
+	mockFinalityGadget := &FinalityGadget{
+		db: mockDbHandler,
+	}
+
+	// fetch block status by hash
+	isFinalized, err := mockFinalityGadget.GetBlockStatusByHash("123")
+	require.False(t, isFinalized)
+	require.Equal(t, err, types.ErrBlockNotFound)
+}
+
+func TestGetLatestBlock(t *testing.T) {
+	// define blocks
+	first := &types.Block{
+		BlockHeight:    1,
+		BlockHash:      "0x123",
+		BlockTimestamp: 1000,
+	}
+	second := &types.Block{
+		BlockHeight:    2,
+		BlockHash:      "0x456",
+		BlockTimestamp: 2000,
+	}
+	normalizedFirst := normalizedBlock(first)
+	normalizedSecond := normalizedBlock(second)
+
+	// mock db and finality gadget
+	ctl := gomock.NewController(t)
+	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
+	mockDbHandler.EXPECT().InsertBlock(normalizedFirst).Return(nil).Times(1)
+	mockDbHandler.EXPECT().InsertBlock(normalizedSecond).Return(nil).Times(1)
+	mockDbHandler.EXPECT().GetLatestBlock().Return(normalizedSecond, nil).Times(1)
+
+	mockFinalityGadget := &FinalityGadget{
+		db: mockDbHandler,
+	}
+
+	// insert two blocks
+	err := mockFinalityGadget.InsertBlock(first)
+	require.NoError(t, err)
+	err = mockFinalityGadget.InsertBlock(second)
+	require.NoError(t, err)
+
+	// fetch latest block
+	latestBlock, err := mockFinalityGadget.GetLatestBlock()
+	require.NoError(t, err)
+	require.Equal(t, normalizedSecond.BlockHeight, latestBlock.BlockHeight)
+	require.Equal(t, normalizedSecond.BlockHash, latestBlock.BlockHash)
+	require.Equal(t, normalizedSecond.BlockTimestamp, latestBlock.BlockTimestamp)
+}
+
+func TestGetLatestBlockForNonExistentBlock(t *testing.T) {
+	// mock db and finality gadget
+	ctl := gomock.NewController(t)
+	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
+	mockDbHandler.EXPECT().GetLatestBlock().Return(nil, types.ErrBlockNotFound).Times(1)
+
+	mockFinalityGadget := &FinalityGadget{
+		db: mockDbHandler,
+	}
+
+	// fetch latest block
+	latestBlock, err := mockFinalityGadget.GetLatestBlock()
+	require.Nil(t, latestBlock)
+	require.Equal(t, err, types.ErrBlockNotFound)
+}
+
+func normalizedBlock(block *types.Block) *types.Block {
+	return &types.Block{
+		BlockHeight:    block.BlockHeight,
+		BlockHash:      normalizeBlockHash(block.BlockHash),
+		BlockTimestamp: block.BlockTimestamp,
+	}
+}

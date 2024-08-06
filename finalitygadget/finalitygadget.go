@@ -401,7 +401,7 @@ func (fg *FinalityGadget) startService() error {
 	}
 
 	// if local chain tip is ahead of node, start service at latest block
-	if localBlock.BlockHeight != 0 && localBlock.BlockHeight >= block.BlockHeight {
+	if localBlock != nil && localBlock.BlockHeight >= block.BlockHeight {
 		block = &types.Block{
 			BlockHeight:    localBlock.BlockHeight,
 			BlockHash:      localBlock.BlockHash,

@@ -214,10 +214,6 @@ func TestGetLatestBlockNonExistent(t *testing.T) {
 	defer cleanup()
 
 	latestBlock, err := handler.GetLatestBlock()
-	assert.Equal(t, latestBlock, &types.Block{
-		BlockHeight:    0,
-		BlockHash:      "",
-		BlockTimestamp: 0,
-	})
+	assert.Nil(t, latestBlock)
 	assert.NoError(t, err)
 }
