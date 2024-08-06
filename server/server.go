@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -11,6 +10,7 @@ import (
 	"github.com/babylonlabs-io/finality-gadget/db"
 	"github.com/babylonlabs-io/finality-gadget/finalitygadget"
 	"github.com/lightningnetwork/lnd/signal"
+	"go.uber.org/zap"
 
 	"google.golang.org/grpc"
 )
@@ -23,17 +23,20 @@ type Server struct {
 	cfg       *config.Config
 	db        db.IDatabaseHandler
 
+	logger *zap.Logger
+
 	quit        chan struct{}
 	interceptor signal.Interceptor
 	started     int32
 }
 
 // NewEOTSManagerServer creates a new server with the given config.
-func NewFinalityGadgetServer(cfg *config.Config, db db.IDatabaseHandler, fg finalitygadget.IFinalityGadget, sig signal.Interceptor) *Server {
+func NewFinalityGadgetServer(cfg *config.Config, db db.IDatabaseHandler, fg finalitygadget.IFinalityGadget, sig signal.Interceptor, logger *zap.Logger) *Server {
 	return &Server{
 		cfg:         cfg,
 		rpcServer:   newRPCServer(fg),
 		db:          db,
+		logger:      logger,
 		interceptor: sig,
 		quit:        make(chan struct{}, 1),
 	}
@@ -47,9 +50,9 @@ func (s *Server) RunUntilShutdown() error {
 	}
 
 	defer func() {
-		log.Printf("Closing database...")
+		s.logger.Info("Closing database...")
 		s.db.Close()
-		log.Printf("Database closed")
+		s.logger.Info("Database closed")
 	}()
 
 	listenAddr := "localhost:" + s.cfg.GRPCServerPort
@@ -74,7 +77,7 @@ func (s *Server) RunUntilShutdown() error {
 		return fmt.Errorf("failed to start gRPC listener: %v", err)
 	}
 
-	log.Printf("Finality gadget is active")
+	s.logger.Info("Finality gadget is active")
 
 	// Wait for shutdown signal from either a graceful server stop or from
 	// the interrupt handler.
@@ -93,7 +96,7 @@ func (s *Server) startGrpcListen(grpcServer *grpc.Server, listeners []net.Listen
 	for _, lis := range listeners {
 		wg.Add(1)
 		go func(lis net.Listener) {
-			log.Printf("RPC server listening: %s", lis.Addr().String())
+			s.logger.Info("RPC server listening", zap.String("address", lis.Addr().String()))
 
 			// Close the ready chan to indicate we are listening.
 			defer lis.Close()

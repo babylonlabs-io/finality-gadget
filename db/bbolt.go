@@ -6,17 +6,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/babylonlabs-io/finality-gadget/types"
 	bolt "go.etcd.io/bbolt"
+	"go.uber.org/zap"
 )
 
 type BBoltHandler struct {
-	db *bolt.DB
+	db     *bolt.DB
+	logger *zap.Logger
 }
 
 var _ IDatabaseHandler = &BBoltHandler{}
@@ -36,16 +37,17 @@ var (
 // CONSTRUCTOR
 //////////////////////////////
 
-func NewBBoltHandler(path string) (*BBoltHandler, error) {
+func NewBBoltHandler(path string, logger *zap.Logger) (*BBoltHandler, error) {
 	// 0600 = read/write permission for owner only
 	db, err := bolt.Open(path, 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
-		log.Fatalf("Error opening DB: %v\n", err)
+		logger.Error("Error opening DB", zap.Error(err))
 		return nil, err
 	}
 
 	return &BBoltHandler{
-		db: db,
+		db:     db,
+		logger: logger,
 	}, nil
 }
 
@@ -54,11 +56,11 @@ func NewBBoltHandler(path string) (*BBoltHandler, error) {
 //////////////////////////////
 
 func (bb *BBoltHandler) CreateInitialSchema() error {
-	log.Printf("Initialising DB...")
+	bb.logger.Info("Initialising DB...")
 	return bb.db.Update(func(tx *bolt.Tx) error {
 		buckets := []string{blocksBucket, blockHeightsBucket, latestBlockBucket}
 		for _, bucket := range buckets {
-			if err := tryCreateBucket(tx, bucket); err != nil {
+			if err := bb.tryCreateBucket(tx, bucket); err != nil {
 				return err
 			}
 		}
@@ -67,12 +69,12 @@ func (bb *BBoltHandler) CreateInitialSchema() error {
 }
 
 func (bb *BBoltHandler) InsertBlock(block *types.Block) error {
-	log.Printf("Inserting block %d to DB...\n", block.BlockHeight)
+	bb.logger.Info("Inserting block to DB", zap.Uint64("block_height", block.BlockHeight))
 
 	// Store mapping number -> block
 	err := bb.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
-		key := itob(block.BlockHeight)
+		key := bb.itob(block.BlockHeight)
 		blockBytes, err := json.Marshal(block)
 		if err != nil {
 			return err
@@ -80,24 +82,24 @@ func (bb *BBoltHandler) InsertBlock(block *types.Block) error {
 		return b.Put(key, blockBytes)
 	})
 	if err != nil {
-		log.Fatalf("Error inserting block: %v\n", err)
+		bb.logger.Error("Error inserting block", zap.Error(err))
 		return err
 	}
 
 	// Store mapping hash -> number
 	err = bb.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blockHeightsBucket))
-		return b.Put([]byte(block.BlockHash), itob(block.BlockHeight))
+		return b.Put([]byte(block.BlockHash), bb.itob(block.BlockHeight))
 	})
 	if err != nil {
-		log.Fatalf("Error inserting block: %v\n", err)
+		bb.logger.Error("Error inserting block", zap.Error(err))
 		return err
 	}
 
 	// Get current latest block
 	latestBlock, err := bb.GetLatestBlock()
 	if err != nil {
-		log.Fatalf("Error getting latest block: %v\n", err)
+		bb.logger.Error("Error getting latest block", zap.Error(err))
 		return err
 	}
 
@@ -105,16 +107,16 @@ func (bb *BBoltHandler) InsertBlock(block *types.Block) error {
 	err = bb.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(latestBlockBucket))
 		if err != nil {
-			log.Fatalf("Error getting latest block: %v\n", err)
+			bb.logger.Error("Error getting latest block", zap.Error(err))
 			return err
 		}
 		if latestBlock.BlockHeight < block.BlockHeight {
-			return b.Put([]byte(latestBlockKey), itob(block.BlockHeight))
+			return b.Put([]byte(latestBlockKey), bb.itob(block.BlockHeight))
 		}
 		return nil
 	})
 	if err != nil {
-		log.Fatalf("Error updating latest block: %v\n", err)
+		bb.logger.Error("Error updating latest block", zap.Error(err))
 		return err
 	}
 
@@ -125,7 +127,7 @@ func (bb *BBoltHandler) GetBlockByHeight(height uint64) (*types.Block, error) {
 	var block types.Block
 	err := bb.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
-		v := b.Get(itob(height))
+		v := b.Get(bb.itob(height))
 		if v == nil {
 			return ErrBlockNotFound
 		}
@@ -157,7 +159,7 @@ func (bb *BBoltHandler) GetBlockStatusByHash(hash string) (bool, error) {
 		if len(res) == 0 {
 			return ErrBlockNotFound
 		}
-		blockHeight = btoi(res)
+		blockHeight = bb.btoi(res)
 		return nil
 	})
 	if err != nil {
@@ -180,7 +182,7 @@ func (bb *BBoltHandler) GetLatestBlock() (*types.Block, error) {
 		if v == nil {
 			return ErrBlockNotFound
 		}
-		latestBlockHeight = btoi(v)
+		latestBlockHeight = bb.btoi(v)
 		return nil
 	})
 	if err != nil {
@@ -192,7 +194,7 @@ func (bb *BBoltHandler) GetLatestBlock() (*types.Block, error) {
 				BlockTimestamp: 0,
 			}, nil
 		}
-		log.Fatalf("Error getting latest block: %v\n", err)
+		bb.logger.Error("Error getting latest block", zap.Error(err))
 		return nil, err
 	}
 
@@ -203,7 +205,7 @@ func (bb *BBoltHandler) GetLatestBlock() (*types.Block, error) {
 func (bb *BBoltHandler) DeleteDB() error {
 	absPath, err := filepath.Abs(bb.db.Path())
 	if err != nil {
-		log.Fatalf("failed to get db absolute path: %v\n", err)
+		bb.logger.Error("Error getting db absolute path", zap.Error(err))
 		return fmt.Errorf("failed to get db absolute path: %w", err)
 	}
 
@@ -218,29 +220,29 @@ func (bb *BBoltHandler) Close() error {
 // INTERNAL
 //////////////////////////////
 
-func tryCreateBucket(tx *bolt.Tx, bucketName string) error {
+func (bb *BBoltHandler) tryCreateBucket(tx *bolt.Tx, bucketName string) error {
 	_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
 	if err != nil {
-		log.Fatalf("Error creating bucket: %v\n", err)
+		bb.logger.Error("Error creating bucket", zap.Error(err))
 	}
 	return err
 }
 
-func itob(v uint64) []byte {
+func (bb *BBoltHandler) itob(v uint64) []byte {
 	buf := new(bytes.Buffer)
 	err := binary.Write(buf, binary.BigEndian, v)
 	if err != nil {
-		log.Fatalf("Error writing to buffer: %v\n", err)
+		bb.logger.Fatal("Error writing to buffer", zap.Error(err))
 	}
 	return buf.Bytes()
 }
 
-func btoi(b []byte) uint64 {
+func (bb *BBoltHandler) btoi(b []byte) uint64 {
 	var v uint64
 	buf := bytes.NewReader(b)
 	err := binary.Read(buf, binary.BigEndian, &v)
 	if err != nil {
-		log.Fatalf("Error reading from buffer: %v\n", err)
+		bb.logger.Fatal("Error reading from buffer", zap.Error(err))
 	}
 	return v
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 
 	rpcclient "github.com/babylonlabs-io/finality-gadget/client"
 	"github.com/babylonlabs-io/finality-gadget/config"
@@ -47,8 +48,14 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load configuration: %w", err)
 	}
 
+	// Create logger
+	logger, err := zap.NewProduction()
+	if err != nil {
+		return fmt.Errorf("failed to create logger: %w", err)
+	}
+
 	// Init local DB for storing and querying blocks
-	db, err := db.NewBBoltHandler(cfg.DBFilePath)
+	db, err := db.NewBBoltHandler(cfg.DBFilePath, logger)
 	if err != nil {
 		return fmt.Errorf("failed to create DB handler: %w", err)
 	}
@@ -59,7 +66,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	}
 
 	// Create finality gadget
-	fg, err := finalitygadget.NewFinalityGadget(cfg, db)
+	fg, err := finalitygadget.NewFinalityGadget(cfg, db, logger)
 	if err != nil {
 		log.Fatalf("Error creating finality gadget: %v\n", err)
 		return fmt.Errorf("error creating finality gadget: %v", err)
@@ -71,7 +78,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	srv := server.NewFinalityGadgetServer(cfg, db, fg, shutdownInterceptor)
+	srv := server.NewFinalityGadgetServer(cfg, db, fg, shutdownInterceptor, logger)
 	go func() {
 		err = srv.RunUntilShutdown()
 		if err != nil {

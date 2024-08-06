@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"math"
 	"math/big"
 	"strings"
@@ -39,35 +38,15 @@ type FinalityGadget struct {
 
 	pollInterval time.Duration
 	currHeight   uint64
+
+	logger *zap.Logger
 }
 
 //////////////////////////////
 // CONSTRUCTOR
 //////////////////////////////
 
-func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler) (*FinalityGadget, error) {
-	// Create logger
-	logger, err := zap.NewProduction()
-	if err != nil {
-		return nil, err
-	}
-
-	// Create bitcoin client
-	btcConfig := btcclient.DefaultBTCConfig()
-	btcConfig.RPCHost = cfg.BitcoinRPCHost
-	var btcClient btcclient.IBitcoinClient
-	// Create BTC client
-	switch cfg.BBNChainID {
-	// TODO: once we set up our own local BTC devnet, we don't need to use this mock BTC client
-	case config.BabylonLocalnetChainID:
-		btcClient, err = mocks.NewMockBitcoinClient(btcConfig, logger)
-	default:
-		btcClient, err = btcclient.NewBitcoinClient(btcConfig, logger)
-	}
-	if err != nil {
-		return nil, err
-	}
-
+func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.Logger) (*FinalityGadget, error) {
 	// Create babylon client
 	bbnConfig := bbncfg.DefaultBabylonConfig()
 	bbnConfig.RPCAddr = cfg.BBNRPCAddress
@@ -79,6 +58,21 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler) (*FinalityGad
 	bbnClient := bbnclient.NewBabylonClient(babylonClient.QueryClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Babylon client: %w", err)
+	}
+
+	// Create bitcoin client
+	btcConfig := btcclient.DefaultBTCConfig()
+	btcConfig.RPCHost = cfg.BitcoinRPCHost
+	var btcClient btcclient.IBitcoinClient
+	switch cfg.BBNChainID {
+	// TODO: once we set up our own local BTC devnet, we don't need to use this mock BTC client
+	case config.BabylonLocalnetChainID:
+		btcClient, err = mocks.NewMockBitcoinClient(btcConfig, logger)
+	default:
+		btcClient, err = btcclient.NewBitcoinClient(btcConfig, logger)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	// Create cosmwasm client
@@ -98,6 +92,7 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler) (*FinalityGad
 		l2Client:     l2Client,
 		db:           db,
 		pollInterval: cfg.PollInterval,
+		logger:       logger,
 	}, nil
 }
 
@@ -308,7 +303,7 @@ func (fg *FinalityGadget) ProcessBlocks(ctx context.Context) error {
 		case <-ticker.C:
 			block, err := fg.getBlockByNumber(int64(fg.currHeight + 1))
 			if err != nil {
-				log.Fatalf("error getting new block: %v\n", err)
+				fg.logger.Fatal("error getting new block", zap.Error(err))
 				continue
 			}
 			go func() {
@@ -427,7 +422,7 @@ func (fg *FinalityGadget) startService() error {
 	}
 
 	// Start service at block height
-	log.Printf("Starting finality gadget at block %d...\n", block.BlockHeight)
+	fg.logger.Info("Starting finality gadget at block", zap.Uint64("block_height", block.BlockHeight))
 
 	// Set the curr finalized block in memory
 	fg.currHeight = block.BlockHeight
@@ -442,13 +437,13 @@ func (fg *FinalityGadget) handleBlock(block *types.Block) {
 		// Check if block is finalized
 		isFinal, err := fg.QueryIsBlockBabylonFinalized(block)
 		if err != nil {
-			log.Fatalf("Error checking block %d: %v\n", block.BlockHeight, err)
+			fg.logger.Fatal("Error checking block", zap.Uint64("block_height", block.BlockHeight), zap.Error(err))
 			return
 		}
 		if isFinal {
 			err = fg.InsertBlock(block)
 			if err != nil {
-				log.Fatalf("Error storing block %d: %v\n", block.BlockHeight, err)
+				fg.logger.Fatal("Error storing block", zap.Uint64("block_height", block.BlockHeight), zap.Error(err))
 			}
 			return
 		}
