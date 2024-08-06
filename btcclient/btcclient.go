@@ -16,8 +16,6 @@ type BitcoinClient struct {
 	cfg    *BTCConfig
 }
 
-var _ IBitcoinClient = &BitcoinClient{}
-
 //////////////////////////////
 // CONSTRUCTOR
 //////////////////////////////

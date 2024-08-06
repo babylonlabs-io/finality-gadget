@@ -16,8 +16,6 @@ type CosmWasmClient struct {
 	contractAddr string
 }
 
-var _ ICosmWasmClient = &CosmWasmClient{}
-
 const (
 	// hardcode the timeout to 20 seconds. We can expose it to the params once needed
 	DefaultTimeout = 20 * time.Second

@@ -12,8 +12,6 @@ type BabylonClient struct {
 	*query.QueryClient
 }
 
-var _ IBabylonClient = &BabylonClient{}
-
 //////////////////////////////
 // CONSTRUCTOR
 //////////////////////////////

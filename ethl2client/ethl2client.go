@@ -9,8 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-var _ IEthL2Client = &EthL2Client{}
-
 type EthL2Client struct {
 	client *ethclient.Client
 }
