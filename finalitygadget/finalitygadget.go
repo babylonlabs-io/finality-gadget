@@ -64,43 +64,43 @@ func NewFinalityGadget(cfg *config.Config, db *db.BBoltHandler) (*FinalityGadget
 }
 
 // This function process blocks indefinitely, starting from the last finalized block.
-func (s *FinalityGadget) ProcessBlocks(ctx context.Context) error {
+func (fg *FinalityGadget) ProcessBlocks(ctx context.Context) error {
 	// Start service at last finalized block
-	err := s.startService()
+	err := fg.startService()
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
 
 	// Start polling for new blocks at set interval
-	ticker := time.NewTicker(s.PollInterval)
+	ticker := time.NewTicker(fg.PollInterval)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
-			block, err := s.getBlockByNumber(int64(s.currHeight + 1))
+			block, err := fg.getBlockByNumber(int64(fg.currHeight + 1))
 			if err != nil {
 				log.Fatalf("error getting new block: %v\n", err)
 				continue
 			}
 			go func() {
-				s.handleBlock(block)
+				fg.handleBlock(block)
 			}()
 		}
 	}
 }
 
 // Start service at last finalized block
-func (s *FinalityGadget) startService() error {
+func (fg *FinalityGadget) startService() error {
 	// Query L2 node for last finalized block
-	block, err := s.getLatestFinalizedBlock()
+	block, err := fg.getLatestFinalizedBlock()
 	if err != nil {
 		return fmt.Errorf("error getting last finalized block: %v", err)
 	}
 
 	// Query local DB for last block processed
-	localBlock, err := s.Db.GetLatestBlock()
+	localBlock, err := fg.Db.GetLatestBlock()
 	if err != nil {
 		return fmt.Errorf("error getting latest block from db: %v", err)
 	}
@@ -119,7 +119,7 @@ func (s *FinalityGadget) startService() error {
 		}
 
 		// Check the block is finalized using sdk client
-		isFinal, err := s.queryIsBlockBabylonFinalized(block)
+		isFinal, err := fg.queryIsBlockBabylonFinalized(block)
 		// If not finalized, throw error
 		if !isFinal {
 			return fmt.Errorf("block %d should be finalized according to client but is not", block.BlockHeight)
@@ -128,7 +128,7 @@ func (s *FinalityGadget) startService() error {
 			return fmt.Errorf("error checking block %d: %v", block.BlockHeight, err)
 		}
 		// If finalised, store the block in DB and set the last finalized block
-		err = s.InsertBlock(block)
+		err = fg.InsertBlock(block)
 		if err != nil {
 			return fmt.Errorf("error storing block %d: %v", block.BlockHeight, err)
 		}
@@ -138,20 +138,20 @@ func (s *FinalityGadget) startService() error {
 	log.Printf("Starting finality gadget at block %d...\n", block.BlockHeight)
 
 	// Set the start block and curr finalized block in memory
-	s.startHeight = block.BlockHeight
-	s.currHeight = block.BlockHeight
+	fg.startHeight = block.BlockHeight
+	fg.currHeight = block.BlockHeight
 
 	return nil
 }
 
 // Get last btc finalized block
-func (s *FinalityGadget) getLatestFinalizedBlock() (*types.Block, error) {
-	return s.getBlockByNumber(ethrpc.FinalizedBlockNumber.Int64())
+func (fg *FinalityGadget) getLatestFinalizedBlock() (*types.Block, error) {
+	return fg.getBlockByNumber(ethrpc.FinalizedBlockNumber.Int64())
 }
 
 // Get block by number
-func (s *FinalityGadget) getBlockByNumber(blockNumber int64) (*types.Block, error) {
-	header, err := s.L2Client.HeaderByNumber(context.Background(), big.NewInt(blockNumber))
+func (fg *FinalityGadget) getBlockByNumber(blockNumber int64) (*types.Block, error) {
+	header, err := fg.L2Client.HeaderByNumber(context.Background(), big.NewInt(blockNumber))
 	if err != nil {
 		return nil, err
 	}
@@ -162,18 +162,18 @@ func (s *FinalityGadget) getBlockByNumber(blockNumber int64) (*types.Block, erro
 	}, nil
 }
 
-func (s *FinalityGadget) handleBlock(block *types.Block) {
+func (fg *FinalityGadget) handleBlock(block *types.Block) {
 	// while block is not finalized, recheck if block is finalized every `retryInterval` seconds
 	// if finalized, store the block in DB and set the last finalized block
 	for {
 		// Check if block is finalized
-		isFinal, err := s.queryIsBlockBabylonFinalized(block)
+		isFinal, err := fg.queryIsBlockBabylonFinalized(block)
 		if err != nil {
 			log.Fatalf("Error checking block %d: %v\n", block.BlockHeight, err)
 			return
 		}
 		if isFinal {
-			err = s.InsertBlock(block)
+			err = fg.InsertBlock(block)
 			if err != nil {
 				log.Fatalf("Error storing block %d: %v\n", block.BlockHeight, err)
 			}
@@ -181,23 +181,23 @@ func (s *FinalityGadget) handleBlock(block *types.Block) {
 		}
 
 		// Sleep for `PollInterval` seconds
-		time.Sleep(s.PollInterval * time.Second)
+		time.Sleep(fg.PollInterval * time.Second)
 	}
 }
 
-func (vf *FinalityGadget) queryIsBlockBabylonFinalized(block *types.Block) (bool, error) {
-	return vf.SdkClient.QueryIsBlockBabylonFinalized(cwclient.L2Block{
+func (fg *FinalityGadget) queryIsBlockBabylonFinalized(block *types.Block) (bool, error) {
+	return fg.SdkClient.QueryIsBlockBabylonFinalized(cwclient.L2Block{
 		BlockHash:      string(block.BlockHash),
 		BlockHeight:    block.BlockHeight,
 		BlockTimestamp: block.BlockTimestamp,
 	})
 }
 
-func (s *FinalityGadget) InsertBlock(block *types.Block) error {
+func (fg *FinalityGadget) InsertBlock(block *types.Block) error {
 	// Lock mutex
-	s.Mutex.Lock()
+	fg.Mutex.Lock()
 	// Store block in DB
-	err := s.Db.InsertBlock(&types.Block{
+	err := fg.Db.InsertBlock(&types.Block{
 		BlockHeight:    block.BlockHeight,
 		BlockHash:      block.BlockHash,
 		BlockTimestamp: block.BlockTimestamp,
@@ -206,29 +206,29 @@ func (s *FinalityGadget) InsertBlock(block *types.Block) error {
 		return err
 	}
 	// Set last finalized block in memory
-	s.currHeight = block.BlockHeight
+	fg.currHeight = block.BlockHeight
 	// Unlock mutex
-	s.Mutex.Unlock()
+	fg.Mutex.Unlock()
 
 	return nil
 }
 
-func (s *FinalityGadget) GetBlockStatusByHeight(height uint64) (bool, error) {
-	return s.Db.GetBlockStatusByHeight(height)
+func (fg *FinalityGadget) GetBlockStatusByHeight(height uint64) (bool, error) {
+	return fg.Db.GetBlockStatusByHeight(height)
 }
 
-func (s *FinalityGadget) GetBlockStatusByHash(hash string) (bool, error) {
-	return s.Db.GetBlockStatusByHash(hash)
+func (fg *FinalityGadget) GetBlockStatusByHash(hash string) (bool, error) {
+	return fg.Db.GetBlockStatusByHash(hash)
 }
 
-func (s *FinalityGadget) GetLatestBlock() (*types.Block, error) {
-	return s.Db.GetLatestBlock()
+func (fg *FinalityGadget) GetLatestBlock() (*types.Block, error) {
+	return fg.Db.GetLatestBlock()
 }
 
-func (s *FinalityGadget) DeleteDB() error {
-	return s.Db.DeleteDB()
+func (fg *FinalityGadget) DeleteDB() error {
+	return fg.Db.DeleteDB()
 }
 
-func (s *FinalityGadget) Close() {
-	s.L2Client.Close()
+func (fg *FinalityGadget) Close() {
+	fg.L2Client.Close()
 }
