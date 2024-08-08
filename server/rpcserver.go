@@ -105,6 +105,10 @@ func (r *rpcServer) QueryIsBlockFinalizedByHash(ctx context.Context, req *proto.
 func (r *rpcServer) QueryLatestFinalizedBlock(ctx context.Context, req *proto.QueryLatestFinalizedBlockRequest) (*proto.QueryBlockResponse, error) {
 	block, err := r.fg.QueryLatestFinalizedBlock()
 
+	if block == nil {
+		return nil, types.ErrBlockNotFound
+	}
+
 	if err != nil {
 		return nil, err
 	}
