@@ -76,10 +76,10 @@ func (c *FinalityGadgetGrpcClient) QueryIsBlockFinalizedByHash(hash string) (boo
 	return res.IsFinalized, nil
 }
 
-func (c *FinalityGadgetGrpcClient) GetLatestBlock() (*types.Block, error) {
-	req := &proto.GetLatestBlockRequest{}
+func (c *FinalityGadgetGrpcClient) QueryLatestFinalizedBLock() (*types.Block, error) {
+	req := &proto.QueryLatestFinalizedBLockRequest{}
 
-	res, err := c.client.GetLatestBlock(context.Background(), req)
+	res, err := c.client.QueryLatestFinalizedBLock(context.Background(), req)
 	if err != nil {
 		return nil, err
 	}

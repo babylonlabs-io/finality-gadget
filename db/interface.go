@@ -9,6 +9,6 @@ type IDatabaseHandler interface {
 	GetBlockByHash(hash string) (*types.Block, error)
 	QueryIsBlockFinalizedByHeight(height uint64) (bool, error)
 	QueryIsBlockFinalizedByHash(hash string) (bool, error)
-	GetLatestBlock() (*types.Block, error)
+	QueryLatestFinalizedBLock() (*types.Block, error)
 	Close() error
 }

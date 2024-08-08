@@ -90,7 +90,7 @@ func (bb *BBoltHandler) InsertBlock(block *types.Block) error {
 	}
 
 	// Get current latest block
-	latestBlock, err := bb.GetLatestBlock()
+	latestBlock, err := bb.QueryLatestFinalizedBLock()
 	if latestBlock == nil {
 		latestBlock = &types.Block{BlockHeight: 0}
 	}
@@ -186,7 +186,7 @@ func (bb *BBoltHandler) QueryIsBlockFinalizedByHash(hash string) (bool, error) {
 	return bb.QueryIsBlockFinalizedByHeight(blockHeight)
 }
 
-func (bb *BBoltHandler) GetLatestBlock() (*types.Block, error) {
+func (bb *BBoltHandler) QueryLatestFinalizedBLock() (*types.Block, error) {
 	var latestBlockHeight uint64
 
 	// Fetch latest block height

@@ -72,9 +72,9 @@ func (r *rpcServer) QueryIsBlockFinalizedByHash(ctx context.Context, req *proto.
 	return &proto.GetBlockStatusResponse{IsFinalized: isFinalized}, nil
 }
 
-// GetLatestBlock is an RPC method that returns the latest consecutively finalized block.
-func (r *rpcServer) GetLatestBlock(ctx context.Context, req *proto.GetLatestBlockRequest) (*proto.BlockInfo, error) {
-	block, err := r.fg.GetLatestBlock()
+// QueryLatestFinalizedBLock is an RPC method that returns the latest consecutively finalized block.
+func (r *rpcServer) QueryLatestFinalizedBLock(ctx context.Context, req *proto.QueryLatestFinalizedBLockRequest) (*proto.BlockInfo, error) {
+	block, err := r.fg.QueryLatestFinalizedBLock()
 
 	if err != nil {
 		return nil, err

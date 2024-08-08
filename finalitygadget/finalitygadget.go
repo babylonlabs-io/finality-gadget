@@ -288,8 +288,8 @@ func (fg *FinalityGadget) QueryIsBlockFinalizedByHash(hash string) (bool, error)
 	return fg.db.QueryIsBlockFinalizedByHash(normalizeBlockHash(hash))
 }
 
-func (fg *FinalityGadget) GetLatestBlock() (*types.Block, error) {
-	return fg.db.GetLatestBlock()
+func (fg *FinalityGadget) QueryLatestFinalizedBLock() (*types.Block, error) {
+	return fg.db.QueryLatestFinalizedBLock()
 }
 
 // This function process blocks indefinitely, starting from the last finalized block.
@@ -364,7 +364,7 @@ func (fg *FinalityGadget) queryAllFpBtcPubKeys() ([]string, error) {
 }
 
 // Get last btc finalized block
-func (fg *FinalityGadget) getLatestFinalizedBlock() (*types.Block, error) {
+func (fg *FinalityGadget) queryLatestFinalizedBlock() (*types.Block, error) {
 	return fg.queryBlockByHeight(ethrpc.FinalizedBlockNumber.Int64())
 }
 
@@ -384,13 +384,13 @@ func (fg *FinalityGadget) queryBlockByHeight(blockNumber int64) (*types.Block, e
 // Start service at last finalized block
 func (fg *FinalityGadget) startService() error {
 	// Query L2 node for last finalized block
-	block, err := fg.getLatestFinalizedBlock()
+	block, err := fg.queryLatestFinalizedBlock()
 	if err != nil {
 		return fmt.Errorf("error getting last finalized block: %v", err)
 	}
 
 	// Query local DB for last block processed
-	localBlock, err := fg.db.GetLatestBlock()
+	localBlock, err := fg.db.QueryLatestFinalizedBLock()
 	if err != nil {
 		return fmt.Errorf("error getting latest block from db: %v", err)
 	}

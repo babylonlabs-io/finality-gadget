@@ -18,8 +18,9 @@ service FinalityGadget {
   rpc QueryIsBlockFinalizedByHash(QueryIsBlockFinalizedByHashRequest)
       returns (GetBlockStatusResponse);
 
-  // GetLatestBlock returns the latest consecutively finalized block
-  rpc GetLatestBlock(GetLatestBlockRequest) returns (BlockInfo);
+  // QueryLatestFinalizedBLock returns the latest consecutively finalized block
+  rpc QueryLatestFinalizedBLock(QueryLatestFinalizedBLockRequest)
+      returns (BlockInfo);
 }
 
 message BlockInfo {
@@ -48,4 +49,4 @@ message GetBlockStatusResponse {
   bool is_finalized = 1;
 }
 
-message GetLatestBlockRequest {}
+message QueryLatestFinalizedBLockRequest {}

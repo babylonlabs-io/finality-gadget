@@ -70,6 +70,6 @@ type IFinalityGadget interface {
 	// QueryIsBlockFinalizedByHash returns the btc finalization status of a block at given hash by querying the local db
 	QueryIsBlockFinalizedByHash(hash string) (bool, error)
 
-	// GetLatestBlock returns the latest finalized block by querying the local db
-	GetLatestBlock() (*types.Block, error)
+	// QueryLatestFinalizedBLock returns the latest finalized block by querying the local db
+	QueryLatestFinalizedBLock() (*types.Block, error)
 }

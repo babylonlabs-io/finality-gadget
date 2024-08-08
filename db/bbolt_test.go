@@ -184,7 +184,7 @@ func TestQueryIsBlockFinalizedByHashForNonExistentBlock(t *testing.T) {
 	assert.Equal(t, isFinalized, false)
 }
 
-func TestGetLatestBlock(t *testing.T) {
+func TestQueryLatestFinalizedBLock(t *testing.T) {
 	handler, cleanup := setupDB(t)
 	defer cleanup()
 
@@ -205,18 +205,18 @@ func TestGetLatestBlock(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Retrieve latest block
-	latestBlock, err := handler.GetLatestBlock()
+	latestBlock, err := handler.QueryLatestFinalizedBLock()
 	assert.NoError(t, err)
 	assert.Equal(t, latestBlock.BlockHeight, second.BlockHeight)
 	assert.Equal(t, latestBlock.BlockHash, second.BlockHash)
 	assert.Equal(t, latestBlock.BlockTimestamp, second.BlockTimestamp)
 }
 
-func TestGetLatestBlockNonExistent(t *testing.T) {
+func TestQueryLatestFinalizedBLockNonExistent(t *testing.T) {
 	handler, cleanup := setupDB(t)
 	defer cleanup()
 
-	latestBlock, err := handler.GetLatestBlock()
+	latestBlock, err := handler.QueryLatestFinalizedBLock()
 	assert.Nil(t, latestBlock)
 	assert.NoError(t, err)
 }
