@@ -49,6 +49,7 @@ message BlockInfo {
 message QueryIsBlockBabylonFinalizedRequest { BlockInfo block = 1; }
 
 message QueryBlockRangeBabylonFinalizedRequest {
+  // blocks is a list of blocks to query
   repeated BlockInfo blocks = 1;
 }
 
