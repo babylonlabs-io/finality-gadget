@@ -25,7 +25,6 @@ type Server struct {
 
 	logger *zap.Logger
 
-	quit        chan struct{}
 	interceptor signal.Interceptor
 	started     int32
 }
@@ -38,7 +37,6 @@ func NewFinalityGadgetServer(cfg *config.Config, db db.IDatabaseHandler, fg fina
 		db:          db,
 		logger:      logger,
 		interceptor: sig,
-		quit:        make(chan struct{}, 1),
 	}
 }
 
