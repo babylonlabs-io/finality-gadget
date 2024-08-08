@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "github.com/babylonlabs-io/finality-gadget/proto";
+
+service FinalityGadget {
+  // QueryIsBlockFinalizedByHeight returns the finality status of a block at
+  // given height
+  rpc QueryIsBlockFinalizedByHeight(QueryIsBlockFinalizedByHeightRequest)
+      returns (QueryIsBlockFinalizedResponse);
+
+  // QueryIsBlockFinalizedByHash returns the finality status of a block with
+  // given hash
+  rpc QueryIsBlockFinalizedByHash(QueryIsBlockFinalizedByHashRequest)
+      returns (QueryIsBlockFinalizedResponse);
+
+  // QueryLatestFinalizedBlock returns the latest consecutively finalized block
+  rpc QueryLatestFinalizedBlock(QueryLatestFinalizedBlockRequest)
+      returns (QueryBlockResponse);
+}
+
+message QueryIsBlockFinalizedByHeightRequest {
+  // block_height is the height of the block
+  uint64 block_height = 1;
+}
+
+message QueryIsBlockFinalizedByHashRequest {
+  // block_hash is the hash of the block
+  string block_hash = 1;
+}
+
+message QueryIsBlockFinalizedResponse {
+  // is_finalized is true if the block is finalized
+  bool is_finalized = 1;
+}
+
+message QueryLatestFinalizedBlockRequest {}
+
+message QueryBlockResponse {
+  // block_hash is the hash of the block
+  string block_hash = 1;
+  // block_height is the height of the block
+  uint64 block_height = 2;
+  // block_timestamp is the unix timestamp of the block
+  uint64 block_timestamp = 3;
+}

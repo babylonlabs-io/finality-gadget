@@ -1,0 +1,8 @@
+L2RPCHost = "https://mainnet.optimism.io"
+BitcoinRPCHost = "rpc.ankr.com/btc"
+DBFilePath = "data.db"
+FGContractAddress = "bbn1ghd753shjuwexxywmgs4xz7x2q732vcnkm6h2pyv9s6ah3hylvrqxxvh0f"
+BBNChainID = "euphrates-0.2.0"
+BBNRPCAddress = "https://rpc-euphrates.devnet.babylonchain.io"
+GRPCServerPort = "8080"
+PollInterval = "10s"

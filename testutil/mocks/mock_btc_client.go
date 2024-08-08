@@ -1,27 +1,27 @@
-package testutil
+package mocks
 
 import (
-	"github.com/babylonlabs-io/finality-gadget/sdk/btcclient"
+	"github.com/babylonlabs-io/finality-gadget/btcclient"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
 )
 
 // MockBtcClient is the mock implementation of BtcClient.
-type MockBtcClient struct {
-	*btcclient.BTCClient
+type MockBitcoinClient struct {
+	*btcclient.BitcoinClient
 	mock.Mock
 }
 
-func NewMockBTCClient(cfg *btcclient.BTCConfig, logger *zap.Logger) (*MockBtcClient, error) {
-	innerClient, err := btcclient.NewBTCClient(cfg, logger)
+func NewMockBitcoinClient(cfg *btcclient.BTCConfig, logger *zap.Logger) (*MockBitcoinClient, error) {
+	innerClient, err := btcclient.NewBitcoinClient(cfg, logger)
 
-	return &MockBtcClient{
-		BTCClient: innerClient,
+	return &MockBitcoinClient{
+		BitcoinClient: innerClient,
 	}, err
 }
 
 // GetBlockHeightByTimestamp overrides the BTCClient's GetBlockHeightByTimestamp method.
-func (c *MockBtcClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint64, error) {
+func (c *MockBitcoinClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint64, error) {
 	// by default, kValue is 6 and wValue is 20
 	//
 	// in out test, the two mock delegations has:
@@ -37,6 +37,6 @@ func (c *MockBtcClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint6
 
 // this is used to determine when the BTC staking is activated. return 0 to
 // simulate that the BTC staking is always activated
-func (c *MockBtcClient) GetBlockTimestampByHeight(height uint64) (uint64, error) {
+func (c *MockBitcoinClient) GetBlockTimestampByHeight(height uint64) (uint64, error) {
 	return 0, nil
 }

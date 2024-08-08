@@ -47,7 +47,6 @@ func DefaultBTCConfig() *BTCConfig {
 	}
 }
 
-
 func (cfg *BTCConfig) ToConnConfig() *rpcclient.ConnConfig {
 	return &rpcclient.ConnConfig{
 		Host:                 cfg.RPCHost,

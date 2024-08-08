@@ -3,8 +3,8 @@ package btcclient
 import (
 	"testing"
 
+	"github.com/babylonlabs-io/finality-gadget/log"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 // TODO: 1) not rely on mainnet RPC; 2) add more tests for some other edge cases
@@ -13,12 +13,12 @@ func TestBtcClient(t *testing.T) {
 	var err error
 
 	// Create logger.
-	logger, err := zap.NewDevelopment()
+	logger, err := log.NewRootLogger("console", true)
 	require.Nil(t, err)
 
 	// Create BTC client
 	btcConfig := DefaultBTCConfig()
-	btc, err := NewBTCClient(btcConfig, logger)
+	btc, err := NewBitcoinClient(btcConfig, logger)
 	require.Nil(t, err)
 
 	// timestmap between block 848682 and 848683

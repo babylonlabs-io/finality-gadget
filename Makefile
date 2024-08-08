@@ -2,6 +2,8 @@
 
 MOCKS_DIR=./testutil/mocks
 
+OPFGD_PKG := github.com/babylonlabs-io/finality-gadget/cmd/opfgd
+
 mock-gen:
 	go install go.uber.org/mock/mockgen@latest
 	mockgen -source=sdk/client/expected_clients.go -package mocks -destination $(MOCKS_DIR)/expected_clients_mock.go
@@ -12,3 +14,6 @@ test:
 
 lint:
 	golangci-lint run
+
+install:
+	go install -trimpath $(OPFGD_PKG)
