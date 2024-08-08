@@ -203,7 +203,7 @@ func (bb *BBoltHandler) GetLatestBlock() (*types.Block, error) {
 		return nil
 	})
 	if err != nil {
-		// If no latest block has been stored yet, return empty block (block 0)
+		// If no latest block has been stored yet, return nil
 		if errors.Is(err, types.ErrBlockNotFound) {
 			return nil, nil
 		}
