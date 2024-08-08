@@ -30,10 +30,7 @@ message BlockInfo {
   uint64 block_timestamp = 3;
 }
 
-message InsertBlockResponse {
-  // success is true if the block is successfully inserted
-  bool success = 1;
-}
+message InsertBlockResponse {}
 
 message GetBlockStatusByHeightRequest {
   // block_height is the height of the block

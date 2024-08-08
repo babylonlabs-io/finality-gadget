@@ -44,10 +44,10 @@ func (r *rpcServer) InsertBlock(ctx context.Context, req *proto.BlockInfo) (*pro
 	})
 
 	if err != nil {
-		return &proto.InsertBlockResponse{Success: false}, err
+		return &proto.InsertBlockResponse{}, err
 	}
 
-	return &proto.InsertBlockResponse{Success: true}, nil
+	return &proto.InsertBlockResponse{}, nil
 }
 
 // GetBlockStatusByHeight is an RPC method that returns the status of a block at a given height.

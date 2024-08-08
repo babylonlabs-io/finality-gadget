@@ -42,12 +42,12 @@ func (c *FinalityGadgetGrpcClient) InsertBlock(block *types.Block) (bool, error)
 		BlockTimestamp: block.BlockTimestamp,
 	}
 
-	res, err := c.client.InsertBlock(context.Background(), req)
+	_, err := c.client.InsertBlock(context.Background(), req)
 	if err != nil {
 		return false, err
 	}
 
-	return res.Success, nil
+	return true, nil
 }
 
 func (c *FinalityGadgetGrpcClient) GetBlockStatusByHeight(height uint64) (bool, error) {
