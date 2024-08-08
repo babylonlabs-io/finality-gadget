@@ -15,9 +15,9 @@ import (
 	"google.golang.org/grpc"
 )
 
-// Server is the main daemon construct for the EOTS manager server. It handles
+// Server is the main daemon construct for the finality gadget server. It handles
 // spinning up the RPC sever, the database, and any other components that the
-// EOTS manager server needs to function.
+// the finality gadget server needs to run.
 type Server struct {
 	rpcServer *rpcServer
 	cfg       *config.Config
@@ -29,7 +29,7 @@ type Server struct {
 	started     int32
 }
 
-// NewEOTSManagerServer creates a new server with the given config.
+// NewFinalityGadgetServer creates a new server with the given config.
 func NewFinalityGadgetServer(cfg *config.Config, db db.IDatabaseHandler, fg finalitygadget.IFinalityGadget, sig signal.Interceptor, logger *zap.Logger) *Server {
 	return &Server{
 		cfg:         cfg,
