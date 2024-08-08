@@ -31,7 +31,13 @@ To get started, clone the repository.
 git clone https://github.com/babylonlabs-io/finality-gadget.git
 ```
 
-Configure the `config.toml` file:
+Copy the `config.toml.example` file to `config.toml`:
+
+```bash
+cp config.toml.example config.toml
+```
+
+Configure the `config.toml` file with the following parameters:
 
 ```toml
 L2RPCHost = # RPC URL of OP stack L2 chain
