@@ -88,7 +88,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 
 	// Create grpc client
 	hostAddr := "localhost:" + cfg.GRPCServerPort
-	client, err := rpcclient.NewFinalityGadgetGrpcClient(db, hostAddr)
+	client, err := rpcclient.NewFinalityGadgetGrpcClient(hostAddr)
 	if err != nil {
 		logger.Fatal("Error creating grpc client", zap.Error(err))
 		return fmt.Errorf("error creating grpc client: %v", err)

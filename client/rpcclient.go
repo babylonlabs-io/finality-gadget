@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/babylonlabs-io/finality-gadget/db"
 	"github.com/babylonlabs-io/finality-gadget/proto"
 	"github.com/babylonlabs-io/finality-gadget/types"
 	"google.golang.org/grpc"
@@ -14,11 +13,9 @@ import (
 type FinalityGadgetGrpcClient struct {
 	client proto.FinalityGadgetClient
 	conn   *grpc.ClientConn
-	db     db.IDatabaseHandler
 }
 
 func NewFinalityGadgetGrpcClient(
-	db db.IDatabaseHandler,
 	remoteAddr string,
 ) (*FinalityGadgetGrpcClient, error) {
 	conn, err := grpc.NewClient(remoteAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -29,7 +26,6 @@ func NewFinalityGadgetGrpcClient(
 	gClient := &FinalityGadgetGrpcClient{
 		client: proto.NewFinalityGadgetClient(conn),
 		conn:   conn,
-		db:     db,
 	}
 
 	return gClient, nil
