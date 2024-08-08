@@ -288,8 +288,8 @@ func (fg *FinalityGadget) QueryIsBlockFinalizedByHash(hash string) (bool, error)
 	return fg.db.QueryIsBlockFinalizedByHash(normalizeBlockHash(hash))
 }
 
-func (fg *FinalityGadget) QueryLatestFinalizedBLock() (*types.Block, error) {
-	return fg.db.QueryLatestFinalizedBLock()
+func (fg *FinalityGadget) QueryLatestFinalizedBlock() (*types.Block, error) {
+	return fg.db.QueryLatestFinalizedBlock()
 }
 
 // This function process blocks indefinitely, starting from the last finalized block.
@@ -390,7 +390,7 @@ func (fg *FinalityGadget) startService() error {
 	}
 
 	// Query local DB for last block processed
-	localBlock, err := fg.db.QueryLatestFinalizedBLock()
+	localBlock, err := fg.db.QueryLatestFinalizedBlock()
 	if err != nil {
 		return fmt.Errorf("error getting latest block from db: %v", err)
 	}

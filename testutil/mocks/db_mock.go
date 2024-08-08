@@ -141,19 +141,19 @@ func (mr *MockIDatabaseHandlerMockRecorder) QueryIsBlockFinalizedByHeight(height
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryIsBlockFinalizedByHeight", reflect.TypeOf((*MockIDatabaseHandler)(nil).QueryIsBlockFinalizedByHeight), height)
 }
 
-// QueryLatestFinalizedBLock mocks base method.
-func (m *MockIDatabaseHandler) QueryLatestFinalizedBLock() (*types.Block, error) {
+// QueryLatestFinalizedBlock mocks base method.
+func (m *MockIDatabaseHandler) QueryLatestFinalizedBlock() (*types.Block, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "QueryLatestFinalizedBLock")
+	ret := m.ctrl.Call(m, "QueryLatestFinalizedBlock")
 	ret0, _ := ret[0].(*types.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// QueryLatestFinalizedBLock indicates an expected call of QueryLatestFinalizedBLock.
-func (mr *MockIDatabaseHandlerMockRecorder) QueryLatestFinalizedBLock() *gomock.Call {
+// QueryLatestFinalizedBlock indicates an expected call of QueryLatestFinalizedBlock.
+func (mr *MockIDatabaseHandlerMockRecorder) QueryLatestFinalizedBlock() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryLatestFinalizedBLock", reflect.TypeOf((*MockIDatabaseHandler)(nil).QueryLatestFinalizedBLock))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryLatestFinalizedBlock", reflect.TypeOf((*MockIDatabaseHandler)(nil).QueryLatestFinalizedBlock))
 }
 
 // InsertBlock mocks base method.

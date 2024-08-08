@@ -8,25 +8,16 @@ service FinalityGadget {
   // QueryIsBlockFinalizedByHeight returns the finality status of a block at
   // given height
   rpc QueryIsBlockFinalizedByHeight(QueryIsBlockFinalizedByHeightRequest)
-      returns (GetBlockStatusResponse);
+      returns (QueryIsBlockFinalizedResponse);
 
   // QueryIsBlockFinalizedByHash returns the finality status of a block with
   // given hash
   rpc QueryIsBlockFinalizedByHash(QueryIsBlockFinalizedByHashRequest)
-      returns (GetBlockStatusResponse);
+      returns (QueryIsBlockFinalizedResponse);
 
-  // QueryLatestFinalizedBLock returns the latest consecutively finalized block
-  rpc QueryLatestFinalizedBLock(QueryLatestFinalizedBLockRequest)
-      returns (BlockInfo);
-}
-
-message BlockInfo {
-  // block_hash is the hash of the block
-  string block_hash = 1;
-  // block_height is the height of the block
-  uint64 block_height = 2;
-  // block_timestamp is the unix timestamp of the block
-  uint64 block_timestamp = 3;
+  // QueryLatestFinalizedBlock returns the latest consecutively finalized block
+  rpc QueryLatestFinalizedBlock(QueryLatestFinalizedBlockRequest)
+      returns (QueryBlockResponse);
 }
 
 message QueryIsBlockFinalizedByHeightRequest {
@@ -39,9 +30,18 @@ message QueryIsBlockFinalizedByHashRequest {
   string block_hash = 1;
 }
 
-message GetBlockStatusResponse {
+message QueryIsBlockFinalizedResponse {
   // is_finalized is true if the block is finalized
   bool is_finalized = 1;
 }
 
-message QueryLatestFinalizedBLockRequest {}
+message QueryLatestFinalizedBlockRequest {}
+
+message QueryBlockResponse {
+  // block_hash is the hash of the block
+  string block_hash = 1;
+  // block_height is the height of the block
+  uint64 block_height = 2;
+  // block_timestamp is the unix timestamp of the block
+  uint64 block_timestamp = 3;
+}

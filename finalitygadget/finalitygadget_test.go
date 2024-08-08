@@ -519,7 +519,7 @@ func TestQueryIsBlockFinalizedByHashForNonExistentBlock(t *testing.T) {
 	require.Equal(t, err, types.ErrBlockNotFound)
 }
 
-func TestQueryLatestFinalizedBLock(t *testing.T) {
+func TestQueryLatestFinalizedBlock(t *testing.T) {
 	// define blocks
 	first := &types.Block{
 		BlockHeight:    1,
@@ -539,7 +539,7 @@ func TestQueryLatestFinalizedBLock(t *testing.T) {
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
 	mockDbHandler.EXPECT().InsertBlock(normalizedFirst).Return(nil).Times(1)
 	mockDbHandler.EXPECT().InsertBlock(normalizedSecond).Return(nil).Times(1)
-	mockDbHandler.EXPECT().QueryLatestFinalizedBLock().Return(normalizedSecond, nil).Times(1)
+	mockDbHandler.EXPECT().QueryLatestFinalizedBlock().Return(normalizedSecond, nil).Times(1)
 
 	mockFinalityGadget := &FinalityGadget{
 		db: mockDbHandler,
@@ -552,25 +552,25 @@ func TestQueryLatestFinalizedBLock(t *testing.T) {
 	require.NoError(t, err)
 
 	// fetch latest block
-	latestBlock, err := mockFinalityGadget.QueryLatestFinalizedBLock()
+	latestBlock, err := mockFinalityGadget.QueryLatestFinalizedBlock()
 	require.NoError(t, err)
 	require.Equal(t, normalizedSecond.BlockHeight, latestBlock.BlockHeight)
 	require.Equal(t, normalizedSecond.BlockHash, latestBlock.BlockHash)
 	require.Equal(t, normalizedSecond.BlockTimestamp, latestBlock.BlockTimestamp)
 }
 
-func TestQueryLatestFinalizedBLockForNonExistentBlock(t *testing.T) {
+func TestQueryLatestFinalizedBlockForNonExistentBlock(t *testing.T) {
 	// mock db and finality gadget
 	ctl := gomock.NewController(t)
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
-	mockDbHandler.EXPECT().QueryLatestFinalizedBLock().Return(nil, types.ErrBlockNotFound).Times(1)
+	mockDbHandler.EXPECT().QueryLatestFinalizedBlock().Return(nil, types.ErrBlockNotFound).Times(1)
 
 	mockFinalityGadget := &FinalityGadget{
 		db: mockDbHandler,
 	}
 
 	// fetch latest block
-	latestBlock, err := mockFinalityGadget.QueryLatestFinalizedBLock()
+	latestBlock, err := mockFinalityGadget.QueryLatestFinalizedBlock()
 	require.Nil(t, latestBlock)
 	require.Equal(t, err, types.ErrBlockNotFound)
 }

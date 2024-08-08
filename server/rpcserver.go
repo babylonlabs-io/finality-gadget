@@ -35,36 +35,36 @@ func (r *rpcServer) RegisterWithGrpcServer(grpcServer *grpc.Server) error {
 }
 
 // QueryIsBlockFinalizedByHeight is an RPC method that returns the status of a block at a given height.
-func (r *rpcServer) QueryIsBlockFinalizedByHeight(ctx context.Context, req *proto.QueryIsBlockFinalizedByHeightRequest) (*proto.GetBlockStatusResponse, error) {
+func (r *rpcServer) QueryIsBlockFinalizedByHeight(ctx context.Context, req *proto.QueryIsBlockFinalizedByHeightRequest) (*proto.QueryIsBlockFinalizedResponse, error) {
 	isFinalized, err := r.fg.QueryIsBlockFinalizedByHeight(req.BlockHeight)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &proto.GetBlockStatusResponse{IsFinalized: isFinalized}, nil
+	return &proto.QueryIsBlockFinalizedResponse{IsFinalized: isFinalized}, nil
 }
 
 // QueryIsBlockFinalizedByHeight is an RPC method that returns the status of a block at a given height.
-func (r *rpcServer) QueryIsBlockFinalizedByHash(ctx context.Context, req *proto.QueryIsBlockFinalizedByHashRequest) (*proto.GetBlockStatusResponse, error) {
+func (r *rpcServer) QueryIsBlockFinalizedByHash(ctx context.Context, req *proto.QueryIsBlockFinalizedByHashRequest) (*proto.QueryIsBlockFinalizedResponse, error) {
 	isFinalized, err := r.fg.QueryIsBlockFinalizedByHash(req.BlockHash)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &proto.GetBlockStatusResponse{IsFinalized: isFinalized}, nil
+	return &proto.QueryIsBlockFinalizedResponse{IsFinalized: isFinalized}, nil
 }
 
-// QueryLatestFinalizedBLock is an RPC method that returns the latest consecutively finalized block.
-func (r *rpcServer) QueryLatestFinalizedBLock(ctx context.Context, req *proto.QueryLatestFinalizedBLockRequest) (*proto.BlockInfo, error) {
-	block, err := r.fg.QueryLatestFinalizedBLock()
+// QueryLatestFinalizedBlock is an RPC method that returns the latest consecutively finalized block.
+func (r *rpcServer) QueryLatestFinalizedBlock(ctx context.Context, req *proto.QueryLatestFinalizedBlockRequest) (*proto.QueryBlockResponse, error) {
+	block, err := r.fg.QueryLatestFinalizedBlock()
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &proto.BlockInfo{
+	return &proto.QueryBlockResponse{
 		BlockHash:      block.BlockHash,
 		BlockHeight:    block.BlockHeight,
 		BlockTimestamp: block.BlockTimestamp,
