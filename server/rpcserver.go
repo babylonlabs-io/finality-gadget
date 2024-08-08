@@ -7,7 +7,6 @@ import (
 
 	"github.com/babylonlabs-io/finality-gadget/finalitygadget"
 	"github.com/babylonlabs-io/finality-gadget/proto"
-	"github.com/babylonlabs-io/finality-gadget/types"
 )
 
 // rpcServer is the main RPC server for the finality gadget daemon that handles
@@ -33,21 +32,6 @@ func (r *rpcServer) RegisterWithGrpcServer(grpcServer *grpc.Server) error {
 	// Register the main RPC server.
 	proto.RegisterFinalityGadgetServer(grpcServer, r)
 	return nil
-}
-
-// InsertBlock is an RPC method that inserts a block into the database.
-func (r *rpcServer) InsertBlock(ctx context.Context, req *proto.BlockInfo) (*proto.InsertBlockResponse, error) {
-	err := r.fg.InsertBlock(&types.Block{
-		BlockHash:      req.BlockHash,
-		BlockHeight:    req.BlockHeight,
-		BlockTimestamp: req.BlockTimestamp,
-	})
-
-	if err != nil {
-		return &proto.InsertBlockResponse{}, err
-	}
-
-	return &proto.InsertBlockResponse{}, nil
 }
 
 // QueryIsBlockFinalizedByHeight is an RPC method that returns the status of a block at a given height.

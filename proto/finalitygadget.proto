@@ -5,9 +5,6 @@ package proto;
 option go_package = "github.com/babylonlabs-io/finality-gadget/proto";
 
 service FinalityGadget {
-  // InsertBlock inserts a new block into the finality gadget db
-  rpc InsertBlock(BlockInfo) returns (InsertBlockResponse);
-
   // QueryIsBlockFinalizedByHeight returns the finality status of a block at
   // given height
   rpc QueryIsBlockFinalizedByHeight(QueryIsBlockFinalizedByHeightRequest)
@@ -31,8 +28,6 @@ message BlockInfo {
   // block_timestamp is the unix timestamp of the block
   uint64 block_timestamp = 3;
 }
-
-message InsertBlockResponse {}
 
 message QueryIsBlockFinalizedByHeightRequest {
   // block_height is the height of the block

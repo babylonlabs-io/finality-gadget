@@ -35,21 +35,6 @@ func NewFinalityGadgetGrpcClient(
 	return gClient, nil
 }
 
-func (c *FinalityGadgetGrpcClient) InsertBlock(block *types.Block) (bool, error) {
-	req := &proto.BlockInfo{
-		BlockHash:      block.BlockHash,
-		BlockHeight:    block.BlockHeight,
-		BlockTimestamp: block.BlockTimestamp,
-	}
-
-	_, err := c.client.InsertBlock(context.Background(), req)
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
-}
-
 func (c *FinalityGadgetGrpcClient) QueryIsBlockFinalizedByHeight(height uint64) (bool, error) {
 	req := &proto.QueryIsBlockFinalizedByHeightRequest{
 		BlockHeight: height,

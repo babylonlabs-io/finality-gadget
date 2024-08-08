@@ -19,22 +19,20 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	FinalityGadget_InsertBlock_FullMethodName            = "/proto.FinalityGadget/InsertBlock"
 	FinalityGadget_QueryIsBlockFinalizedByHeight_FullMethodName = "/proto.FinalityGadget/QueryIsBlockFinalizedByHeight"
 	FinalityGadget_QueryIsBlockFinalizedByHash_FullMethodName   = "/proto.FinalityGadget/QueryIsBlockFinalizedByHash"
-	FinalityGadget_QueryLatestFinalizedBLock_FullMethodName         = "/proto.FinalityGadget/QueryLatestFinalizedBLock"
+	FinalityGadget_QueryLatestFinalizedBLock_FullMethodName     = "/proto.FinalityGadget/QueryLatestFinalizedBLock"
 )
 
 // FinalityGadgetClient is the client API for FinalityGadget service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FinalityGadgetClient interface {
-	// InsertBlock inserts a new block into the finality gadget db
-	InsertBlock(ctx context.Context, in *BlockInfo, opts ...grpc.CallOption) (*InsertBlockResponse, error)
-	// QueryIsBlockFinalizedByHeight returns the finality status of a block at given
-	// height
+	// QueryIsBlockFinalizedByHeight returns the finality status of a block at
+	// given height
 	QueryIsBlockFinalizedByHeight(ctx context.Context, in *QueryIsBlockFinalizedByHeightRequest, opts ...grpc.CallOption) (*GetBlockStatusResponse, error)
-	// QueryIsBlockFinalizedByHash returns the finality status of a block with given hash
+	// QueryIsBlockFinalizedByHash returns the finality status of a block with
+	// given hash
 	QueryIsBlockFinalizedByHash(ctx context.Context, in *QueryIsBlockFinalizedByHashRequest, opts ...grpc.CallOption) (*GetBlockStatusResponse, error)
 	// QueryLatestFinalizedBLock returns the latest consecutively finalized block
 	QueryLatestFinalizedBLock(ctx context.Context, in *QueryLatestFinalizedBLockRequest, opts ...grpc.CallOption) (*BlockInfo, error)
@@ -46,15 +44,6 @@ type finalityGadgetClient struct {
 
 func NewFinalityGadgetClient(cc grpc.ClientConnInterface) FinalityGadgetClient {
 	return &finalityGadgetClient{cc}
-}
-
-func (c *finalityGadgetClient) InsertBlock(ctx context.Context, in *BlockInfo, opts ...grpc.CallOption) (*InsertBlockResponse, error) {
-	out := new(InsertBlockResponse)
-	err := c.cc.Invoke(ctx, FinalityGadget_InsertBlock_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *finalityGadgetClient) QueryIsBlockFinalizedByHeight(ctx context.Context, in *QueryIsBlockFinalizedByHeightRequest, opts ...grpc.CallOption) (*GetBlockStatusResponse, error) {
@@ -88,12 +77,11 @@ func (c *finalityGadgetClient) QueryLatestFinalizedBLock(ctx context.Context, in
 // All implementations must embed UnimplementedFinalityGadgetServer
 // for forward compatibility
 type FinalityGadgetServer interface {
-	// InsertBlock inserts a new block into the finality gadget db
-	InsertBlock(context.Context, *BlockInfo) (*InsertBlockResponse, error)
-	// QueryIsBlockFinalizedByHeight returns the finality status of a block at given
-	// height
+	// QueryIsBlockFinalizedByHeight returns the finality status of a block at
+	// given height
 	QueryIsBlockFinalizedByHeight(context.Context, *QueryIsBlockFinalizedByHeightRequest) (*GetBlockStatusResponse, error)
-	// QueryIsBlockFinalizedByHash returns the finality status of a block with given hash
+	// QueryIsBlockFinalizedByHash returns the finality status of a block with
+	// given hash
 	QueryIsBlockFinalizedByHash(context.Context, *QueryIsBlockFinalizedByHashRequest) (*GetBlockStatusResponse, error)
 	// QueryLatestFinalizedBLock returns the latest consecutively finalized block
 	QueryLatestFinalizedBLock(context.Context, *QueryLatestFinalizedBLockRequest) (*BlockInfo, error)
@@ -104,9 +92,6 @@ type FinalityGadgetServer interface {
 type UnimplementedFinalityGadgetServer struct {
 }
 
-func (UnimplementedFinalityGadgetServer) InsertBlock(context.Context, *BlockInfo) (*InsertBlockResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method InsertBlock not implemented")
-}
 func (UnimplementedFinalityGadgetServer) QueryIsBlockFinalizedByHeight(context.Context, *QueryIsBlockFinalizedByHeightRequest) (*GetBlockStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryIsBlockFinalizedByHeight not implemented")
 }
@@ -127,24 +112,6 @@ type UnsafeFinalityGadgetServer interface {
 
 func RegisterFinalityGadgetServer(s grpc.ServiceRegistrar, srv FinalityGadgetServer) {
 	s.RegisterService(&FinalityGadget_ServiceDesc, srv)
-}
-
-func _FinalityGadget_InsertBlock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BlockInfo)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(FinalityGadgetServer).InsertBlock(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: FinalityGadget_InsertBlock_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FinalityGadgetServer).InsertBlock(ctx, req.(*BlockInfo))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _FinalityGadget_QueryIsBlockFinalizedByHeight_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -208,10 +175,6 @@ var FinalityGadget_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.FinalityGadget",
 	HandlerType: (*FinalityGadgetServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "InsertBlock",
-			Handler:    _FinalityGadget_InsertBlock_Handler,
-		},
 		{
 			MethodName: "QueryIsBlockFinalizedByHeight",
 			Handler:    _FinalityGadget_QueryIsBlockFinalizedByHeight_Handler,
