@@ -280,12 +280,12 @@ func (fg *FinalityGadget) GetBlockByHash(hash string) (*types.Block, error) {
 	return fg.db.GetBlockByHash(normalizeBlockHash(hash))
 }
 
-func (fg *FinalityGadget) GetBlockStatusByHeight(height uint64) (bool, error) {
-	return fg.db.GetBlockStatusByHeight(height)
+func (fg *FinalityGadget) QueryIsBlockFinalizedByHeight(height uint64) (bool, error) {
+	return fg.db.QueryIsBlockFinalizedByHeight(height)
 }
 
-func (fg *FinalityGadget) GetBlockStatusByHash(hash string) (bool, error) {
-	return fg.db.GetBlockStatusByHash(normalizeBlockHash(hash))
+func (fg *FinalityGadget) QueryIsBlockFinalizedByHash(hash string) (bool, error) {
+	return fg.db.QueryIsBlockFinalizedByHash(normalizeBlockHash(hash))
 }
 
 func (fg *FinalityGadget) GetLatestBlock() (*types.Block, error) {
@@ -308,7 +308,7 @@ func (fg *FinalityGadget) ProcessBlocks(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
-			block, err := fg.getBlockByNumber(int64(fg.currHeight + 1))
+			block, err := fg.queryBlockByHeight(int64(fg.currHeight + 1))
 			if err != nil {
 				fg.logger.Fatal("error getting new block", zap.Error(err))
 				continue
@@ -369,11 +369,11 @@ func (fg *FinalityGadget) queryAllFpBtcPubKeys() ([]string, error) {
 
 // Get last btc finalized block
 func (fg *FinalityGadget) getLatestFinalizedBlock() (*types.Block, error) {
-	return fg.getBlockByNumber(ethrpc.FinalizedBlockNumber.Int64())
+	return fg.queryBlockByHeight(ethrpc.FinalizedBlockNumber.Int64())
 }
 
 // Get block by number
-func (fg *FinalityGadget) getBlockByNumber(blockNumber int64) (*types.Block, error) {
+func (fg *FinalityGadget) queryBlockByHeight(blockNumber int64) (*types.Block, error) {
 	header, err := fg.l2Client.HeaderByNumber(context.Background(), big.NewInt(blockNumber))
 	if err != nil {
 		return nil, err

@@ -50,9 +50,9 @@ func (r *rpcServer) InsertBlock(ctx context.Context, req *proto.BlockInfo) (*pro
 	return &proto.InsertBlockResponse{}, nil
 }
 
-// GetBlockStatusByHeight is an RPC method that returns the status of a block at a given height.
-func (r *rpcServer) GetBlockStatusByHeight(ctx context.Context, req *proto.GetBlockStatusByHeightRequest) (*proto.GetBlockStatusResponse, error) {
-	isFinalized, err := r.fg.GetBlockStatusByHeight(req.BlockHeight)
+// QueryIsBlockFinalizedByHeight is an RPC method that returns the status of a block at a given height.
+func (r *rpcServer) QueryIsBlockFinalizedByHeight(ctx context.Context, req *proto.QueryIsBlockFinalizedByHeightRequest) (*proto.GetBlockStatusResponse, error) {
+	isFinalized, err := r.fg.QueryIsBlockFinalizedByHeight(req.BlockHeight)
 
 	if err != nil {
 		return nil, err
@@ -61,9 +61,9 @@ func (r *rpcServer) GetBlockStatusByHeight(ctx context.Context, req *proto.GetBl
 	return &proto.GetBlockStatusResponse{IsFinalized: isFinalized}, nil
 }
 
-// GetBlockStatusByHeight is an RPC method that returns the status of a block at a given height.
-func (r *rpcServer) GetBlockStatusByHash(ctx context.Context, req *proto.GetBlockStatusByHashRequest) (*proto.GetBlockStatusResponse, error) {
-	isFinalized, err := r.fg.GetBlockStatusByHash(req.BlockHash)
+// QueryIsBlockFinalizedByHeight is an RPC method that returns the status of a block at a given height.
+func (r *rpcServer) QueryIsBlockFinalizedByHash(ctx context.Context, req *proto.QueryIsBlockFinalizedByHashRequest) (*proto.GetBlockStatusResponse, error) {
+	isFinalized, err := r.fg.QueryIsBlockFinalizedByHash(req.BlockHash)
 
 	if err != nil {
 		return nil, err

@@ -128,7 +128,7 @@ func TestGetBlockByHashForNonExistentBlock(t *testing.T) {
 	assert.Equal(t, types.ErrBlockNotFound, err)
 }
 
-func TestGetBlockStatusByHeight(t *testing.T) {
+func TestQueryIsBlockFinalizedByHeight(t *testing.T) {
 	handler, cleanup := setupDB(t)
 	defer cleanup()
 
@@ -142,21 +142,21 @@ func TestGetBlockStatusByHeight(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Retrieve block status by height
-	isFinalized, err := handler.GetBlockStatusByHeight(block.BlockHeight)
+	isFinalized, err := handler.QueryIsBlockFinalizedByHeight(block.BlockHeight)
 	assert.NoError(t, err)
 	assert.Equal(t, isFinalized, true)
 }
 
-func TestGetBlockStatusByHeightForNonExistentBlock(t *testing.T) {
+func TestQueryIsBlockFinalizedByHeightForNonExistentBlock(t *testing.T) {
 	handler, cleanup := setupDB(t)
 	defer cleanup()
 
-	isFinalized, err := handler.GetBlockStatusByHeight(1)
+	isFinalized, err := handler.QueryIsBlockFinalizedByHeight(1)
 	assert.NoError(t, err)
 	assert.Equal(t, isFinalized, false)
 }
 
-func TestGetBlockStatusByHash(t *testing.T) {
+func TestQueryIsBlockFinalizedByHash(t *testing.T) {
 	handler, cleanup := setupDB(t)
 	defer cleanup()
 
@@ -170,16 +170,16 @@ func TestGetBlockStatusByHash(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Retrieve block status by hash
-	isFinalized, err := handler.GetBlockStatusByHash(block.BlockHash)
+	isFinalized, err := handler.QueryIsBlockFinalizedByHash(block.BlockHash)
 	assert.NoError(t, err)
 	assert.Equal(t, isFinalized, true)
 }
 
-func TestGetBlockStatusByHashForNonExistentBlock(t *testing.T) {
+func TestQueryIsBlockFinalizedByHashForNonExistentBlock(t *testing.T) {
 	handler, cleanup := setupDB(t)
 	defer cleanup()
 
-	isFinalized, err := handler.GetBlockStatusByHash("0x123")
+	isFinalized, err := handler.QueryIsBlockFinalizedByHash("0x123")
 	assert.NoError(t, err)
 	assert.Equal(t, isFinalized, false)
 }

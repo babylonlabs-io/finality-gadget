@@ -64,11 +64,11 @@ type IFinalityGadget interface {
 	// GetBlockByHash returns the btc finalized block at given hash by querying the local db
 	GetBlockByHash(hash string) (*types.Block, error)
 
-	// GetBlockStatusByHeight returns the btc finalization status of a block at given height by querying the local db
-	GetBlockStatusByHeight(height uint64) (bool, error)
+	// QueryIsBlockFinalizedByHeight returns the btc finalization status of a block at given height by querying the local db
+	QueryIsBlockFinalizedByHeight(height uint64) (bool, error)
 
-	// GetBlockStatusByHash returns the btc finalization status of a block at given hash by querying the local db
-	GetBlockStatusByHash(hash string) (bool, error)
+	// QueryIsBlockFinalizedByHash returns the btc finalization status of a block at given hash by querying the local db
+	QueryIsBlockFinalizedByHash(hash string) (bool, error)
 
 	// GetLatestBlock returns the latest finalized block by querying the local db
 	GetLatestBlock() (*types.Block, error)

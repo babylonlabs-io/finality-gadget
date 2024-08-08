@@ -111,34 +111,34 @@ func (mr *MockIDatabaseHandlerMockRecorder) GetBlockByHeight(height any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockByHeight", reflect.TypeOf((*MockIDatabaseHandler)(nil).GetBlockByHeight), height)
 }
 
-// GetBlockStatusByHash mocks base method.
-func (m *MockIDatabaseHandler) GetBlockStatusByHash(hash string) (bool, error) {
+// QueryIsBlockFinalizedByHash mocks base method.
+func (m *MockIDatabaseHandler) QueryIsBlockFinalizedByHash(hash string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBlockStatusByHash", hash)
+	ret := m.ctrl.Call(m, "QueryIsBlockFinalizedByHash", hash)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetBlockStatusByHash indicates an expected call of GetBlockStatusByHash.
-func (mr *MockIDatabaseHandlerMockRecorder) GetBlockStatusByHash(hash any) *gomock.Call {
+// QueryIsBlockFinalizedByHash indicates an expected call of QueryIsBlockFinalizedByHash.
+func (mr *MockIDatabaseHandlerMockRecorder) QueryIsBlockFinalizedByHash(hash any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockStatusByHash", reflect.TypeOf((*MockIDatabaseHandler)(nil).GetBlockStatusByHash), hash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryIsBlockFinalizedByHash", reflect.TypeOf((*MockIDatabaseHandler)(nil).QueryIsBlockFinalizedByHash), hash)
 }
 
-// GetBlockStatusByHeight mocks base method.
-func (m *MockIDatabaseHandler) GetBlockStatusByHeight(height uint64) (bool, error) {
+// QueryIsBlockFinalizedByHeight mocks base method.
+func (m *MockIDatabaseHandler) QueryIsBlockFinalizedByHeight(height uint64) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBlockStatusByHeight", height)
+	ret := m.ctrl.Call(m, "QueryIsBlockFinalizedByHeight", height)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetBlockStatusByHeight indicates an expected call of GetBlockStatusByHeight.
-func (mr *MockIDatabaseHandlerMockRecorder) GetBlockStatusByHeight(height any) *gomock.Call {
+// QueryIsBlockFinalizedByHeight indicates an expected call of QueryIsBlockFinalizedByHeight.
+func (mr *MockIDatabaseHandlerMockRecorder) QueryIsBlockFinalizedByHeight(height any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockStatusByHeight", reflect.TypeOf((*MockIDatabaseHandler)(nil).GetBlockStatusByHeight), height)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryIsBlockFinalizedByHeight", reflect.TypeOf((*MockIDatabaseHandler)(nil).QueryIsBlockFinalizedByHeight), height)
 }
 
 // GetLatestBlock mocks base method.

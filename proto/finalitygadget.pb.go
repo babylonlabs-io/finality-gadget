@@ -124,7 +124,7 @@ func (*InsertBlockResponse) Descriptor() ([]byte, []int) {
 	return file_proto_finalitygadget_proto_rawDescGZIP(), []int{1}
 }
 
-type GetBlockStatusByHeightRequest struct {
+type QueryIsBlockFinalizedByHeightRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -133,8 +133,8 @@ type GetBlockStatusByHeightRequest struct {
 	BlockHeight uint64 `protobuf:"varint,1,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
 }
 
-func (x *GetBlockStatusByHeightRequest) Reset() {
-	*x = GetBlockStatusByHeightRequest{}
+func (x *QueryIsBlockFinalizedByHeightRequest) Reset() {
+	*x = QueryIsBlockFinalizedByHeightRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_proto_finalitygadget_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -142,13 +142,13 @@ func (x *GetBlockStatusByHeightRequest) Reset() {
 	}
 }
 
-func (x *GetBlockStatusByHeightRequest) String() string {
+func (x *QueryIsBlockFinalizedByHeightRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetBlockStatusByHeightRequest) ProtoMessage() {}
+func (*QueryIsBlockFinalizedByHeightRequest) ProtoMessage() {}
 
-func (x *GetBlockStatusByHeightRequest) ProtoReflect() protoreflect.Message {
+func (x *QueryIsBlockFinalizedByHeightRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_finalitygadget_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -160,19 +160,19 @@ func (x *GetBlockStatusByHeightRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetBlockStatusByHeightRequest.ProtoReflect.Descriptor instead.
-func (*GetBlockStatusByHeightRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryIsBlockFinalizedByHeightRequest.ProtoReflect.Descriptor instead.
+func (*QueryIsBlockFinalizedByHeightRequest) Descriptor() ([]byte, []int) {
 	return file_proto_finalitygadget_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *GetBlockStatusByHeightRequest) GetBlockHeight() uint64 {
+func (x *QueryIsBlockFinalizedByHeightRequest) GetBlockHeight() uint64 {
 	if x != nil {
 		return x.BlockHeight
 	}
 	return 0
 }
 
-type GetBlockStatusByHashRequest struct {
+type QueryIsBlockFinalizedByHashRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -181,8 +181,8 @@ type GetBlockStatusByHashRequest struct {
 	BlockHash string `protobuf:"bytes,1,opt,name=block_hash,json=blockHash,proto3" json:"block_hash,omitempty"`
 }
 
-func (x *GetBlockStatusByHashRequest) Reset() {
-	*x = GetBlockStatusByHashRequest{}
+func (x *QueryIsBlockFinalizedByHashRequest) Reset() {
+	*x = QueryIsBlockFinalizedByHashRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_proto_finalitygadget_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -190,13 +190,13 @@ func (x *GetBlockStatusByHashRequest) Reset() {
 	}
 }
 
-func (x *GetBlockStatusByHashRequest) String() string {
+func (x *QueryIsBlockFinalizedByHashRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetBlockStatusByHashRequest) ProtoMessage() {}
+func (*QueryIsBlockFinalizedByHashRequest) ProtoMessage() {}
 
-func (x *GetBlockStatusByHashRequest) ProtoReflect() protoreflect.Message {
+func (x *QueryIsBlockFinalizedByHashRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_finalitygadget_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -208,12 +208,12 @@ func (x *GetBlockStatusByHashRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetBlockStatusByHashRequest.ProtoReflect.Descriptor instead.
-func (*GetBlockStatusByHashRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryIsBlockFinalizedByHashRequest.ProtoReflect.Descriptor instead.
+func (*QueryIsBlockFinalizedByHashRequest) Descriptor() ([]byte, []int) {
 	return file_proto_finalitygadget_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetBlockStatusByHashRequest) GetBlockHash() string {
+func (x *QueryIsBlockFinalizedByHashRequest) GetBlockHash() string {
 	if x != nil {
 		return x.BlockHash
 	}
@@ -377,19 +377,19 @@ var file_proto_finalitygadget_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_proto_finalitygadget_proto_goTypes = []interface{}{
 	(*BlockInfo)(nil),                     // 0: proto.BlockInfo
 	(*InsertBlockResponse)(nil),           // 1: proto.InsertBlockResponse
-	(*GetBlockStatusByHeightRequest)(nil), // 2: proto.GetBlockStatusByHeightRequest
-	(*GetBlockStatusByHashRequest)(nil),   // 3: proto.GetBlockStatusByHashRequest
+	(*QueryIsBlockFinalizedByHeightRequest)(nil), // 2: proto.QueryIsBlockFinalizedByHeightRequest
+	(*QueryIsBlockFinalizedByHashRequest)(nil),   // 3: proto.QueryIsBlockFinalizedByHashRequest
 	(*GetBlockStatusResponse)(nil),        // 4: proto.GetBlockStatusResponse
 	(*GetLatestBlockRequest)(nil),         // 5: proto.GetLatestBlockRequest
 }
 var file_proto_finalitygadget_proto_depIdxs = []int32{
 	0, // 0: proto.FinalityGadget.InsertBlock:input_type -> proto.BlockInfo
-	2, // 1: proto.FinalityGadget.GetBlockStatusByHeight:input_type -> proto.GetBlockStatusByHeightRequest
-	3, // 2: proto.FinalityGadget.GetBlockStatusByHash:input_type -> proto.GetBlockStatusByHashRequest
+	2, // 1: proto.FinalityGadget.QueryIsBlockFinalizedByHeight:input_type -> proto.QueryIsBlockFinalizedByHeightRequest
+	3, // 2: proto.FinalityGadget.QueryIsBlockFinalizedByHash:input_type -> proto.QueryIsBlockFinalizedByHashRequest
 	5, // 3: proto.FinalityGadget.GetLatestBlock:input_type -> proto.GetLatestBlockRequest
 	1, // 4: proto.FinalityGadget.InsertBlock:output_type -> proto.InsertBlockResponse
-	4, // 5: proto.FinalityGadget.GetBlockStatusByHeight:output_type -> proto.GetBlockStatusResponse
-	4, // 6: proto.FinalityGadget.GetBlockStatusByHash:output_type -> proto.GetBlockStatusResponse
+	4, // 5: proto.FinalityGadget.QueryIsBlockFinalizedByHeight:output_type -> proto.GetBlockStatusResponse
+	4, // 6: proto.FinalityGadget.QueryIsBlockFinalizedByHash:output_type -> proto.GetBlockStatusResponse
 	0, // 7: proto.FinalityGadget.GetLatestBlock:output_type -> proto.BlockInfo
 	4, // [4:8] is the sub-list for method output_type
 	0, // [0:4] is the sub-list for method input_type
@@ -429,7 +429,7 @@ func file_proto_finalitygadget_proto_init() {
 			}
 		}
 		file_proto_finalitygadget_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetBlockStatusByHeightRequest); i {
+			switch v := v.(*QueryIsBlockFinalizedByHeightRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -441,7 +441,7 @@ func file_proto_finalitygadget_proto_init() {
 			}
 		}
 		file_proto_finalitygadget_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetBlockStatusByHashRequest); i {
+			switch v := v.(*QueryIsBlockFinalizedByHashRequest); i {
 			case 0:
 				return &v.state
 			case 1:

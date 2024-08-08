@@ -50,12 +50,12 @@ func (c *FinalityGadgetGrpcClient) InsertBlock(block *types.Block) (bool, error)
 	return true, nil
 }
 
-func (c *FinalityGadgetGrpcClient) GetBlockStatusByHeight(height uint64) (bool, error) {
-	req := &proto.GetBlockStatusByHeightRequest{
+func (c *FinalityGadgetGrpcClient) QueryIsBlockFinalizedByHeight(height uint64) (bool, error) {
+	req := &proto.QueryIsBlockFinalizedByHeightRequest{
 		BlockHeight: height,
 	}
 
-	res, err := c.client.GetBlockStatusByHeight(context.Background(), req)
+	res, err := c.client.QueryIsBlockFinalizedByHeight(context.Background(), req)
 	if err != nil {
 		return false, err
 	}
@@ -63,12 +63,12 @@ func (c *FinalityGadgetGrpcClient) GetBlockStatusByHeight(height uint64) (bool, 
 	return res.IsFinalized, nil
 }
 
-func (c *FinalityGadgetGrpcClient) GetBlockStatusByHash(hash string) (bool, error) {
-	req := &proto.GetBlockStatusByHashRequest{
+func (c *FinalityGadgetGrpcClient) QueryIsBlockFinalizedByHash(hash string) (bool, error) {
+	req := &proto.QueryIsBlockFinalizedByHashRequest{
 		BlockHash: hash,
 	}
 
-	res, err := c.client.GetBlockStatusByHash(context.Background(), req)
+	res, err := c.client.QueryIsBlockFinalizedByHash(context.Background(), req)
 	if err != nil {
 		return false, err
 	}

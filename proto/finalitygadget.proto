@@ -8,13 +8,14 @@ service FinalityGadget {
   // InsertBlock inserts a new block into the finality gadget db
   rpc InsertBlock(BlockInfo) returns (InsertBlockResponse);
 
-  // GetBlockStatusByHeight returns the finality status of a block at given
-  // height
-  rpc GetBlockStatusByHeight(GetBlockStatusByHeightRequest)
+  // QueryIsBlockFinalizedByHeight returns the finality status of a block at
+  // given height
+  rpc QueryIsBlockFinalizedByHeight(QueryIsBlockFinalizedByHeightRequest)
       returns (GetBlockStatusResponse);
 
-  // GetBlockStatusByHash returns the finality status of a block with given hash
-  rpc GetBlockStatusByHash(GetBlockStatusByHashRequest)
+  // QueryIsBlockFinalizedByHash returns the finality status of a block with
+  // given hash
+  rpc QueryIsBlockFinalizedByHash(QueryIsBlockFinalizedByHashRequest)
       returns (GetBlockStatusResponse);
 
   // GetLatestBlock returns the latest consecutively finalized block
@@ -32,12 +33,12 @@ message BlockInfo {
 
 message InsertBlockResponse {}
 
-message GetBlockStatusByHeightRequest {
+message QueryIsBlockFinalizedByHeightRequest {
   // block_height is the height of the block
   uint64 block_height = 1;
 }
 
-message GetBlockStatusByHashRequest {
+message QueryIsBlockFinalizedByHashRequest {
   // block_hash is the hash of the block
   string block_hash = 1;
 }

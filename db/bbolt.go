@@ -156,7 +156,7 @@ func (bb *BBoltHandler) GetBlockByHash(hash string) (*types.Block, error) {
 	return bb.GetBlockByHeight(blockHeight)
 }
 
-func (bb *BBoltHandler) GetBlockStatusByHeight(height uint64) (bool, error) {
+func (bb *BBoltHandler) QueryIsBlockFinalizedByHeight(height uint64) (bool, error) {
 	_, err := bb.GetBlockByHeight(height)
 	if err != nil {
 		if errors.Is(err, types.ErrBlockNotFound) {
@@ -167,7 +167,7 @@ func (bb *BBoltHandler) GetBlockStatusByHeight(height uint64) (bool, error) {
 	return true, nil
 }
 
-func (bb *BBoltHandler) GetBlockStatusByHash(hash string) (bool, error) {
+func (bb *BBoltHandler) QueryIsBlockFinalizedByHash(hash string) (bool, error) {
 	// Fetch block number by hash
 	var blockHeight uint64
 	err := bb.db.View(func(tx *bolt.Tx) error {
@@ -186,7 +186,7 @@ func (bb *BBoltHandler) GetBlockStatusByHash(hash string) (bool, error) {
 		return false, err
 	}
 
-	return bb.GetBlockStatusByHeight(blockHeight)
+	return bb.QueryIsBlockFinalizedByHeight(blockHeight)
 }
 
 func (bb *BBoltHandler) GetLatestBlock() (*types.Block, error) {

@@ -427,94 +427,94 @@ func TestGetBlockByHashForNonExistentBlock(t *testing.T) {
 	require.Equal(t, err, types.ErrBlockNotFound)
 }
 
-func TestGetBlockStatusByHeight(t *testing.T) {
+func TestQueryIsBlockFinalizedByHeight(t *testing.T) {
 	blockHeight := uint64(1)
 
 	// mock db and finality gadget
 	ctl := gomock.NewController(t)
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
-	mockDbHandler.EXPECT().GetBlockStatusByHeight(blockHeight).Return(true, nil).Times(1)
+	mockDbHandler.EXPECT().QueryIsBlockFinalizedByHeight(blockHeight).Return(true, nil).Times(1)
 
 	mockFinalityGadget := &FinalityGadget{
 		db: mockDbHandler,
 	}
 
 	// fetch block status by height
-	isFinalized, err := mockFinalityGadget.GetBlockStatusByHeight(1)
+	isFinalized, err := mockFinalityGadget.QueryIsBlockFinalizedByHeight(1)
 	require.NoError(t, err)
 	require.True(t, isFinalized)
 }
 
-func TestGetBlockStatusByHeightForNonExistentBlock(t *testing.T) {
+func TestQueryIsBlockFinalizedByHeightForNonExistentBlock(t *testing.T) {
 	// mock db and finality gadget
 	ctl := gomock.NewController(t)
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
-	mockDbHandler.EXPECT().GetBlockStatusByHeight(uint64(1)).Return(false, types.ErrBlockNotFound).Times(1)
+	mockDbHandler.EXPECT().QueryIsBlockFinalizedByHeight(uint64(1)).Return(false, types.ErrBlockNotFound).Times(1)
 
 	mockFinalityGadget := &FinalityGadget{
 		db: mockDbHandler,
 	}
 
 	// fetch block status by height
-	isFinalized, err := mockFinalityGadget.GetBlockStatusByHeight(1)
+	isFinalized, err := mockFinalityGadget.QueryIsBlockFinalizedByHeight(1)
 	require.False(t, isFinalized)
 	require.Equal(t, err, types.ErrBlockNotFound)
 }
 
-func TestGetBlockStatusByHashWith0xPrefix(t *testing.T) {
+func TestQueryIsBlockFinalizedByHashWith0xPrefix(t *testing.T) {
 	// mock db and finality gadget
 	ctl := gomock.NewController(t)
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
-	mockDbHandler.EXPECT().GetBlockStatusByHash(normalizeBlockHash("0x123")).Return(true, nil).Times(2)
+	mockDbHandler.EXPECT().QueryIsBlockFinalizedByHash(normalizeBlockHash("0x123")).Return(true, nil).Times(2)
 
 	mockFinalityGadget := &FinalityGadget{
 		db: mockDbHandler,
 	}
 
 	// fetch block status by hash including 0x prefix
-	isFinalized, err := mockFinalityGadget.GetBlockStatusByHash("0x123")
+	isFinalized, err := mockFinalityGadget.QueryIsBlockFinalizedByHash("0x123")
 	require.NoError(t, err)
 	require.True(t, isFinalized)
 
 	// fetch block status by hash excluding 0x prefix
-	isFinalized, err = mockFinalityGadget.GetBlockStatusByHash("123")
+	isFinalized, err = mockFinalityGadget.QueryIsBlockFinalizedByHash("123")
 	require.NoError(t, err)
 	require.True(t, isFinalized)
 }
 
-func TestGetBlockStatusByHashWithout0xPrefix(t *testing.T) {
+func TestQueryIsBlockFinalizedByHashWithout0xPrefix(t *testing.T) {
 	// mock db and finality gadget
 	ctl := gomock.NewController(t)
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
-	mockDbHandler.EXPECT().GetBlockStatusByHash(normalizeBlockHash("123")).Return(true, nil).Times(2)
+	mockDbHandler.EXPECT().QueryIsBlockFinalizedByHash(normalizeBlockHash("123")).Return(true, nil).Times(2)
 
 	mockFinalityGadget := &FinalityGadget{
 		db: mockDbHandler,
 	}
 
 	// fetch block status by hash including 0x prefix
-	isFinalized, err := mockFinalityGadget.GetBlockStatusByHash("0x123")
+	isFinalized, err := mockFinalityGadget.QueryIsBlockFinalizedByHash("0x123")
 	require.NoError(t, err)
 	require.True(t, isFinalized)
 
 	// fetch block status by hash excluding 0x prefix
-	isFinalized, err = mockFinalityGadget.GetBlockStatusByHash("123")
+	isFinalized, err = mockFinalityGadget.QueryIsBlockFinalizedByHash("123")
 	require.NoError(t, err)
 	require.True(t, isFinalized)
 }
 
-func TestGetBlockStatusByHashForNonExistentBlock(t *testing.T) {
+func TestQueryIsBlockFinalizedByHashForNonExistentBlock(t *testing.T) {
 	// mock db and finality gadget
 	ctl := gomock.NewController(t)
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
-	mockDbHandler.EXPECT().GetBlockStatusByHash(normalizeBlockHash("123")).Return(false, types.ErrBlockNotFound).Times(1)
+	mockDbHandler.EXPECT().QueryIsBlockFinalizedByHash(normalizeBlockHash("123")).Return(false, types.ErrBlockNotFound).Times(1)
 
 	mockFinalityGadget := &FinalityGadget{
 		db: mockDbHandler,
 	}
 
 	// fetch block status by hash
-	isFinalized, err := mockFinalityGadget.GetBlockStatusByHash("123")
+	isFinalized, err := mockFinalityGadget.QueryIsBlockFinalizedByHash("123")
 	require.False(t, isFinalized)
 	require.Equal(t, err, types.ErrBlockNotFound)
 }
