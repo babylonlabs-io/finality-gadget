@@ -340,10 +340,6 @@ func (fg *FinalityGadget) InsertBlock(block *types.Block) error {
 	return nil
 }
 
-func (fg *FinalityGadget) DeleteDB() error {
-	return fg.db.DeleteDB()
-}
-
 func (fg *FinalityGadget) Close() {
 	fg.l2Client.Close()
 }

@@ -37,7 +37,7 @@ func setupDB(t *testing.T) (*BBoltHandler, func()) {
 
 	// Cleanup function to close DB and remove temp file
 	cleanup := func() {
-		err := db.DeleteDB()
+		err := os.Remove(tempFile.Name())
 		if err != nil {
 			t.Fatalf("Failed to delete DB: %v", err)
 		}

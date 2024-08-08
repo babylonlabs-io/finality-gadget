@@ -5,9 +5,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/babylonlabs-io/finality-gadget/types"
@@ -213,17 +210,6 @@ func (bb *BBoltHandler) GetLatestBlock() (*types.Block, error) {
 
 	// Fetch latest block by height
 	return bb.GetBlockByHeight(latestBlockHeight)
-}
-
-func (bb *BBoltHandler) DeleteDB() error {
-	absPath, err := filepath.Abs(bb.db.Path())
-	bb.logger.Info("Deleting DB", zap.String("path", absPath))
-	if err != nil {
-		bb.logger.Error("Error getting db absolute path", zap.Error(err))
-		return fmt.Errorf("failed to get db absolute path: %w", err)
-	}
-
-	return os.Remove(absPath)
 }
 
 func (bb *BBoltHandler) Close() error {

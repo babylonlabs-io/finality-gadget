@@ -10,6 +10,5 @@ type IDatabaseHandler interface {
 	QueryIsBlockFinalizedByHeight(height uint64) (bool, error)
 	QueryIsBlockFinalizedByHash(hash string) (bool, error)
 	GetLatestBlock() (*types.Block, error)
-	DeleteDB() error
 	Close() error
 }
