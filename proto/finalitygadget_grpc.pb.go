@@ -19,22 +19,35 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	FinalityGadget_QueryIsBlockFinalizedByHeight_FullMethodName = "/proto.FinalityGadget/QueryIsBlockFinalizedByHeight"
-	FinalityGadget_QueryIsBlockFinalizedByHash_FullMethodName   = "/proto.FinalityGadget/QueryIsBlockFinalizedByHash"
-	FinalityGadget_QueryLatestFinalizedBlock_FullMethodName     = "/proto.FinalityGadget/QueryLatestFinalizedBlock"
+	FinalityGadget_QueryIsBlockBabylonFinalized_FullMethodName      = "/proto.FinalityGadget/QueryIsBlockBabylonFinalized"
+	FinalityGadget_QueryBlockRangeBabylonFinalized_FullMethodName   = "/proto.FinalityGadget/QueryBlockRangeBabylonFinalized"
+	FinalityGadget_QueryBtcStakingActivatedTimestamp_FullMethodName = "/proto.FinalityGadget/QueryBtcStakingActivatedTimestamp"
+	FinalityGadget_QueryIsBlockFinalizedByHeight_FullMethodName     = "/proto.FinalityGadget/QueryIsBlockFinalizedByHeight"
+	FinalityGadget_QueryIsBlockFinalizedByHash_FullMethodName       = "/proto.FinalityGadget/QueryIsBlockFinalizedByHash"
+	FinalityGadget_QueryLatestFinalizedBlock_FullMethodName         = "/proto.FinalityGadget/QueryLatestFinalizedBlock"
 )
 
 // FinalityGadgetClient is the client API for FinalityGadget service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FinalityGadgetClient interface {
+	// QueryIsBlockBabylonFinalized returns the finality status of a block by
+	// querying Babylon chain
+	QueryIsBlockBabylonFinalized(ctx context.Context, in *QueryIsBlockBabylonFinalizedRequest, opts ...grpc.CallOption) (*QueryIsBlockFinalizedResponse, error)
+	// QueryBlockRangeBabylonFinalized returns the last finalized block height
+	// within a block range by querying Babylon chain
+	QueryBlockRangeBabylonFinalized(ctx context.Context, in *QueryBlockRangeBabylonFinalizedRequest, opts ...grpc.CallOption) (*QueryBlockRangeBabylonFinalizedResponse, error)
+	// QueryBtcStakingActivatedTimestamp returns the timestamp when BTC staking
+	// was activated
+	QueryBtcStakingActivatedTimestamp(ctx context.Context, in *QueryBtcStakingActivatedTimestampRequest, opts ...grpc.CallOption) (*QueryBtcStakingActivatedTimestampResponse, error)
 	// QueryIsBlockFinalizedByHeight returns the finality status of a block at
-	// given height
+	// given height by querying the local db
 	QueryIsBlockFinalizedByHeight(ctx context.Context, in *QueryIsBlockFinalizedByHeightRequest, opts ...grpc.CallOption) (*QueryIsBlockFinalizedResponse, error)
 	// QueryIsBlockFinalizedByHash returns the finality status of a block with
-	// given hash
+	// given hash by querying the local db
 	QueryIsBlockFinalizedByHash(ctx context.Context, in *QueryIsBlockFinalizedByHashRequest, opts ...grpc.CallOption) (*QueryIsBlockFinalizedResponse, error)
 	// QueryLatestFinalizedBlock returns the latest consecutively finalized block
+	// by querying the local db
 	QueryLatestFinalizedBlock(ctx context.Context, in *QueryLatestFinalizedBlockRequest, opts ...grpc.CallOption) (*QueryBlockResponse, error)
 }
 
@@ -44,6 +57,33 @@ type finalityGadgetClient struct {
 
 func NewFinalityGadgetClient(cc grpc.ClientConnInterface) FinalityGadgetClient {
 	return &finalityGadgetClient{cc}
+}
+
+func (c *finalityGadgetClient) QueryIsBlockBabylonFinalized(ctx context.Context, in *QueryIsBlockBabylonFinalizedRequest, opts ...grpc.CallOption) (*QueryIsBlockFinalizedResponse, error) {
+	out := new(QueryIsBlockFinalizedResponse)
+	err := c.cc.Invoke(ctx, FinalityGadget_QueryIsBlockBabylonFinalized_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *finalityGadgetClient) QueryBlockRangeBabylonFinalized(ctx context.Context, in *QueryBlockRangeBabylonFinalizedRequest, opts ...grpc.CallOption) (*QueryBlockRangeBabylonFinalizedResponse, error) {
+	out := new(QueryBlockRangeBabylonFinalizedResponse)
+	err := c.cc.Invoke(ctx, FinalityGadget_QueryBlockRangeBabylonFinalized_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *finalityGadgetClient) QueryBtcStakingActivatedTimestamp(ctx context.Context, in *QueryBtcStakingActivatedTimestampRequest, opts ...grpc.CallOption) (*QueryBtcStakingActivatedTimestampResponse, error) {
+	out := new(QueryBtcStakingActivatedTimestampResponse)
+	err := c.cc.Invoke(ctx, FinalityGadget_QueryBtcStakingActivatedTimestamp_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *finalityGadgetClient) QueryIsBlockFinalizedByHeight(ctx context.Context, in *QueryIsBlockFinalizedByHeightRequest, opts ...grpc.CallOption) (*QueryIsBlockFinalizedResponse, error) {
@@ -77,13 +117,23 @@ func (c *finalityGadgetClient) QueryLatestFinalizedBlock(ctx context.Context, in
 // All implementations must embed UnimplementedFinalityGadgetServer
 // for forward compatibility
 type FinalityGadgetServer interface {
+	// QueryIsBlockBabylonFinalized returns the finality status of a block by
+	// querying Babylon chain
+	QueryIsBlockBabylonFinalized(context.Context, *QueryIsBlockBabylonFinalizedRequest) (*QueryIsBlockFinalizedResponse, error)
+	// QueryBlockRangeBabylonFinalized returns the last finalized block height
+	// within a block range by querying Babylon chain
+	QueryBlockRangeBabylonFinalized(context.Context, *QueryBlockRangeBabylonFinalizedRequest) (*QueryBlockRangeBabylonFinalizedResponse, error)
+	// QueryBtcStakingActivatedTimestamp returns the timestamp when BTC staking
+	// was activated
+	QueryBtcStakingActivatedTimestamp(context.Context, *QueryBtcStakingActivatedTimestampRequest) (*QueryBtcStakingActivatedTimestampResponse, error)
 	// QueryIsBlockFinalizedByHeight returns the finality status of a block at
-	// given height
+	// given height by querying the local db
 	QueryIsBlockFinalizedByHeight(context.Context, *QueryIsBlockFinalizedByHeightRequest) (*QueryIsBlockFinalizedResponse, error)
 	// QueryIsBlockFinalizedByHash returns the finality status of a block with
-	// given hash
+	// given hash by querying the local db
 	QueryIsBlockFinalizedByHash(context.Context, *QueryIsBlockFinalizedByHashRequest) (*QueryIsBlockFinalizedResponse, error)
 	// QueryLatestFinalizedBlock returns the latest consecutively finalized block
+	// by querying the local db
 	QueryLatestFinalizedBlock(context.Context, *QueryLatestFinalizedBlockRequest) (*QueryBlockResponse, error)
 	mustEmbedUnimplementedFinalityGadgetServer()
 }
@@ -92,6 +142,15 @@ type FinalityGadgetServer interface {
 type UnimplementedFinalityGadgetServer struct {
 }
 
+func (UnimplementedFinalityGadgetServer) QueryIsBlockBabylonFinalized(context.Context, *QueryIsBlockBabylonFinalizedRequest) (*QueryIsBlockFinalizedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryIsBlockBabylonFinalized not implemented")
+}
+func (UnimplementedFinalityGadgetServer) QueryBlockRangeBabylonFinalized(context.Context, *QueryBlockRangeBabylonFinalizedRequest) (*QueryBlockRangeBabylonFinalizedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryBlockRangeBabylonFinalized not implemented")
+}
+func (UnimplementedFinalityGadgetServer) QueryBtcStakingActivatedTimestamp(context.Context, *QueryBtcStakingActivatedTimestampRequest) (*QueryBtcStakingActivatedTimestampResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryBtcStakingActivatedTimestamp not implemented")
+}
 func (UnimplementedFinalityGadgetServer) QueryIsBlockFinalizedByHeight(context.Context, *QueryIsBlockFinalizedByHeightRequest) (*QueryIsBlockFinalizedResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryIsBlockFinalizedByHeight not implemented")
 }
@@ -112,6 +171,60 @@ type UnsafeFinalityGadgetServer interface {
 
 func RegisterFinalityGadgetServer(s grpc.ServiceRegistrar, srv FinalityGadgetServer) {
 	s.RegisterService(&FinalityGadget_ServiceDesc, srv)
+}
+
+func _FinalityGadget_QueryIsBlockBabylonFinalized_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryIsBlockBabylonFinalizedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FinalityGadgetServer).QueryIsBlockBabylonFinalized(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FinalityGadget_QueryIsBlockBabylonFinalized_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FinalityGadgetServer).QueryIsBlockBabylonFinalized(ctx, req.(*QueryIsBlockBabylonFinalizedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FinalityGadget_QueryBlockRangeBabylonFinalized_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryBlockRangeBabylonFinalizedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FinalityGadgetServer).QueryBlockRangeBabylonFinalized(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FinalityGadget_QueryBlockRangeBabylonFinalized_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FinalityGadgetServer).QueryBlockRangeBabylonFinalized(ctx, req.(*QueryBlockRangeBabylonFinalizedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FinalityGadget_QueryBtcStakingActivatedTimestamp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryBtcStakingActivatedTimestampRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FinalityGadgetServer).QueryBtcStakingActivatedTimestamp(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FinalityGadget_QueryBtcStakingActivatedTimestamp_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FinalityGadgetServer).QueryBtcStakingActivatedTimestamp(ctx, req.(*QueryBtcStakingActivatedTimestampRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _FinalityGadget_QueryIsBlockFinalizedByHeight_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -175,6 +288,18 @@ var FinalityGadget_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.FinalityGadget",
 	HandlerType: (*FinalityGadgetServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "QueryIsBlockBabylonFinalized",
+			Handler:    _FinalityGadget_QueryIsBlockBabylonFinalized_Handler,
+		},
+		{
+			MethodName: "QueryBlockRangeBabylonFinalized",
+			Handler:    _FinalityGadget_QueryBlockRangeBabylonFinalized_Handler,
+		},
+		{
+			MethodName: "QueryBtcStakingActivatedTimestamp",
+			Handler:    _FinalityGadget_QueryBtcStakingActivatedTimestamp_Handler,
+		},
 		{
 			MethodName: "QueryIsBlockFinalizedByHeight",
 			Handler:    _FinalityGadget_QueryIsBlockFinalizedByHeight_Handler,

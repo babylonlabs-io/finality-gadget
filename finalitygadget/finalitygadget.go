@@ -228,6 +228,10 @@ func (fg *FinalityGadget) QueryBlockRangeBabylonFinalized(
 			break
 		}
 	}
+	// handle case where no block is finalized
+	if finalizedBlockHeight == nil {
+		return nil, fmt.Errorf("no block was finalized in the given range")
+	}
 	return finalizedBlockHeight, nil
 }
 
