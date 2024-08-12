@@ -1,4 +1,4 @@
-MOCKS_DIR := $(CURDIR)/testutil/mocks
+MOCKS_DIR := ./testutil/mocks
 
 OPFGD_PKG := github.com/babylonlabs-io/finality-gadget/cmd/opfgd
 
@@ -11,8 +11,7 @@ GIT_ROOT := $(shell git rev-parse --show-toplevel)
 
 mock-gen:
 	go install go.uber.org/mock/mockgen@latest
-	mockgen -source=sdk/client/expected_clients.go -package mocks -destination $(MOCKS_DIR)/expected_clients_mock.go
-	mockgen -source=sdk/client/interface.go -package mocks -destination $(MOCKS_DIR)/sdkclient_mock.go
+	mockgen -source=finalitygadget/expected_clients.go -package mocks -destination $(MOCKS_DIR)/expected_clients_mock.go
 
 test:
 	go test -race ./... -v
