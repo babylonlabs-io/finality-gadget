@@ -84,3 +84,29 @@ To run tests:
 ```bash
 make test
 ```
+
+## Build Docker image
+
+### Prerequisites
+
+1. **Docker Desktop**: Install from [Docker's official website](https://docs.docker.com/desktop/).
+
+2. **Make**: Required for building service binaries. Installation guide available [here](https://sp21.datastructur.es/materials/guides/make-install.html).
+
+3. **GitHub SSH Key**:
+   - Create a non-passphrase-protected SSH key.
+   - Add it to GitHub ([instructions](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)).
+   - Export the key path:
+     ```shell
+     export BBN_PRIV_DEPLOY_KEY=FULL_PATH_TO_PRIVATE_KEY/.ssh/id_ed25519
+     ```
+
+4. **Repository Setup**:
+   ```shell
+   git clone https://github.com/babylonlabs-io/finality-gadget.git
+   ```
+To build the docker image:
+
+```bash
+make build-docker
+```
