@@ -37,7 +37,7 @@ RUN CGO_LDFLAGS="$CGO_LDFLAGS -lstdc++ -lm -lsodium" \
     make build
 
 # FINAL IMAGE
-FROM alpine:3.16 AS run
+FROM alpine:3.16
 
 RUN addgroup --gid 1138 -S finality-gadget && adduser --uid 1138 -S finality-gadget -G finality-gadget
 
