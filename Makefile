@@ -1,8 +1,13 @@
-.PHONY: lint test mock-gen
-
-MOCKS_DIR=./testutil/mocks
+MOCKS_DIR := $(CURDIR)/testutil/mocks
 
 OPFGD_PKG := github.com/babylonlabs-io/finality-gadget/cmd/opfgd
+
+BUILDDIR ?= $(CURDIR)/build
+BUILD_FLAGS := --tags '$(BUILD_TAGS)' --ldflags '$(LDFLAGS)'
+BUILD_ARGS := $(BUILD_ARGS) -o $(BUILDDIR)
+
+DOCKER ?= $(shell which docker)
+GIT_ROOT := $(shell git rev-parse --show-toplevel)
 
 mock-gen:
 	go install go.uber.org/mock/mockgen@latest
@@ -17,3 +22,19 @@ lint:
 
 install:
 	go install -trimpath $(OPFGD_PKG)
+
+.PHONY: lint test mock-gen install
+
+$(BUILDDIR)/:
+	mkdir -p $(BUILDDIR)/
+
+build: go.sum $(BUILDDIR)/
+	CGO_CFLAGS="-O -D__BLST_PORTABLE__" go $@ -mod=readonly $(BUILD_FLAGS) $(BUILD_ARGS) ./...
+
+build-docker:
+	$(DOCKER) build --secret id=sshKey,src=${BBN_PRIV_DEPLOY_KEY} \
+	--tag babylonlabs-io/finality-gadget \
+	-f Dockerfile \
+	$(GIT_ROOT)
+
+.PHONY: build build-docker
