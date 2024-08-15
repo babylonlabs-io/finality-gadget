@@ -22,6 +22,7 @@ import (
 	"github.com/babylonlabs-io/finality-gadget/testutil/mocks"
 	"github.com/babylonlabs-io/finality-gadget/types"
 	"github.com/ethereum/go-ethereum/common"
+	ethrpc "github.com/ethereum/go-ethereum/rpc"
 	"go.uber.org/zap"
 )
 
@@ -83,11 +84,15 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.L
 		return nil, err
 	}
 
-	latestBlock, err := db.QueryLatestFinalizedBlock()
+	finalizedBlock, err := l2Client.HeaderByNumber(context.Background(), big.NewInt(ethrpc.FinalizedBlockNumber.Int64()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to query latest finalized block: %w", err)
 	}
-	lastProcessedHeight := uint64(0)
+	lastProcessedHeight := finalizedBlock.Number.Uint64()
+	latestBlock, err := db.QueryLatestFinalizedBlock()
+	if err != nil {
+		return nil, fmt.Errorf("failed to query latest babylon finalized block: %w", err)
+	}
 	if latestBlock != nil {
 		lastProcessedHeight = latestBlock.BlockHeight
 	}
@@ -269,6 +274,9 @@ func (fg *FinalityGadget) QueryBtcStakingActivatedTimestamp() (uint64, error) {
 
 	// check whether the btc staking is actived
 	earliestDelHeight, err := fg.bbnClient.QueryEarliestActiveDelBtcHeight(allFpPks)
+	fg.logger.Info("Earliest active delegation height",
+		zap.Uint64("height", earliestDelHeight),
+		zap.Any("allFpPks", allFpPks))
 	if err != nil {
 		return math.MaxUint64, err
 	}
@@ -403,6 +411,8 @@ func (fg *FinalityGadget) queryBlockByHeight(blockNumber int64) (*types.Block, e
 func (fg *FinalityGadget) handleBlock(block *types.Block, btcStakingActivatedTimestamp uint64) error {
 	// only process blocks after the btc staking is activated
 	if block.BlockTimestamp < btcStakingActivatedTimestamp {
+		fg.logger.Info("Skipping block before BTC staking activation", zap.Uint64("block_height", block.BlockHeight))
+		fg.lastProcessedHeight = block.BlockHeight
 		return nil
 	}
 
