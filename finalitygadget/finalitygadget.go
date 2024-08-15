@@ -83,17 +83,9 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.L
 		return nil, err
 	}
 
-	finalizedBlock, err := l2Client.HeaderByNumber(context.Background(), big.NewInt(ethrpc.FinalizedBlockNumber.Int64()))
+	lastProcessedHeight, err := initializeLastProcessedHeight(l2Client, db)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query latest finalized block: %w", err)
-	}
-	lastProcessedHeight := finalizedBlock.Number.Uint64()
-	latestBlock, err := db.QueryLatestFinalizedBlock()
-	if err != nil {
-		return nil, fmt.Errorf("failed to query latest babylon finalized block: %w", err)
-	}
-	if latestBlock != nil {
-		lastProcessedHeight = latestBlock.BlockHeight
+		return nil, err
 	}
 
 	// Create finality gadget
@@ -328,6 +320,11 @@ func (fg *FinalityGadget) ProcessBlocks(ctx context.Context) error {
 			if err != nil {
 				if errors.Is(err, types.ErrBtcStakingNotActivated) {
 					fg.logger.Info("BTC staking not yet activated, waiting...")
+					lastProcessedHeight, err := initializeLastProcessedHeight(fg.l2Client, fg.db)
+					if err != nil {
+						return err
+					}
+					fg.lastProcessedHeight = lastProcessedHeight
 					continue
 				}
 				fg.logger.Error("Error querying BTC staking activation timestamp", zap.Error(err))
@@ -443,4 +440,22 @@ func (fg *FinalityGadget) handleBlock(block *types.Block) error {
 
 func normalizeBlockHash(hash string) string {
 	return common.HexToHash(hash).Hex()
+}
+
+func initializeLastProcessedHeight(l2Client IEthL2Client, db db.IDatabaseHandler) (uint64, error) {
+	finalizedBlock, err := l2Client.HeaderByNumber(context.Background(), big.NewInt(ethrpc.FinalizedBlockNumber.Int64()))
+	if err != nil {
+		return 0, fmt.Errorf("failed to query latest finalized block: %w", err)
+	}
+	lastProcessedHeight := finalizedBlock.Number.Uint64()
+
+	latestBlock, err := db.QueryLatestFinalizedBlock()
+	if err != nil {
+		return 0, fmt.Errorf("failed to query latest babylon finalized block: %w", err)
+	}
+	if latestBlock != nil {
+		lastProcessedHeight = latestBlock.BlockHeight
+	}
+
+	return lastProcessedHeight, nil
 }
