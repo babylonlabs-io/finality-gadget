@@ -63,6 +63,10 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.L
 	// Create bitcoin client
 	btcConfig := btcclient.DefaultBTCConfig()
 	btcConfig.RPCHost = cfg.BitcoinRPCHost
+	if cfg.BitcoinRPCUser != "" && cfg.BitcoinRPCPass != "" {
+		btcConfig.RPCUser = cfg.BitcoinRPCUser
+		btcConfig.RPCPass = cfg.BitcoinRPCPass
+	}
 	var btcClient IBitcoinClient
 	switch cfg.BBNChainID {
 	// TODO: once we set up our own local BTC devnet, we don't need to use this mock BTC client
