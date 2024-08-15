@@ -66,7 +66,9 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.L
 		btcConfig.RPCUser = cfg.BitcoinRPCUser
 		btcConfig.RPCPass = cfg.BitcoinRPCPass
 	}
-
+	if cfg.BitcoinDisableTLS {
+		btcConfig.DisableTLS = true
+	}
 	btcClient, err := btcclient.NewBitcoinClient(btcConfig, logger)
 	if err != nil {
 		return nil, err
