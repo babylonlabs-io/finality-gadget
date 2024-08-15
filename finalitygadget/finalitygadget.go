@@ -333,6 +333,7 @@ func (fg *FinalityGadget) ProcessBlocks(ctx context.Context) error {
 				fg.logger.Error("Error querying BTC staking activation timestamp", zap.Error(err))
 				continue
 			}
+			fg.logger.Info("BTC staking activated at", zap.Uint64("timestamp", btcStakingActivatedTimestamp))
 
 			block, err := fg.queryBlockByHeight(int64(fg.lastProcessedHeight + 1))
 			if err != nil {
@@ -340,7 +341,15 @@ func (fg *FinalityGadget) ProcessBlocks(ctx context.Context) error {
 				continue
 			}
 
-			if err := fg.handleBlock(block, btcStakingActivatedTimestamp); err != nil {
+			// only process blocks after the btc staking is activated
+			if block.BlockTimestamp < btcStakingActivatedTimestamp {
+				fg.logger.Info("Skipping block before BTC staking activation", zap.Uint64("block_height", block.BlockHeight))
+				fg.lastProcessedHeight = block.BlockHeight
+				continue
+			}
+
+			fg.logger.Info("Processing block", zap.Uint64("block_height", block.BlockHeight))
+			if err := fg.handleBlock(block); err != nil {
 				fg.logger.Error("Error processing block", zap.Error(err))
 			}
 		}
@@ -402,14 +411,7 @@ func (fg *FinalityGadget) queryBlockByHeight(blockNumber int64) (*types.Block, e
 	}, nil
 }
 
-func (fg *FinalityGadget) handleBlock(block *types.Block, btcStakingActivatedTimestamp uint64) error {
-	// only process blocks after the btc staking is activated
-	if block.BlockTimestamp < btcStakingActivatedTimestamp {
-		fg.logger.Info("Skipping block before BTC staking activation", zap.Uint64("block_height", block.BlockHeight))
-		fg.lastProcessedHeight = block.BlockHeight
-		return nil
-	}
-
+func (fg *FinalityGadget) handleBlock(block *types.Block) error {
 	// Query local DB for last block processed
 	localBlock, err := fg.db.QueryLatestFinalizedBlock()
 	if err != nil {
@@ -420,7 +422,7 @@ func (fg *FinalityGadget) handleBlock(block *types.Block, btcStakingActivatedTim
 	if localBlock == nil || localBlock.BlockHeight < block.BlockHeight {
 		// Check the block is babylon finalized using sdk client
 		isFinal, err := fg.QueryIsBlockBabylonFinalized(block)
-		if err != nil {
+		if err != nil && !errors.Is(err, types.ErrBtcStakingNotActivated) {
 			return fmt.Errorf("error checking block %d: %v", block.BlockHeight, err)
 		}
 		// If not finalized, throw error
