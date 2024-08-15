@@ -1,15 +1,9 @@
 package config
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/spf13/viper"
-)
-
-const (
-	BabylonLocalnetChainID = "chain-test"
-	BabylonDevnetChainID   = "euphrates-0.2.0"
 )
 
 type Config struct {
@@ -17,6 +11,7 @@ type Config struct {
 	BitcoinRPCHost    string        `long:"bitcoin-rpc-host" description:"rpc host address of the bitcoin node"`
 	BitcoinRPCUser    string        `long:"bitcoin-rpc-user" description:"rpc user of the bitcoin node"`
 	BitcoinRPCPass    string        `long:"bitcoin-rpc-pass" description:"rpc password of the bitcoin node"`
+	BitcoinDisableTLS bool          `long:"bitcoin-disable-tls" description:"disable TLS for RPC connections"`
 	FGContractAddress string        `long:"fg-contract-address" description:"BabylonChain op finality gadget contract address"`
 	BBNChainID        string        `long:"bbn-chain-id" description:"BabylonChain chain ID"`
 	BBNRPCAddress     string        `long:"bbn-rpc-address" description:"BabylonChain chain RPC address"`
@@ -39,24 +34,4 @@ func Load(configPath string) (*Config, error) {
 	}
 
 	return &config, nil
-}
-
-func (config *Config) GetRpcAddr() (string, error) {
-	if config.BBNRPCAddress != "" {
-		return config.BBNRPCAddress, nil
-	}
-	return config.getDefaultRpcAddr()
-}
-
-func (config *Config) getDefaultRpcAddr() (string, error) {
-	switch config.BBNChainID {
-	case BabylonLocalnetChainID:
-		// for the e2e test
-		return "http://127.0.0.1:26657", nil
-	case BabylonDevnetChainID:
-		return "https://rpc-euphrates.devnet.babylonchain.io/", nil
-	// TODO: add mainnet RPCs when available
-	default:
-		return "", fmt.Errorf("unrecognized chain id: %s", config.BBNChainID)
-	}
 }
