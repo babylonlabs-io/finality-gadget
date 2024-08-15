@@ -271,12 +271,11 @@ func (fg *FinalityGadget) QueryBtcStakingActivatedTimestamp() (uint64, error) {
 	if err != nil {
 		return math.MaxUint64, err
 	}
-
+	fg.logger.Info("All consumer FP public keys", zap.Strings("allFpPks", allFpPks))
 	// check whether the btc staking is actived
 	earliestDelHeight, err := fg.bbnClient.QueryEarliestActiveDelBtcHeight(allFpPks)
 	fg.logger.Info("Earliest active delegation height",
-		zap.Uint64("height", earliestDelHeight),
-		zap.Any("allFpPks", allFpPks))
+		zap.Uint64("height", earliestDelHeight))
 	if err != nil {
 		return math.MaxUint64, err
 	}
@@ -320,24 +319,19 @@ func (fg *FinalityGadget) ProcessBlocks(ctx context.Context) error {
 	ticker := time.NewTicker(fg.pollInterval)
 	defer ticker.Stop()
 
-	var btcStakingActivatedTimestamp uint64
-	var err error
-
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
-			if btcStakingActivatedTimestamp == 0 {
-				btcStakingActivatedTimestamp, err = fg.QueryBtcStakingActivatedTimestamp()
-				if err != nil {
-					if errors.Is(err, types.ErrBtcStakingNotActivated) {
-						fg.logger.Info("BTC staking not yet activated, waiting...")
-						continue
-					}
-					fg.logger.Error("Error querying BTC staking activation timestamp", zap.Error(err))
+			btcStakingActivatedTimestamp, err := fg.QueryBtcStakingActivatedTimestamp()
+			if err != nil {
+				if errors.Is(err, types.ErrBtcStakingNotActivated) {
+					fg.logger.Info("BTC staking not yet activated, waiting...")
 					continue
 				}
+				fg.logger.Error("Error querying BTC staking activation timestamp", zap.Error(err))
+				continue
 			}
 
 			block, err := fg.queryBlockByHeight(int64(fg.lastProcessedHeight + 1))
