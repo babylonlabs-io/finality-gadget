@@ -127,12 +127,14 @@ func (c *BitcoinClient) GetBlockTimestampByHeight(height uint64) (uint64, error)
 	if err != nil {
 		return 0, err
 	}
+	c.logger.Info("Block hash: ", zap.String("hash", blockHash.String()))
 
 	// get block header by hash. the header contains info such as the block time expressed in UNIX epoch time
 	blockHeader, err := c.GetBlockHeaderByHash(blockHash)
 	if err != nil {
 		return 0, err
 	}
+	c.logger.Info("Block header: ", zap.Int64("timestamp", blockHeader.Timestamp.Unix()))
 
 	return uint64(blockHeader.Timestamp.Unix()), nil
 }

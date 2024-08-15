@@ -290,6 +290,7 @@ func (fg *FinalityGadget) QueryBtcStakingActivatedTimestamp() (uint64, error) {
 	if err != nil {
 		return math.MaxUint64, err
 	}
+	fg.logger.Info("BTC staking activated at", zap.Uint64("timestamp", btcBlockTimestamp))
 	return btcBlockTimestamp, nil
 }
 
@@ -333,7 +334,6 @@ func (fg *FinalityGadget) ProcessBlocks(ctx context.Context) error {
 				fg.logger.Error("Error querying BTC staking activation timestamp", zap.Error(err))
 				continue
 			}
-			fg.logger.Info("BTC staking activated at", zap.Uint64("timestamp", btcStakingActivatedTimestamp))
 
 			block, err := fg.queryBlockByHeight(int64(fg.lastProcessedHeight + 1))
 			if err != nil {
