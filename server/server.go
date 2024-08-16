@@ -53,12 +53,10 @@ func (s *Server) RunUntilShutdown() error {
 		s.logger.Info("Database closed")
 	}()
 
-	listenAddr := "localhost:" + s.cfg.GRPCServerPort
-	// we create listeners from the RPCListeners defined
-	// in the config.
-	lis, err := net.Listen("tcp", listenAddr)
+	// we create listeners from the GRPCListener defined in the config.
+	lis, err := net.Listen("tcp", s.cfg.GRPCListener)
 	if err != nil {
-		return fmt.Errorf("failed to listen on %s: %w", listenAddr, err)
+		return fmt.Errorf("failed to listen on %s: %w", s.cfg.GRPCListener, err)
 	}
 	defer lis.Close()
 

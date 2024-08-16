@@ -373,6 +373,7 @@ func (fg *FinalityGadget) InsertBlock(block *types.Block) error {
 
 func (fg *FinalityGadget) Close() {
 	fg.l2Client.Close()
+	fg.db.Close()
 }
 
 //////////////////////////////
