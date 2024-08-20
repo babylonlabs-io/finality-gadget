@@ -67,6 +67,11 @@ func (c *FinalityGadgetGrpcClient) QueryBlockRangeBabylonFinalized(blocks []*typ
 		return nil, err
 	}
 
+	// No block in the range is babylon finalized
+	if res.LastFinalizedBlockHeight == 0 {
+		return nil, nil
+	}
+
 	return &res.LastFinalizedBlockHeight, nil
 }
 

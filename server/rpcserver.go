@@ -66,7 +66,13 @@ func (r *rpcServer) QueryBlockRangeBabylonFinalized(ctx context.Context, req *pr
 		return nil, err
 	}
 
-	return &proto.QueryBlockRangeBabylonFinalizedResponse{LastFinalizedBlockHeight: *blockHeight}, nil
+	response := &proto.QueryBlockRangeBabylonFinalizedResponse{}
+	if blockHeight == nil {
+		response.LastFinalizedBlockHeight = 0
+	} else {
+		response.LastFinalizedBlockHeight = *blockHeight
+	}
+	return response, nil
 }
 
 // QueryBtcStakingActivatedTimestamp is an RPC method that returns the timestamp when BTC staking was activated.
