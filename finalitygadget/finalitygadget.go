@@ -83,9 +83,13 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.L
 		return nil, err
 	}
 
-	lastProcessedHeight, err := initializeLastProcessedHeight(l2Client, db)
+	lastProcessedHeight := uint64(0)
+	latestBlock, err := db.QueryLatestFinalizedBlock()
 	if err != nil {
 		return nil, err
+	}
+	if latestBlock != nil {
+		lastProcessedHeight = latestBlock.BlockHeight
 	}
 
 	// Create finality gadget
@@ -265,16 +269,14 @@ func (fg *FinalityGadget) QueryBtcStakingActivatedTimestamp() (uint64, error) {
 	fg.logger.Info("All consumer FP public keys", zap.Strings("allFpPks", allFpPks))
 	// check whether the btc staking is actived
 	earliestDelHeight, err := fg.bbnClient.QueryEarliestActiveDelBtcHeight(allFpPks)
-	fg.logger.Info("Earliest active delegation height",
-		zap.Uint64("height", earliestDelHeight))
-	if err != nil {
-		return math.MaxUint64, err
-	}
-
 	// not activated yet
 	if earliestDelHeight == math.MaxUint64 {
 		return math.MaxUint64, types.ErrBtcStakingNotActivated
 	}
+	if err != nil {
+		return math.MaxUint64, err
+	}
+	fg.logger.Info("Earliest active delegation height", zap.Uint64("height", earliestDelHeight))
 
 	// get the timestamp of the BTC height
 	btcBlockTimestamp, err := fg.btcClient.GetBlockTimestampByHeight(earliestDelHeight)
@@ -416,32 +418,23 @@ func (fg *FinalityGadget) handleBlock(ctx context.Context, latestFinalizedHeight
 				continue
 			}
 
-			// Query local DB for last block processed
-			localBlock, err := fg.db.QueryLatestFinalizedBlock()
+			// Check the block is babylon finalized using sdk client
+			isFinal, err := fg.QueryIsBlockBabylonFinalized(block)
+			if err != nil && !errors.Is(err, types.ErrBtcStakingNotActivated) {
+				return fmt.Errorf("error checking block %d: %v", block.BlockHeight, err)
+			}
+			// If not finalized, throw error
+			if !isFinal {
+				return fmt.Errorf("block %d should be finalized according to client but is not", block.BlockHeight)
+			}
+
+			// If finalised, store the block in DB
+			err = fg.InsertBlock(block)
 			if err != nil {
-				return fmt.Errorf("error getting latest block from db: %v", err)
+				return fmt.Errorf("error storing block %d: %v", block.BlockHeight, err)
 			}
-
-			// store the first babylon finalized block to local DB
-			if localBlock == nil || localBlock.BlockHeight < block.BlockHeight {
-				// Check the block is babylon finalized using sdk client
-				isFinal, err := fg.QueryIsBlockBabylonFinalized(block)
-				if err != nil && !errors.Is(err, types.ErrBtcStakingNotActivated) {
-					return fmt.Errorf("error checking block %d: %v", block.BlockHeight, err)
-				}
-				// If not finalized, throw error
-				if !isFinal {
-					return fmt.Errorf("block %d should be finalized according to client but is not", block.BlockHeight)
-				}
-
-				// If finalised, store the block in DB
-				err = fg.InsertBlock(block)
-				if err != nil {
-					return fmt.Errorf("error storing block %d: %v", block.BlockHeight, err)
-				}
-				fg.lastProcessedHeight = block.BlockHeight
-				fg.logger.Info("Inserted new finalized block", zap.Uint64("block_height", block.BlockHeight))
-			}
+			fg.lastProcessedHeight = block.BlockHeight
+			fg.logger.Info("Inserted new finalized block", zap.Uint64("block_height", block.BlockHeight))
 		}
 	}
 
@@ -450,22 +443,4 @@ func (fg *FinalityGadget) handleBlock(ctx context.Context, latestFinalizedHeight
 
 func normalizeBlockHash(hash string) string {
 	return common.HexToHash(hash).Hex()
-}
-
-func initializeLastProcessedHeight(l2Client IEthL2Client, db db.IDatabaseHandler) (uint64, error) {
-	finalizedBlock, err := l2Client.HeaderByNumber(context.Background(), big.NewInt(ethrpc.FinalizedBlockNumber.Int64()))
-	if err != nil {
-		return 0, fmt.Errorf("failed to query latest finalized block: %w", err)
-	}
-	lastProcessedHeight := finalizedBlock.Number.Uint64()
-
-	latestBlock, err := db.QueryLatestFinalizedBlock()
-	if err != nil {
-		return 0, fmt.Errorf("failed to query latest babylon finalized block: %w", err)
-	}
-	if latestBlock != nil {
-		lastProcessedHeight = latestBlock.BlockHeight
-	}
-
-	return lastProcessedHeight, nil
 }
