@@ -19,6 +19,7 @@ import (
 	"github.com/babylonlabs-io/finality-gadget/cwclient"
 	"github.com/babylonlabs-io/finality-gadget/db"
 	"github.com/babylonlabs-io/finality-gadget/ethl2client"
+	"github.com/babylonlabs-io/finality-gadget/testutil/mocks"
 	"github.com/babylonlabs-io/finality-gadget/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
@@ -69,7 +70,13 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.L
 	if cfg.BitcoinDisableTLS {
 		btcConfig.DisableTLS = true
 	}
-	btcClient, err := btcclient.NewBitcoinClient(btcConfig, logger)
+	var btcClient IBitcoinClient
+	switch cfg.BitcoinRPCHost {
+	case "mock-btc-client":
+		btcClient, err = mocks.NewMockBitcoinClient(btcConfig, logger)
+	default:
+		btcClient, err = btcclient.NewBitcoinClient(btcConfig, logger)
+	}
 	if err != nil {
 		return nil, err
 	}
