@@ -3,6 +3,7 @@ package finalitygadget
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -37,8 +38,8 @@ type FinalityGadget struct {
 	logger *zap.Logger
 	mutex  sync.Mutex
 
-	pollInterval time.Duration
-	currHeight   uint64
+	pollInterval        time.Duration
+	lastProcessedHeight uint64
 }
 
 //////////////////////////////
@@ -62,10 +63,16 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.L
 	// Create bitcoin client
 	btcConfig := btcclient.DefaultBTCConfig()
 	btcConfig.RPCHost = cfg.BitcoinRPCHost
+	if cfg.BitcoinRPCUser != "" && cfg.BitcoinRPCPass != "" {
+		btcConfig.RPCUser = cfg.BitcoinRPCUser
+		btcConfig.RPCPass = cfg.BitcoinRPCPass
+	}
+	if cfg.BitcoinDisableTLS {
+		btcConfig.DisableTLS = true
+	}
 	var btcClient IBitcoinClient
-	switch cfg.BBNChainID {
-	// TODO: once we set up our own local BTC devnet, we don't need to use this mock BTC client
-	case config.BabylonLocalnetChainID:
+	switch cfg.BitcoinRPCHost {
+	case "mock-btc-client":
 		btcClient, err = mocks.NewMockBitcoinClient(btcConfig, logger)
 	default:
 		btcClient, err = btcclient.NewBitcoinClient(btcConfig, logger)
@@ -83,15 +90,25 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.L
 		return nil, err
 	}
 
+	lastProcessedHeight := uint64(0)
+	latestBlock, err := db.QueryLatestFinalizedBlock()
+	if err != nil {
+		return nil, err
+	}
+	if latestBlock != nil {
+		lastProcessedHeight = latestBlock.BlockHeight
+	}
+
 	// Create finality gadget
 	return &FinalityGadget{
-		btcClient:    btcClient,
-		bbnClient:    bbnClient,
-		cwClient:     cwClient,
-		l2Client:     l2Client,
-		db:           db,
-		pollInterval: cfg.PollInterval,
-		logger:       logger,
+		btcClient:           btcClient,
+		bbnClient:           bbnClient,
+		cwClient:            cwClient,
+		l2Client:            l2Client,
+		db:                  db,
+		pollInterval:        cfg.PollInterval,
+		lastProcessedHeight: lastProcessedHeight,
+		logger:              logger,
 	}, nil
 }
 
@@ -256,23 +273,24 @@ func (fg *FinalityGadget) QueryBtcStakingActivatedTimestamp() (uint64, error) {
 	if err != nil {
 		return math.MaxUint64, err
 	}
-
+	fg.logger.Debug("All consumer FP public keys", zap.Strings("allFpPks", allFpPks))
 	// check whether the btc staking is actived
 	earliestDelHeight, err := fg.bbnClient.QueryEarliestActiveDelBtcHeight(allFpPks)
-	if err != nil {
-		return math.MaxUint64, err
-	}
-
 	// not activated yet
 	if earliestDelHeight == math.MaxUint64 {
 		return math.MaxUint64, types.ErrBtcStakingNotActivated
 	}
+	if err != nil {
+		return math.MaxUint64, err
+	}
+	fg.logger.Debug("Earliest active delegation height", zap.Uint64("height", earliestDelHeight))
 
 	// get the timestamp of the BTC height
 	btcBlockTimestamp, err := fg.btcClient.GetBlockTimestampByHeight(earliestDelHeight)
 	if err != nil {
 		return math.MaxUint64, err
 	}
+	fg.logger.Debug("BTC staking activated at", zap.Uint64("timestamp", btcBlockTimestamp))
 	return btcBlockTimestamp, nil
 }
 
@@ -298,28 +316,55 @@ func (fg *FinalityGadget) QueryLatestFinalizedBlock() (*types.Block, error) {
 
 // This function process blocks indefinitely, starting from the last finalized block.
 func (fg *FinalityGadget) ProcessBlocks(ctx context.Context) error {
-	// Start service at last finalized block
-	err := fg.startService()
-	if err != nil {
-		return fmt.Errorf("%v", err)
-	}
-
 	// Start polling for new blocks at set interval
 	ticker := time.NewTicker(fg.pollInterval)
 	defer ticker.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
-			block, err := fg.queryBlockByHeight(int64(fg.currHeight + 1))
+			latestFinalizedBlock, err := fg.l2Client.HeaderByNumber(ctx, big.NewInt(ethrpc.FinalizedBlockNumber.Int64()))
 			if err != nil {
-				fg.logger.Fatal("error getting new block", zap.Error(err))
+				return fmt.Errorf("error fetching latest finalized L2 block: %w", err)
+			}
+
+			latestFinalizedHeight := latestFinalizedBlock.Number.Uint64()
+			latestFinalizedBlockTime := latestFinalizedBlock.Time
+
+			// get the BTC staking activation timestamp
+			btcStakingActivatedTimestamp, err := fg.QueryBtcStakingActivatedTimestamp()
+			if err != nil {
+				if errors.Is(err, types.ErrBtcStakingNotActivated) {
+					fg.logger.Info("BTC staking not yet activated, waiting...")
+					continue
+				}
+				return fmt.Errorf("error querying BTC staking activation timestamp: %w", err)
+			}
+
+			// only process blocks after the btc staking is activated
+			if latestFinalizedBlockTime < btcStakingActivatedTimestamp {
+				fg.logger.Info("Skipping block before BTC staking activation", zap.Uint64("block_height", latestFinalizedHeight))
+				fg.lastProcessedHeight = latestFinalizedHeight
 				continue
 			}
-			go func() {
-				fg.handleBlock(block)
-			}()
+
+			// at FG startup, this can avoid indexing from blocks that's not activated yet
+			// TODO: we can add a flag fullSync
+			// true: sync from the first btc finalized block (convertL2BlockHeight(btcStakingActivatedTimestamp))
+			// false: sync from the last btc finalized block
+			if fg.lastProcessedHeight == 0 {
+				fg.lastProcessedHeight = latestFinalizedHeight - 1
+			}
+
+			// if the latest finalized block is greater than the last processed block, process it
+			if latestFinalizedHeight > fg.lastProcessedHeight {
+				fg.logger.Info("Processing block", zap.Uint64("block_height", latestFinalizedHeight))
+				if err := fg.handleBlock(ctx, latestFinalizedHeight); err != nil {
+					return fmt.Errorf("error processing block %d: %w", latestFinalizedHeight, err)
+				}
+			}
 		}
 	}
 }
@@ -336,8 +381,7 @@ func (fg *FinalityGadget) InsertBlock(block *types.Block) error {
 	if err != nil {
 		return err
 	}
-	// Set last finalized block in memory
-	fg.currHeight = block.BlockHeight
+
 	// Unlock mutex
 	fg.mutex.Unlock()
 
@@ -346,6 +390,7 @@ func (fg *FinalityGadget) InsertBlock(block *types.Block) error {
 
 func (fg *FinalityGadget) Close() {
 	fg.l2Client.Close()
+	fg.db.Close()
 }
 
 //////////////////////////////
@@ -367,11 +412,6 @@ func (fg *FinalityGadget) queryAllFpBtcPubKeys() ([]string, error) {
 	return allFpPks, nil
 }
 
-// Get last btc finalized block
-func (fg *FinalityGadget) queryLatestFinalizedBlock() (*types.Block, error) {
-	return fg.queryBlockByHeight(ethrpc.FinalizedBlockNumber.Int64())
-}
-
 // Get block by number
 func (fg *FinalityGadget) queryBlockByHeight(blockNumber int64) (*types.Block, error) {
 	header, err := fg.l2Client.HeaderByNumber(context.Background(), big.NewInt(blockNumber))
@@ -385,79 +425,38 @@ func (fg *FinalityGadget) queryBlockByHeight(blockNumber int64) (*types.Block, e
 	}, nil
 }
 
-// Start service at last finalized block
-func (fg *FinalityGadget) startService() error {
-	// Query L2 node for last finalized block
-	block, err := fg.queryLatestFinalizedBlock()
-	if err != nil {
-		return fmt.Errorf("error getting last finalized block: %v", err)
-	}
+func (fg *FinalityGadget) handleBlock(ctx context.Context, latestFinalizedHeight uint64) error {
+	for height := fg.lastProcessedHeight + 1; height <= latestFinalizedHeight; height++ {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+			block, err := fg.queryBlockByHeight(int64(height))
+			if err != nil {
+				return fmt.Errorf("error getting block at height %d: %w", height, err)
+			}
 
-	// Query local DB for last block processed
-	localBlock, err := fg.db.QueryLatestFinalizedBlock()
-	if err != nil {
-		return fmt.Errorf("error getting latest block from db: %v", err)
-	}
+			// Check the block is babylon finalized using sdk client
+			isFinal, err := fg.QueryIsBlockBabylonFinalized(block)
+			if err != nil && !errors.Is(err, types.ErrBtcStakingNotActivated) {
+				return fmt.Errorf("error checking block %d: %v", block.BlockHeight, err)
+			}
+			// If not finalized, throw error
+			if !isFinal {
+				return fmt.Errorf("block %d should be finalized according to client but is not", block.BlockHeight)
+			}
 
-	// if local chain tip is ahead of node, start service at latest block
-	if localBlock != nil && localBlock.BlockHeight >= block.BlockHeight {
-		block = &types.Block{
-			BlockHeight:    localBlock.BlockHeight,
-			BlockHash:      localBlock.BlockHash,
-			BlockTimestamp: localBlock.BlockTimestamp,
-		}
-	} else {
-		// throw if block height is 0
-		if block.BlockHeight == 0 {
-			return fmt.Errorf("block height 0")
-		}
-
-		// Check the block is finalized using sdk client
-		isFinal, err := fg.QueryIsBlockBabylonFinalized(block)
-		// If not finalized, throw error
-		if !isFinal {
-			return fmt.Errorf("block %d should be finalized according to client but is not", block.BlockHeight)
-		}
-		if err != nil {
-			return fmt.Errorf("error checking block %d: %v", block.BlockHeight, err)
-		}
-		// If finalised, store the block in DB and set the last finalized block
-		err = fg.InsertBlock(block)
-		if err != nil {
-			return fmt.Errorf("error storing block %d: %v", block.BlockHeight, err)
-		}
-	}
-
-	// Start service at block height
-	fg.logger.Info("Starting finality gadget at block", zap.Uint64("block_height", block.BlockHeight))
-
-	// Set the curr finalized block in memory
-	fg.currHeight = block.BlockHeight
-
-	return nil
-}
-
-func (fg *FinalityGadget) handleBlock(block *types.Block) {
-	// while block is not finalized, recheck if block is finalized every `retryInterval` seconds
-	// if finalized, store the block in DB and set the last finalized block
-	for {
-		// Check if block is finalized
-		isFinal, err := fg.QueryIsBlockBabylonFinalized(block)
-		if err != nil {
-			fg.logger.Fatal("Error checking block", zap.Uint64("block_height", block.BlockHeight), zap.Error(err))
-			return
-		}
-		if isFinal {
+			// If finalised, store the block in DB
 			err = fg.InsertBlock(block)
 			if err != nil {
-				fg.logger.Fatal("Error storing block", zap.Uint64("block_height", block.BlockHeight), zap.Error(err))
+				return fmt.Errorf("error storing block %d: %v", block.BlockHeight, err)
 			}
-			return
+			fg.lastProcessedHeight = block.BlockHeight
+			fg.logger.Info("Inserted new finalized block", zap.Uint64("block_height", block.BlockHeight))
 		}
-
-		// Sleep for `PollInterval` seconds
-		time.Sleep(fg.pollInterval * time.Second)
 	}
+
+	return nil
 }
 
 func normalizeBlockHash(hash string) string {

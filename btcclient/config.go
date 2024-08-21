@@ -11,6 +11,7 @@ const (
 	defaultBitcoindRpcHost        = "rpc.ankr.com/btc"
 	defaultBitcoindRPCUser        = "user"
 	defaultBitcoindRPCPass        = "pass"
+	defaultBitcoindDisableTLS     = false
 	defaultBitcoindBlockCacheSize = 20 * 1024 * 1024 // 20 MB
 	defaultBlockPollingInterval   = 30 * time.Second
 	defaultTxPollingInterval      = 30 * time.Second
@@ -32,6 +33,7 @@ type BTCConfig struct {
 	BlockCacheSize       uint64        `long:"block-cache-size" description:"Size of the Bitcoin blocks cache."`
 	MaxRetryTimes        uint          `long:"max-retry-times" description:"The max number of retries to an RPC call in case of failure."`
 	RetryInterval        time.Duration `long:"retry-interval" description:"The time interval between each retry."`
+	DisableTLS           bool          `long:"disable-tls" description:"Disable TLS for RPC connections"`
 }
 
 func DefaultBTCConfig() *BTCConfig {
@@ -44,6 +46,7 @@ func DefaultBTCConfig() *BTCConfig {
 		BlockCacheSize:       defaultBitcoindBlockCacheSize,
 		MaxRetryTimes:        defaultMaxRetryTimes,
 		RetryInterval:        defaultRetryInterval,
+		DisableTLS:           defaultBitcoindDisableTLS,
 	}
 }
 
@@ -52,7 +55,7 @@ func (cfg *BTCConfig) ToConnConfig() *rpcclient.ConnConfig {
 		Host:                 cfg.RPCHost,
 		User:                 cfg.RPCUser,
 		Pass:                 cfg.RPCPass,
-		DisableTLS:           false,
+		DisableTLS:           cfg.DisableTLS,
 		DisableConnectOnNew:  true,
 		DisableAutoReconnect: false,
 		// we use post mode as it sure it works with either bitcoind or btcwallet

@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
-	rpcclient "github.com/babylonlabs-io/finality-gadget/client"
 	"github.com/babylonlabs-io/finality-gadget/config"
 	"github.com/babylonlabs-io/finality-gadget/db"
 	"github.com/babylonlabs-io/finality-gadget/finalitygadget"
@@ -86,14 +85,6 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 		}
 	}()
 
-	// Create grpc client
-	hostAddr := "localhost:" + cfg.GRPCServerPort
-	client, err := rpcclient.NewFinalityGadgetGrpcClient(hostAddr)
-	if err != nil {
-		logger.Fatal("Error creating grpc client", zap.Error(err))
-		return fmt.Errorf("error creating grpc client: %v", err)
-	}
-
 	// Set up channel to listen for interrupt signal
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
@@ -113,10 +104,6 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 
 	// Call Close method when interrupt signal is received
 	logger.Info("Closing finality gadget server...")
-	if err := client.Close(); err != nil {
-		logger.Fatal("Error closing grpc client", zap.Error(err))
-		return err
-	}
 	fg.Close()
 
 	return nil
