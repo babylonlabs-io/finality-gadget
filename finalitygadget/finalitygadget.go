@@ -320,9 +320,7 @@ func (fg *FinalityGadget) ProcessBlocks(ctx context.Context) error {
 		case <-ticker.C:
 			latestFinalizedBlock, err := fg.l2Client.HeaderByNumber(ctx, big.NewInt(ethrpc.FinalizedBlockNumber.Int64()))
 			if err != nil {
-				// log the error and continue
-				fg.logger.Error("Error fetching latest finalized L2 block", zap.Error(err))
-				continue
+				return fmt.Errorf("error fetching latest finalized L2 block: %w", err)
 			}
 
 			latestFinalizedHeight := latestFinalizedBlock.Number.Uint64()
@@ -343,6 +341,14 @@ func (fg *FinalityGadget) ProcessBlocks(ctx context.Context) error {
 				fg.logger.Info("Skipping block before BTC staking activation", zap.Uint64("block_height", latestFinalizedHeight))
 				fg.lastProcessedHeight = latestFinalizedHeight
 				continue
+			}
+
+			// at FG startup, this can avoid indexing from blocks that's not activated yet
+			// TODO: we can add a flag fullSync
+			// true: sync from the first btc finalized block (convertL2BlockHeight(btcStakingActivatedTimestamp))
+			// false: sync from the last btc finalized block
+			if fg.lastProcessedHeight == 0 {
+				fg.lastProcessedHeight = latestFinalizedHeight - 1
 			}
 
 			// if the latest finalized block is greater than the last processed block, process it
