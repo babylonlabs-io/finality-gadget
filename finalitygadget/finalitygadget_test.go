@@ -3,6 +3,7 @@ package finalitygadget
 import (
 	"errors"
 	"fmt"
+	"math"
 	"math/rand"
 	"strings"
 	"testing"
@@ -13,6 +14,7 @@ import (
 	"github.com/babylonlabs-io/finality-gadget/types"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
 )
 
 func TestFinalityGadgetDisabled(t *testing.T) {
@@ -573,6 +575,52 @@ func TestQueryLatestFinalizedBlockForNonExistentBlock(t *testing.T) {
 	latestBlock, err := mockFinalityGadget.QueryLatestFinalizedBlock()
 	require.Nil(t, latestBlock)
 	require.Equal(t, err, types.ErrBlockNotFound)
+}
+
+func TestQueryBtcStakingActivatedTimestamp(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
+	mockCwClient := mocks.NewMockICosmWasmClient(ctl)
+	mockBBNClient := mocks.NewMockIBabylonClient(ctl)
+	mockBTCClient := mocks.NewMockIBitcoinClient(ctl)
+
+	mockFinalityGadget := &FinalityGadget{
+		db:        mockDbHandler,
+		cwClient:  mockCwClient,
+		bbnClient: mockBBNClient,
+		btcClient: mockBTCClient,
+		logger:    zap.NewNop(),
+	}
+
+	// Test case 1: Timestamp is already in the database
+	mockDbHandler.EXPECT().GetActivatedTimestamp().Return(uint64(1234567890), nil)
+	timestamp, err := mockFinalityGadget.QueryBtcStakingActivatedTimestamp()
+	require.NoError(t, err)
+	require.Equal(t, uint64(1234567890), timestamp)
+
+	// Test case 2: Timestamp is not in the database, need to query from bbnClient
+	mockDbHandler.EXPECT().GetActivatedTimestamp().Return(uint64(0), types.ErrActivatedTimestampNotFound)
+	mockCwClient.EXPECT().QueryConsumerId().Return("consumer-chain-id", nil)
+	mockBBNClient.EXPECT().QueryAllFpBtcPubKeys("consumer-chain-id").Return([]string{"pk1", "pk2"}, nil)
+	mockBBNClient.EXPECT().QueryEarliestActiveDelBtcHeight([]string{"pk1", "pk2"}).Return(uint64(100), nil)
+	mockBTCClient.EXPECT().GetBlockTimestampByHeight(uint64(100)).Return(uint64(1234567890), nil)
+	mockDbHandler.EXPECT().SaveActivatedTimestamp(uint64(1234567890)).Return(nil)
+
+	timestamp, err = mockFinalityGadget.QueryBtcStakingActivatedTimestamp()
+	require.NoError(t, err)
+	require.Equal(t, uint64(1234567890), timestamp)
+
+	// Test case 3: BTC staking is not activated
+	mockDbHandler.EXPECT().GetActivatedTimestamp().Return(uint64(0), types.ErrActivatedTimestampNotFound)
+	mockCwClient.EXPECT().QueryConsumerId().Return("consumer-chain-id", nil)
+	mockBBNClient.EXPECT().QueryAllFpBtcPubKeys("consumer-chain-id").Return([]string{"pk1", "pk2"}, nil)
+	mockBBNClient.EXPECT().QueryEarliestActiveDelBtcHeight([]string{"pk1", "pk2"}).Return(uint64(math.MaxUint64), nil)
+
+	timestamp, err = mockFinalityGadget.QueryBtcStakingActivatedTimestamp()
+	require.Equal(t, types.ErrBtcStakingNotActivated, err)
+	require.Equal(t, uint64(math.MaxUint64), timestamp)
 }
 
 func normalizedBlock(block *types.Block) *types.Block {

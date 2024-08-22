@@ -67,18 +67,19 @@ func (mr *MockIDatabaseHandlerMockRecorder) CreateInitialSchema() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInitialSchema", reflect.TypeOf((*MockIDatabaseHandler)(nil).CreateInitialSchema))
 }
 
-// DeleteDB mocks base method.
-func (m *MockIDatabaseHandler) DeleteDB() error {
+// GetActivatedTimestamp mocks base method.
+func (m *MockIDatabaseHandler) GetActivatedTimestamp() (uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteDB")
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "GetActivatedTimestamp")
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// DeleteDB indicates an expected call of DeleteDB.
-func (mr *MockIDatabaseHandlerMockRecorder) DeleteDB() *gomock.Call {
+// GetActivatedTimestamp indicates an expected call of GetActivatedTimestamp.
+func (mr *MockIDatabaseHandlerMockRecorder) GetActivatedTimestamp() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteDB", reflect.TypeOf((*MockIDatabaseHandler)(nil).DeleteDB))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActivatedTimestamp", reflect.TypeOf((*MockIDatabaseHandler)(nil).GetActivatedTimestamp))
 }
 
 // GetBlockByHash mocks base method.
@@ -109,6 +110,20 @@ func (m *MockIDatabaseHandler) GetBlockByHeight(height uint64) (*types.Block, er
 func (mr *MockIDatabaseHandlerMockRecorder) GetBlockByHeight(height any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockByHeight", reflect.TypeOf((*MockIDatabaseHandler)(nil).GetBlockByHeight), height)
+}
+
+// InsertBlock mocks base method.
+func (m *MockIDatabaseHandler) InsertBlock(block *types.Block) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertBlock", block)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InsertBlock indicates an expected call of InsertBlock.
+func (mr *MockIDatabaseHandlerMockRecorder) InsertBlock(block any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertBlock", reflect.TypeOf((*MockIDatabaseHandler)(nil).InsertBlock), block)
 }
 
 // QueryIsBlockFinalizedByHash mocks base method.
@@ -156,16 +171,16 @@ func (mr *MockIDatabaseHandlerMockRecorder) QueryLatestFinalizedBlock() *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryLatestFinalizedBlock", reflect.TypeOf((*MockIDatabaseHandler)(nil).QueryLatestFinalizedBlock))
 }
 
-// InsertBlock mocks base method.
-func (m *MockIDatabaseHandler) InsertBlock(block *types.Block) error {
+// SaveActivatedTimestamp mocks base method.
+func (m *MockIDatabaseHandler) SaveActivatedTimestamp(timestamp uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InsertBlock", block)
+	ret := m.ctrl.Call(m, "SaveActivatedTimestamp", timestamp)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// InsertBlock indicates an expected call of InsertBlock.
-func (mr *MockIDatabaseHandlerMockRecorder) InsertBlock(block any) *gomock.Call {
+// SaveActivatedTimestamp indicates an expected call of SaveActivatedTimestamp.
+func (mr *MockIDatabaseHandlerMockRecorder) SaveActivatedTimestamp(timestamp any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertBlock", reflect.TypeOf((*MockIDatabaseHandler)(nil).InsertBlock), block)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveActivatedTimestamp", reflect.TypeOf((*MockIDatabaseHandler)(nil).SaveActivatedTimestamp), timestamp)
 }

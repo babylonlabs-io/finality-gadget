@@ -269,11 +269,21 @@ func (fg *FinalityGadget) QueryBlockRangeBabylonFinalized(
  * returns math.MaxUint64, ErrBtcStakingNotActivated if the BTC staking is not activated
  */
 func (fg *FinalityGadget) QueryBtcStakingActivatedTimestamp() (uint64, error) {
+	// First, try to get the timestamp from the DB
+	timestamp, err := fg.db.GetActivatedTimestamp()
+	if err != nil {
+		fg.logger.Error("Failed to get activated timestamp from database", zap.Error(err))
+	} else {
+		return timestamp, nil
+	}
+
+	// If there's an error (either activated timestamp not found or DB error), query from bbnClient
 	allFpPks, err := fg.queryAllFpBtcPubKeys()
 	if err != nil {
 		return math.MaxUint64, err
 	}
 	fg.logger.Debug("All consumer FP public keys", zap.Strings("allFpPks", allFpPks))
+
 	// check whether the btc staking is actived
 	earliestDelHeight, err := fg.bbnClient.QueryEarliestActiveDelBtcHeight(allFpPks)
 	// not activated yet
@@ -291,6 +301,13 @@ func (fg *FinalityGadget) QueryBtcStakingActivatedTimestamp() (uint64, error) {
 		return math.MaxUint64, err
 	}
 	fg.logger.Debug("BTC staking activated at", zap.Uint64("timestamp", btcBlockTimestamp))
+
+	// Save the timestamp to the DB
+	err = fg.db.SaveActivatedTimestamp(btcBlockTimestamp)
+	if err != nil {
+		fg.logger.Error("Failed to save activated timestamp to database", zap.Error(err))
+	}
+
 	return btcBlockTimestamp, nil
 }
 

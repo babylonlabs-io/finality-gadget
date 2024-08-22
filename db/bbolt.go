@@ -20,10 +20,11 @@ type BBoltHandler struct {
 var _ IDatabaseHandler = &BBoltHandler{}
 
 const (
-	blocksBucket       = "blocks"
-	blockHeightsBucket = "block_heights"
-	latestBlockBucket  = "latest_block"
-	latestBlockKey     = "latest"
+	blocksBucket          = "blocks"
+	blockHeightsBucket    = "block_heights"
+	latestBlockBucket     = "latest_block"
+	latestBlockKey        = "latest"
+	activatedTimestampKey = "activated_timestamp"
 )
 
 //////////////////////////////
@@ -210,6 +211,30 @@ func (bb *BBoltHandler) QueryLatestFinalizedBlock() (*types.Block, error) {
 
 	// Fetch latest block by height
 	return bb.GetBlockByHeight(latestBlockHeight)
+}
+
+func (bb *BBoltHandler) GetActivatedTimestamp() (uint64, error) {
+	var timestamp uint64
+	err := bb.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(latestBlockBucket))
+		v := b.Get([]byte(activatedTimestampKey))
+		if v == nil {
+			return types.ErrActivatedTimestampNotFound
+		}
+		timestamp = bb.btoi(v)
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	return timestamp, nil
+}
+
+func (bb *BBoltHandler) SaveActivatedTimestamp(timestamp uint64) error {
+	return bb.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(latestBlockBucket))
+		return b.Put([]byte(activatedTimestampKey), bb.itob(timestamp))
+	})
 }
 
 func (bb *BBoltHandler) Close() error {
