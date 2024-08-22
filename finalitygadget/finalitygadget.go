@@ -274,6 +274,7 @@ func (fg *FinalityGadget) QueryBtcStakingActivatedTimestamp() (uint64, error) {
 	if err != nil {
 		fg.logger.Error("Failed to get activated timestamp from database", zap.Error(err))
 	} else {
+		fg.logger.Debug("BTC staking activated timestamp found in database", zap.Uint64("timestamp", timestamp))
 		return timestamp, nil
 	}
 
@@ -307,6 +308,7 @@ func (fg *FinalityGadget) QueryBtcStakingActivatedTimestamp() (uint64, error) {
 	if err != nil {
 		fg.logger.Error("Failed to save activated timestamp to database", zap.Error(err))
 	}
+	fg.logger.Debug("Saved BTC staking activated timestamp to database", zap.Uint64("timestamp", btcBlockTimestamp))
 
 	return btcBlockTimestamp, nil
 }
