@@ -3,9 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/spf13/cobra"
@@ -71,6 +68,12 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error creating finality gadget: %v", err)
 	}
 
+	// Create a cancellable context
+	fgCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	// Start monitoring BTC staking activation
+	go fg.MonitorBtcStakingActivation(fgCtx)
+
 	// Start grpc server
 	// Hook interceptor for os signals.
 	shutdownInterceptor, err := sig.Intercept()
@@ -85,22 +88,15 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 		}
 	}()
 
-	// Set up channel to listen for interrupt signal
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-
 	// Run finality gadget in a separate goroutine
 	go func() {
-		if err := fg.ProcessBlocks(context.Background()); err != nil {
+		if err := fg.ProcessBlocks(fgCtx); err != nil {
 			logger.Fatal("Error processing blocks", zap.Error(err))
 		}
 	}()
 
-	// Wait for interrupt signal
-	sig := <-sigChan
-	if sig == os.Interrupt {
-		fmt.Print("\r")
-	}
+	// Wait for shutdown signal
+	<-shutdownInterceptor.ShutdownChannel()
 
 	// Call Close method when interrupt signal is received
 	logger.Info("Closing finality gadget server...")
