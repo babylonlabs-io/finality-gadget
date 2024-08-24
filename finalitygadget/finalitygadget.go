@@ -302,6 +302,63 @@ func (fg *FinalityGadget) GetBlockByHash(hash string) (*types.Block, error) {
 	return fg.db.GetBlockByHash(normalizeBlockHash(hash))
 }
 
+func (fg *FinalityGadget) QueryTransactionStatus(txHash string) (*types.TransactionInfo, error) {
+	// get block info
+	ctx := context.Background()
+	txReceipt, err := fg.l2Client.TransactionReceipt(ctx, txHash)
+	fmt.Println("tx recept - block number:", txReceipt.BlockNumber)
+	if err != nil {
+		return nil, err
+	}
+	header, err := fg.l2Client.HeaderByNumber(ctx, txReceipt.BlockNumber)
+	fmt.Println("block hash:", header.Hash().Hex())
+	fmt.Println("block timestamp:", header.Time)
+	if err != nil {
+		return nil, err
+	}
+
+	// get babylon finalized info
+	isBabylonFinalized, err := fg.QueryIsBlockFinalizedByHeight(txReceipt.BlockNumber.Uint64())
+	fmt.Println("isBabylonFinalized", isBabylonFinalized)
+	if err != nil {
+		return nil, err
+	}
+
+	// get safe and finalized blocks
+	safeBlock, err := fg.l2Client.HeaderByNumber(ctx, big.NewInt(ethrpc.SafeBlockNumber.Int64()))
+	fmt.Println("safeBlock:", safeBlock.Number)
+	if err != nil {
+		return nil, err
+	}
+	finalizedBlock, err := fg.l2Client.HeaderByNumber(ctx, big.NewInt(ethrpc.FinalizedBlockNumber.Int64()))
+	fmt.Println("finalizedBlock:", finalizedBlock.Number)
+	if err != nil {
+		return nil, err
+	}
+
+	var status types.FinalityStatus
+	if finalizedBlock.Number.Uint64() >= header.Number.Uint64() {
+		status = types.FinalityStatusFinalized
+	} else if isBabylonFinalized {
+		status = types.FinalityStatusBitcoinFinalized
+	} else if safeBlock.Number.Uint64() >= header.Number.Uint64() {
+		status = types.FinalityStatusSafe
+	} else {
+		status = types.FinalityStatusPending
+	}
+	fmt.Println("status:", status)
+
+	return &types.TransactionInfo{
+		TxHash:           txReceipt.TxHash.Hex(),
+		BlockHeight:      header.Number.Uint64(),
+		BlockHash:        hex.EncodeToString(header.Hash().Bytes()),
+		BlockTimestamp:   header.Time,
+		Status:           status,
+		BabylonFinalized: isBabylonFinalized || status == types.FinalityStatusFinalized,
+	}, nil
+
+}
+
 func (fg *FinalityGadget) QueryIsBlockFinalizedByHeight(height uint64) (bool, error) {
 	return fg.db.QueryIsBlockFinalizedByHeight(height)
 }

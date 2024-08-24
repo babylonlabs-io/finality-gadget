@@ -33,5 +33,6 @@ type ICosmWasmClient interface {
 
 type IEthL2Client interface {
 	HeaderByNumber(ctx context.Context, number *big.Int) (*eth.Header, error)
+	TransactionReceipt(ctx context.Context, txHash string) (*eth.Receipt, error)
 	Close()
 }

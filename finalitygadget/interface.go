@@ -72,4 +72,7 @@ type IFinalityGadget interface {
 
 	// QueryLatestFinalizedBlock returns the latest finalized block by querying the local db
 	QueryLatestFinalizedBlock() (*types.Block, error)
+
+	// QueryTransactionStatus returns the finality status of a transaction
+	QueryTransactionStatus(txHash string) (*types.TransactionInfo, error)
 }
