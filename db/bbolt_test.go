@@ -220,3 +220,38 @@ func TestQueryLatestFinalizedBlockNonExistent(t *testing.T) {
 	assert.Nil(t, latestBlock)
 	assert.NoError(t, err)
 }
+
+func TestGetActivatedTimestamp(t *testing.T) {
+	handler, cleanup := setupDB(t)
+	defer cleanup()
+
+	// Test when timestamp is not set
+	timestamp, err := handler.GetActivatedTimestamp()
+	assert.Equal(t, uint64(0), timestamp)
+	assert.Equal(t, types.ErrActivatedTimestampNotFound, err)
+
+	// Set timestamp
+	expectedTimestamp := uint64(1234567890)
+	err = handler.SaveActivatedTimestamp(expectedTimestamp)
+	assert.NoError(t, err)
+
+	// Test when timestamp is set
+	timestamp, err = handler.GetActivatedTimestamp()
+	assert.NoError(t, err)
+	assert.Equal(t, expectedTimestamp, timestamp)
+}
+
+func TestSaveActivatedTimestamp(t *testing.T) {
+	handler, cleanup := setupDB(t)
+	defer cleanup()
+
+	// Set timestamp
+	expectedTimestamp := uint64(1234567890)
+	err := handler.SaveActivatedTimestamp(expectedTimestamp)
+	assert.NoError(t, err)
+
+	// Verify timestamp was saved
+	timestamp, err := handler.GetActivatedTimestamp()
+	assert.NoError(t, err)
+	assert.Equal(t, expectedTimestamp, timestamp)
+}

@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	bbnClient "github.com/babylonlabs-io/babylon/client/client"
+	bbnclient "github.com/babylonlabs-io/babylon/client/client"
 	bbncfg "github.com/babylonlabs-io/babylon/client/config"
-	"github.com/babylonlabs-io/finality-gadget/bbnclient"
+	fgbbnclient "github.com/babylonlabs-io/finality-gadget/bbnclient"
 	"github.com/babylonlabs-io/finality-gadget/btcclient"
 	"github.com/babylonlabs-io/finality-gadget/config"
 	"github.com/babylonlabs-io/finality-gadget/cwclient"
@@ -51,11 +51,11 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.L
 	bbnConfig := bbncfg.DefaultBabylonConfig()
 	bbnConfig.RPCAddr = cfg.BBNRPCAddress
 	bbnConfig.ChainID = cfg.BBNChainID
-	babylonClient, err := bbnClient.New(
+	babylonClient, err := bbnclient.New(
 		&bbnConfig,
 		logger,
 	)
-	bbnClient := bbnclient.NewBabylonClient(babylonClient.QueryClient)
+	bbnClient := fgbbnclient.NewBabylonClient(babylonClient.QueryClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Babylon client: %w", err)
 	}
@@ -92,8 +92,8 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.L
 
 	lastProcessedHeight := uint64(0)
 	latestBlock, err := db.QueryLatestFinalizedBlock()
-	if err != nil {
-		return nil, err
+	if err != nil && !errors.Is(err, types.ErrBlockNotFound) {
+		return nil, fmt.Errorf("failed to query latest finalized block: %w", err)
 	}
 	if latestBlock != nil {
 		lastProcessedHeight = latestBlock.BlockHeight
@@ -252,46 +252,22 @@ func (fg *FinalityGadget) QueryBlockRangeBabylonFinalized(
 	return finalizedBlockHeight, nil
 }
 
-/* QueryBtcStakingActivatedTimestamp returns the timestamp when the BTC staking is activated
- *
- * - We will check for k deep and covenant quorum to mark a delegation as active
- * - So technically, activated time needs to be max of the following
- *	 - timestamp of Babylon block that BTC delegation receives covenant quorum
- *	 - timestamp of BTC block that BTC delegation's staking tx becomes k-deep
- * - But we don't have a Babylon API to find the earliest Babylon block where BTC delegation gets covenant quorum.
- *   and it's probably not a good idea to add this to Babylon, as this creates more coupling between Babylon and
- *   consumer. So waiting for covenant quorum can be implemented in a clean way only with Babylon side support.
- *   this will be considered as future work
- * - For now, we will use the k-deep BTC block timestamp for the activation timestamp
- * - The time diff issue is not burning. The time diff between pending and active only matters if FP equivocates
- *   during that time period
- *
- * returns math.MaxUint64, ErrBtcStakingNotActivated if the BTC staking is not activated
- */
+// QueryBtcStakingActivatedTimestamp retrieves BTC staking activation timestamp from the database
+// returns math.MaxUint64, error if any error occurs
 func (fg *FinalityGadget) QueryBtcStakingActivatedTimestamp() (uint64, error) {
-	allFpPks, err := fg.queryAllFpBtcPubKeys()
+	// First, try to get the timestamp from the database
+	timestamp, err := fg.db.GetActivatedTimestamp()
 	if err != nil {
+		// If error is not found, try to query it from the bbnClient
+		if errors.Is(err, types.ErrActivatedTimestampNotFound) {
+			fg.logger.Debug("activation timestamp hasn't been set yet, querying from bbnClient...")
+			return fg.queryBtcStakingActivationTimestamp()
+		}
+		fg.logger.Error("Failed to get activated timestamp from database", zap.Error(err))
 		return math.MaxUint64, err
 	}
-	fg.logger.Debug("All consumer FP public keys", zap.Strings("allFpPks", allFpPks))
-	// check whether the btc staking is actived
-	earliestDelHeight, err := fg.bbnClient.QueryEarliestActiveDelBtcHeight(allFpPks)
-	// not activated yet
-	if earliestDelHeight == math.MaxUint64 {
-		return math.MaxUint64, types.ErrBtcStakingNotActivated
-	}
-	if err != nil {
-		return math.MaxUint64, err
-	}
-	fg.logger.Debug("Earliest active delegation height", zap.Uint64("height", earliestDelHeight))
-
-	// get the timestamp of the BTC height
-	btcBlockTimestamp, err := fg.btcClient.GetBlockTimestampByHeight(earliestDelHeight)
-	if err != nil {
-		return math.MaxUint64, err
-	}
-	fg.logger.Debug("BTC staking activated at", zap.Uint64("timestamp", btcBlockTimestamp))
-	return btcBlockTimestamp, nil
+	fg.logger.Debug("BTC staking activated timestamp found in database", zap.Uint64("timestamp", timestamp))
+	return timestamp, nil
 }
 
 func (fg *FinalityGadget) GetBlockByHeight(height uint64) (*types.Block, error) {
@@ -514,6 +490,65 @@ func (fg *FinalityGadget) handleBlock(ctx context.Context, latestFinalizedHeight
 	}
 
 	return nil
+}
+
+// Query the BTC staking activation timestamp from bbnClient
+// returns math.MaxUint64, ErrBtcStakingNotActivated if the BTC staking is not activated
+func (fg *FinalityGadget) queryBtcStakingActivationTimestamp() (uint64, error) {
+	allFpPks, err := fg.queryAllFpBtcPubKeys()
+	if err != nil {
+		return math.MaxUint64, err
+	}
+	fg.logger.Debug("All consumer FP public keys", zap.Strings("allFpPks", allFpPks))
+
+	earliestDelHeight, err := fg.bbnClient.QueryEarliestActiveDelBtcHeight(allFpPks)
+	if err != nil {
+		return math.MaxUint64, err
+	}
+	if earliestDelHeight == math.MaxUint64 {
+		return math.MaxUint64, types.ErrBtcStakingNotActivated
+	}
+	fg.logger.Debug("Earliest active delegation height", zap.Uint64("height", earliestDelHeight))
+
+	btcBlockTimestamp, err := fg.btcClient.GetBlockTimestampByHeight(earliestDelHeight)
+	if err != nil {
+		return math.MaxUint64, err
+	}
+	fg.logger.Debug("BTC staking activated at", zap.Uint64("timestamp", btcBlockTimestamp))
+
+	return btcBlockTimestamp, nil
+}
+
+// periodically check and update the BTC staking activation timestamp
+// Exit the goroutine once we've successfully saved the timestamp
+func (fg *FinalityGadget) MonitorBtcStakingActivation(ctx context.Context) {
+	ticker := time.NewTicker(fg.pollInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			timestamp, err := fg.queryBtcStakingActivationTimestamp()
+			if err != nil {
+				if errors.Is(err, types.ErrBtcStakingNotActivated) {
+					fg.logger.Debug("BTC staking not yet activated, waiting...")
+					continue
+				}
+				fg.logger.Error("Failed to query BTC staking activation timestamp", zap.Error(err))
+				continue
+			}
+
+			err = fg.db.SaveActivatedTimestamp(timestamp)
+			if err != nil {
+				fg.logger.Error("Failed to save activated timestamp to database", zap.Error(err))
+				continue
+			}
+			fg.logger.Debug("Saved BTC staking activated timestamp to database", zap.Uint64("timestamp", timestamp))
+			return
+		}
+	}
 }
 
 func normalizeBlockHash(hash string) string {
