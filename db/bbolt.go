@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"math"
 	"time"
 
 	"github.com/babylonlabs-io/finality-gadget/types"
@@ -225,7 +226,7 @@ func (bb *BBoltHandler) GetActivatedTimestamp() (uint64, error) {
 		return nil
 	})
 	if err != nil {
-		return 0, err
+		return math.MaxUint64, err
 	}
 	return timestamp, nil
 }
