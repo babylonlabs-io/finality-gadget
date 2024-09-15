@@ -113,9 +113,9 @@ func (c *BitcoinClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint6
 	}
 
 	// timestamp is in the future (not in the most-work fully-validated chain)
-	// so we cannot determine the height from the timestamp
+	// so we return the most recent BTC block height
 	if lowerBound > blockHeight {
-		return 0, nil
+		return blockHeight, nil
 	}
 
 	return lowerBound - 1, nil
