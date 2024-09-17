@@ -8,4 +8,5 @@ FGContractAddress = "bbn1ghd753shjuwexxywmgs4xz7x2q732vcnkm6h2pyv9s6ah3hylvrqxxv
 BBNChainID = "euphrates-0.4.0"
 BBNRPCAddress = "https://rpc-euphrates.devnet.babylonchain.io"
 GRPCListener = "0.0.0.0:50051"
+HTTPListener = "0.0.0.0:8080"
 PollInterval = "10s"
