@@ -9,7 +9,6 @@ import (
 func (s *Server) txStatusHandler(w http.ResponseWriter, r *http.Request) {
 	// Extract query parameters
 	txHash := r.URL.Query().Get("hash")
-	fmt.Printf("txHash: %s\n", txHash)
 
 	// Get block from rpc.
 	txInfo, err := s.rpcServer.fg.QueryTransactionStatus(txHash)

@@ -306,32 +306,26 @@ func (fg *FinalityGadget) QueryTransactionStatus(txHash string) (*types.Transact
 	// get block info
 	ctx := context.Background()
 	txReceipt, err := fg.l2Client.TransactionReceipt(ctx, txHash)
-	fmt.Println("tx recept - block number:", txReceipt.BlockNumber)
 	if err != nil {
 		return nil, err
 	}
 	header, err := fg.l2Client.HeaderByNumber(ctx, txReceipt.BlockNumber)
-	fmt.Println("block hash:", header.Hash().Hex())
-	fmt.Println("block timestamp:", header.Time)
 	if err != nil {
 		return nil, err
 	}
 
 	// get babylon finalized info
 	isBabylonFinalized, err := fg.QueryIsBlockFinalizedByHeight(txReceipt.BlockNumber.Uint64())
-	fmt.Println("isBabylonFinalized", isBabylonFinalized)
 	if err != nil {
 		return nil, err
 	}
 
 	// get safe and finalized blocks
 	safeBlock, err := fg.l2Client.HeaderByNumber(ctx, big.NewInt(ethrpc.SafeBlockNumber.Int64()))
-	fmt.Println("safeBlock:", safeBlock.Number)
 	if err != nil {
 		return nil, err
 	}
 	finalizedBlock, err := fg.l2Client.HeaderByNumber(ctx, big.NewInt(ethrpc.FinalizedBlockNumber.Int64()))
-	fmt.Println("finalizedBlock:", finalizedBlock.Number)
 	if err != nil {
 		return nil, err
 	}
@@ -346,7 +340,8 @@ func (fg *FinalityGadget) QueryTransactionStatus(txHash string) (*types.Transact
 	} else {
 		status = types.FinalityStatusPending
 	}
-	fmt.Println("status:", status)
+
+	fg.logger.Debug("Transaction status", zap.String("block_hash", header.Hash().Hex()), zap.Uint64("block_height", header.Number.Uint64()), zap.String("tx_hash", txHash), zap.String("status", string(status)))
 
 	return &types.TransactionInfo{
 		TxHash:           txReceipt.TxHash.Hex(),
