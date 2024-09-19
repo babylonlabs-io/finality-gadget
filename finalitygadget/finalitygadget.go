@@ -278,6 +278,58 @@ func (fg *FinalityGadget) GetBlockByHash(hash string) (*types.Block, error) {
 	return fg.db.GetBlockByHash(normalizeBlockHash(hash))
 }
 
+func (fg *FinalityGadget) QueryTransactionStatus(txHash string) (*types.TransactionInfo, error) {
+	// get block info
+	ctx := context.Background()
+	txReceipt, err := fg.l2Client.TransactionReceipt(ctx, txHash)
+	if err != nil {
+		return nil, err
+	}
+	header, err := fg.l2Client.HeaderByNumber(ctx, txReceipt.BlockNumber)
+	if err != nil {
+		return nil, err
+	}
+
+	// get babylon finalized info
+	isBabylonFinalized, err := fg.QueryIsBlockFinalizedByHeight(txReceipt.BlockNumber.Uint64())
+	if err != nil {
+		return nil, err
+	}
+
+	// get safe and finalized blocks
+	safeBlock, err := fg.l2Client.HeaderByNumber(ctx, big.NewInt(ethrpc.SafeBlockNumber.Int64()))
+	if err != nil {
+		return nil, err
+	}
+	finalizedBlock, err := fg.l2Client.HeaderByNumber(ctx, big.NewInt(ethrpc.FinalizedBlockNumber.Int64()))
+	if err != nil {
+		return nil, err
+	}
+
+	var status types.FinalityStatus
+	if finalizedBlock.Number.Uint64() >= header.Number.Uint64() {
+		status = types.FinalityStatusFinalized
+	} else if isBabylonFinalized {
+		status = types.FinalityStatusBitcoinFinalized
+	} else if safeBlock.Number.Uint64() >= header.Number.Uint64() {
+		status = types.FinalityStatusSafe
+	} else {
+		status = types.FinalityStatusPending
+	}
+
+	fg.logger.Debug("Transaction status", zap.String("block_hash", header.Hash().Hex()), zap.Uint64("block_height", header.Number.Uint64()), zap.String("tx_hash", txHash), zap.String("status", string(status)))
+
+	return &types.TransactionInfo{
+		TxHash:           txReceipt.TxHash.Hex(),
+		BlockHeight:      header.Number.Uint64(),
+		BlockHash:        hex.EncodeToString(header.Hash().Bytes()),
+		BlockTimestamp:   header.Time,
+		Status:           status,
+		BabylonFinalized: isBabylonFinalized || status == types.FinalityStatusFinalized,
+	}, nil
+
+}
+
 func (fg *FinalityGadget) QueryIsBlockFinalizedByHeight(height uint64) (bool, error) {
 	return fg.db.QueryIsBlockFinalizedByHeight(height)
 }

@@ -3,6 +3,8 @@ package server
 import (
 	"fmt"
 	"net"
+	"net/http"
+	"net/url"
 	"sync"
 	"sync/atomic"
 
@@ -10,6 +12,7 @@ import (
 	"github.com/babylonlabs-io/finality-gadget/db"
 	"github.com/babylonlabs-io/finality-gadget/finalitygadget"
 	"github.com/lightningnetwork/lnd/signal"
+	"github.com/rs/cors"
 	"go.uber.org/zap"
 
 	"google.golang.org/grpc"
@@ -60,9 +63,9 @@ func (s *Server) RunUntilShutdown() error {
 	}
 	defer lis.Close()
 
+	// Create grpc server
 	grpcServer := grpc.NewServer()
 	defer grpcServer.Stop()
-
 	if err := s.rpcServer.RegisterWithGrpcServer(grpcServer); err != nil {
 		return fmt.Errorf("failed to register gRPC server: %w", err)
 	}
@@ -71,6 +74,34 @@ func (s *Server) RunUntilShutdown() error {
 	// actually start listening for requests.
 	if err := s.startGrpcListen(grpcServer, []net.Listener{lis}); err != nil {
 		return fmt.Errorf("failed to start gRPC listener: %v", err)
+	}
+
+	// Add cors handler to allow local development
+	corsHandler := cors.New(cors.Options{
+		AllowOriginFunc: func(origin string) bool {
+			u, err := url.Parse(origin)
+			if err != nil {
+				return false
+			}
+			if u.Hostname() == "localhost" || u.Hostname() == "127.0.0.1" {
+				return true
+			}
+			return false
+		},
+		AllowCredentials: true,
+		AllowedMethods:   []string{"GET", "POST"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+	}).Handler(s.newHttpHandler())
+
+	// Create http server.
+	httpServer := &http.Server{
+		Addr:    s.cfg.HTTPListener,
+		Handler: corsHandler,
+	}
+
+	s.logger.Info("Starting standalone HTTP server on port 8080")
+	if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		s.logger.Error("HTTP server failed", zap.Error(err))
 	}
 
 	s.logger.Info("Finality gadget is active")
@@ -106,4 +137,11 @@ func (s *Server) startGrpcListen(grpcServer *grpc.Server, listeners []net.Listen
 	wg.Wait()
 
 	return nil
+}
+
+func (s *Server) newHttpHandler() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/v1/transaction", s.txStatusHandler)
+	mux.HandleFunc("/health", s.healthHandler)
+	return mux
 }
