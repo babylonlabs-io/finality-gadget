@@ -240,7 +240,7 @@ func TestQueryLatestFinalizedBlockNonExistent(t *testing.T) {
 
 	latestBlock, err := handler.QueryLatestFinalizedBlock()
 	assert.Nil(t, latestBlock)
-	assert.NoError(t, err)
+	assert.Equal(t, types.ErrBlockNotFound, err)
 }
 
 func TestGetActivatedTimestamp(t *testing.T) {
