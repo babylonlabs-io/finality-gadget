@@ -49,13 +49,13 @@ type FinalityGadget struct {
 func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.Logger) (*FinalityGadget, error) {
 	// Create babylon client
 	bbnConfig := bbncfg.DefaultBabylonConfig()
-	bbnConfig.RPCAddr = cfg.BBNRPCAddress
-	bbnConfig.ChainID = cfg.BBNChainID
+	bbnConfig.RPCAddr = cfg.BBNConfig.BabylonRPCAddress
+	bbnConfig.ChainID = cfg.BBNConfig.BabylonChainId
 	babylonClient, err := bbnclient.New(
 		&bbnConfig,
 		logger,
 	)
-	bbnClient := fgbbnclient.NewBabylonClient(babylonClient.QueryClient)
+	bbnClient, err := fgbbnclient.NewBabylonClient(cfg.BBNConfig, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Babylon client: %w", err)
 	}
@@ -106,7 +106,7 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.L
 		cwClient:            cwClient,
 		l2Client:            l2Client,
 		db:                  db,
-		pollInterval:        cfg.PollInterval,
+		pollInterval:        cfg.FGConfig.BlockPollInterval,
 		lastProcessedHeight: lastProcessedHeight,
 		logger:              logger,
 	}, nil

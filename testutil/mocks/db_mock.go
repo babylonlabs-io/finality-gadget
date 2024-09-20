@@ -12,7 +12,10 @@ package mocks
 import (
 	reflect "reflect"
 
-	types "github.com/babylonlabs-io/finality-gadget/types"
+	types "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+	types0 "github.com/babylonlabs-io/babylon/x/btcstkconsumer/types"
+	types1 "github.com/babylonlabs-io/finality-gadget/types"
+	pgx "github.com/jackc/pgx/v5"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -39,6 +42,21 @@ func (m *MockIDatabaseHandler) EXPECT() *MockIDatabaseHandlerMockRecorder {
 	return m.recorder
 }
 
+// BeginTx mocks base method.
+func (m *MockIDatabaseHandler) BeginTx() (pgx.Tx, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BeginTx")
+	ret0, _ := ret[0].(pgx.Tx)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BeginTx indicates an expected call of BeginTx.
+func (mr *MockIDatabaseHandlerMockRecorder) BeginTx() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BeginTx", reflect.TypeOf((*MockIDatabaseHandler)(nil).BeginTx))
+}
+
 // Close mocks base method.
 func (m *MockIDatabaseHandler) Close() error {
 	m.ctrl.T.Helper()
@@ -51,6 +69,20 @@ func (m *MockIDatabaseHandler) Close() error {
 func (mr *MockIDatabaseHandlerMockRecorder) Close() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockIDatabaseHandler)(nil).Close))
+}
+
+// CommitTx mocks base method.
+func (m *MockIDatabaseHandler) CommitTx(tx pgx.Tx) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CommitTx", tx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CommitTx indicates an expected call of CommitTx.
+func (mr *MockIDatabaseHandlerMockRecorder) CommitTx(tx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CommitTx", reflect.TypeOf((*MockIDatabaseHandler)(nil).CommitTx), tx)
 }
 
 // CreateInitialSchema mocks base method.
@@ -83,10 +115,10 @@ func (mr *MockIDatabaseHandlerMockRecorder) GetActivatedTimestamp() *gomock.Call
 }
 
 // GetBlockByHash mocks base method.
-func (m *MockIDatabaseHandler) GetBlockByHash(hash string) (*types.Block, error) {
+func (m *MockIDatabaseHandler) GetBlockByHash(hash string) (*types1.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlockByHash", hash)
-	ret0, _ := ret[0].(*types.Block)
+	ret0, _ := ret[0].(*types1.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -98,10 +130,10 @@ func (mr *MockIDatabaseHandlerMockRecorder) GetBlockByHash(hash any) *gomock.Cal
 }
 
 // GetBlockByHeight mocks base method.
-func (m *MockIDatabaseHandler) GetBlockByHeight(height uint64) (*types.Block, error) {
+func (m *MockIDatabaseHandler) GetBlockByHeight(height uint64) (*types1.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlockByHeight", height)
-	ret0, _ := ret[0].(*types.Block)
+	ret0, _ := ret[0].(*types1.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -113,7 +145,7 @@ func (mr *MockIDatabaseHandlerMockRecorder) GetBlockByHeight(height any) *gomock
 }
 
 // InsertBlock mocks base method.
-func (m *MockIDatabaseHandler) InsertBlock(block *types.Block) error {
+func (m *MockIDatabaseHandler) InsertBlock(block *types1.Block) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InsertBlock", block)
 	ret0, _ := ret[0].(error)
@@ -157,10 +189,10 @@ func (mr *MockIDatabaseHandlerMockRecorder) QueryIsBlockFinalizedByHeight(height
 }
 
 // QueryLatestFinalizedBlock mocks base method.
-func (m *MockIDatabaseHandler) QueryLatestFinalizedBlock() (*types.Block, error) {
+func (m *MockIDatabaseHandler) QueryLatestFinalizedBlock() (*types1.Block, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "QueryLatestFinalizedBlock")
-	ret0, _ := ret[0].(*types.Block)
+	ret0, _ := ret[0].(*types1.Block)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -169,6 +201,20 @@ func (m *MockIDatabaseHandler) QueryLatestFinalizedBlock() (*types.Block, error)
 func (mr *MockIDatabaseHandlerMockRecorder) QueryLatestFinalizedBlock() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryLatestFinalizedBlock", reflect.TypeOf((*MockIDatabaseHandler)(nil).QueryLatestFinalizedBlock))
+}
+
+// RollbackTx mocks base method.
+func (m *MockIDatabaseHandler) RollbackTx(tx pgx.Tx) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RollbackTx", tx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RollbackTx indicates an expected call of RollbackTx.
+func (mr *MockIDatabaseHandlerMockRecorder) RollbackTx(tx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RollbackTx", reflect.TypeOf((*MockIDatabaseHandler)(nil).RollbackTx), tx)
 }
 
 // SaveActivatedTimestamp mocks base method.
@@ -183,4 +229,88 @@ func (m *MockIDatabaseHandler) SaveActivatedTimestamp(timestamp uint64) error {
 func (mr *MockIDatabaseHandlerMockRecorder) SaveActivatedTimestamp(timestamp any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveActivatedTimestamp", reflect.TypeOf((*MockIDatabaseHandler)(nil).SaveActivatedTimestamp), timestamp)
+}
+
+// SaveEventBTCDelegationStateUpdate mocks base method.
+func (m *MockIDatabaseHandler) SaveEventBTCDelegationStateUpdate(tx pgx.Tx, txInfo *types1.TxInfo, evtIdx int, evt *types1.EventBTCDelegationStateUpdate) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveEventBTCDelegationStateUpdate", tx, txInfo, evtIdx, evt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveEventBTCDelegationStateUpdate indicates an expected call of SaveEventBTCDelegationStateUpdate.
+func (mr *MockIDatabaseHandlerMockRecorder) SaveEventBTCDelegationStateUpdate(tx, txInfo, evtIdx, evt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveEventBTCDelegationStateUpdate", reflect.TypeOf((*MockIDatabaseHandler)(nil).SaveEventBTCDelegationStateUpdate), tx, txInfo, evtIdx, evt)
+}
+
+// SaveEventNewFinalityProvider mocks base method.
+func (m *MockIDatabaseHandler) SaveEventNewFinalityProvider(tx pgx.Tx, txInfo *types1.TxInfo, evtIdx int, evt *types1.EventNewFinalityProvider) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveEventNewFinalityProvider", tx, txInfo, evtIdx, evt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveEventNewFinalityProvider indicates an expected call of SaveEventNewFinalityProvider.
+func (mr *MockIDatabaseHandlerMockRecorder) SaveEventNewFinalityProvider(tx, txInfo, evtIdx, evt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveEventNewFinalityProvider", reflect.TypeOf((*MockIDatabaseHandler)(nil).SaveEventNewFinalityProvider), tx, txInfo, evtIdx, evt)
+}
+
+// SaveEventSelectiveSlashing mocks base method.
+func (m *MockIDatabaseHandler) SaveEventSelectiveSlashing(tx pgx.Tx, txInfo *types1.TxInfo, evtIdx int, evt *types1.EventSelectiveSlashing) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveEventSelectiveSlashing", tx, txInfo, evtIdx, evt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveEventSelectiveSlashing indicates an expected call of SaveEventSelectiveSlashing.
+func (mr *MockIDatabaseHandlerMockRecorder) SaveEventSelectiveSlashing(tx, txInfo, evtIdx, evt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveEventSelectiveSlashing", reflect.TypeOf((*MockIDatabaseHandler)(nil).SaveEventSelectiveSlashing), tx, txInfo, evtIdx, evt)
+}
+
+// SaveEventSlashedFinalityProvider mocks base method.
+func (m *MockIDatabaseHandler) SaveEventSlashedFinalityProvider(tx pgx.Tx, txInfo *types1.TxInfo, evtIdx int, evt *types1.EventSlashedFinalityProvider) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveEventSlashedFinalityProvider", tx, txInfo, evtIdx, evt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveEventSlashedFinalityProvider indicates an expected call of SaveEventSlashedFinalityProvider.
+func (mr *MockIDatabaseHandlerMockRecorder) SaveEventSlashedFinalityProvider(tx, txInfo, evtIdx, evt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveEventSlashedFinalityProvider", reflect.TypeOf((*MockIDatabaseHandler)(nil).SaveEventSlashedFinalityProvider), tx, txInfo, evtIdx, evt)
+}
+
+// SaveInitialDelegations mocks base method.
+func (m *MockIDatabaseHandler) SaveInitialDelegations(dels []*types.BTCDelegationResponse) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveInitialDelegations", dels)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveInitialDelegations indicates an expected call of SaveInitialDelegations.
+func (mr *MockIDatabaseHandlerMockRecorder) SaveInitialDelegations(dels any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveInitialDelegations", reflect.TypeOf((*MockIDatabaseHandler)(nil).SaveInitialDelegations), dels)
+}
+
+// SaveInitialFinalityProviders mocks base method.
+func (m *MockIDatabaseHandler) SaveInitialFinalityProviders(fps []*types0.FinalityProviderResponse) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveInitialFinalityProviders", fps)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveInitialFinalityProviders indicates an expected call of SaveInitialFinalityProviders.
+func (mr *MockIDatabaseHandlerMockRecorder) SaveInitialFinalityProviders(fps any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveInitialFinalityProviders", reflect.TypeOf((*MockIDatabaseHandler)(nil).SaveInitialFinalityProviders), fps)
 }

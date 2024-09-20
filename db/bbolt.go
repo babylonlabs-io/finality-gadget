@@ -18,7 +18,7 @@ type BBoltHandler struct {
 	logger *zap.Logger
 }
 
-var _ IDatabaseHandler = &BBoltHandler{}
+// var _ IDatabaseHandler = &BBoltHandler{}
 
 const (
 	blocksBucket          = "blocks"

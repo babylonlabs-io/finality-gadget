@@ -11,6 +11,7 @@ import (
 	"github.com/babylonlabs-io/finality-gadget/config"
 	"github.com/babylonlabs-io/finality-gadget/db"
 	"github.com/babylonlabs-io/finality-gadget/finalitygadget"
+	"github.com/babylonlabs-io/finality-gadget/indexer"
 	"github.com/babylonlabs-io/finality-gadget/log"
 	"github.com/babylonlabs-io/finality-gadget/server"
 	sig "github.com/lightningnetwork/lnd/signal"
@@ -51,11 +52,12 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	}
 
 	// Init local DB for storing and querying blocks
-	db, err := db.NewBBoltHandler(cfg.DBFilePath, logger)
+	db, err := db.NewPostgresHandler(&cfg.DBConfig, logger)
 	if err != nil {
 		return fmt.Errorf("failed to create DB handler: %w", err)
 	}
-	defer db.Close()
+
+	// Create initial db schema
 	err = db.CreateInitialSchema()
 	if err != nil {
 		return fmt.Errorf("create initial buckets error: %w", err)
@@ -66,6 +68,13 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	if err != nil {
 		logger.Fatal("Error creating finality gadget", zap.Error(err))
 		return fmt.Errorf("error creating finality gadget: %v", err)
+	}
+
+	// Create indexer
+	idx, err := indexer.NewIndexer(cfg, db, logger)
+	if err != nil {
+		logger.Fatal("Error creating fp indexer", zap.Error(err))
+		return err
 	}
 
 	// Create a cancellable context
@@ -95,12 +104,30 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 		}
 	}()
 
+	// Index events in a separate goroutine
+	go func() {
+		// On startup, sync all fps and delegations as of latest height
+		err := idx.Sync()
+		if err != nil {
+			logger.Fatal("Error syncing blocks", zap.Error(err))
+		}
+
+		// Once synced, start polling for new blocks
+		err = idx.Poll(context.Background())
+		if err != nil {
+			logger.Fatal("Error polling blocks", zap.Error(err))
+		}
+	}()
+
 	// Wait for shutdown signal
 	<-shutdownInterceptor.ShutdownChannel()
 
 	// Call Close method when interrupt signal is received
 	logger.Info("Closing finality gadget server...")
 	fg.Close()
+
+	logger.Info("Shutting down database...")
+	db.Close()
 
 	return nil
 }

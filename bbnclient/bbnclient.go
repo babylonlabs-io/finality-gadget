@@ -3,32 +3,86 @@ package bbnclient
 import (
 	"math"
 
+	bbnClient "github.com/babylonlabs-io/babylon/client/client"
+	bbncfg "github.com/babylonlabs-io/babylon/client/config"
 	"github.com/babylonlabs-io/babylon/client/query"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+	bsctypes "github.com/babylonlabs-io/babylon/x/btcstkconsumer/types"
+	cfg "github.com/babylonlabs-io/finality-gadget/config"
 	sdkquerytypes "github.com/cosmos/cosmos-sdk/types/query"
+	"go.uber.org/zap"
 )
 
 type BabylonClient struct {
-	*query.QueryClient
+	queryClient *query.QueryClient
+	logger      *zap.Logger
 }
 
 //////////////////////////////
 // CONSTRUCTOR
 //////////////////////////////
 
-func NewBabylonClient(queryClient *query.QueryClient) *BabylonClient {
-	return &BabylonClient{
-		QueryClient: queryClient,
+func NewBabylonClient(cfg cfg.BBNConfig, logger *zap.Logger) (*BabylonClient, error) {
+	// Load configs
+	bbnConfig := bbncfg.DefaultBabylonConfig()
+	bbnConfig.RPCAddr = cfg.BabylonRPCAddress
+	bbnConfig.ChainID = cfg.BabylonChainId
+
+	// Create Babylon client
+	babylonClient, err := bbnClient.New(&bbnConfig, logger)
+	if err != nil {
+		return nil, err
 	}
+
+	return &BabylonClient{
+		queryClient: babylonClient.QueryClient,
+	}, nil
 }
 
 //////////////////////////////
 // METHODS
 //////////////////////////////
 
+func (bbnClient *BabylonClient) QueryAllFinalityProviders(consumerId string) ([]*bsctypes.FinalityProviderResponse, error) {
+	bbnClient.logger.Info("Querying all finality providers", zap.String("consumer_id", consumerId))
+
+	pagination := &sdkquerytypes.PageRequest{}
+	resp, err := bbnClient.queryClient.QueryConsumerFinalityProviders(consumerId, pagination)
+	if err != nil {
+		return nil, err
+	}
+
+	var pkArr []*bsctypes.FinalityProviderResponse
+
+	for _, fp := range resp.FinalityProviders {
+		pkArr = append(pkArr, fp)
+	}
+	return pkArr, nil
+}
+
+func (bbnClient *BabylonClient) QueryFPDelegations(fpBtcPk string) ([]*bbntypes.BTCDelegationResponse, error) {
+	bbnClient.logger.Info("Querying finality provider delegations", zap.String("fp_btc_pk", fpBtcPk))
+
+	pagination := &sdkquerytypes.PageRequest{
+		Limit: 100,
+	}
+
+	resp, err := bbnClient.queryClient.FinalityProviderDelegations(fpBtcPk, pagination)
+	if err != nil {
+		return nil, err
+	}
+
+	var delArr []*bbntypes.BTCDelegationResponse
+	for _, del := range resp.BtcDelegatorDelegations {
+		delArr = append(delArr, del.Dels...)
+	}
+
+	return delArr, nil
+}
+
 func (bbnClient *BabylonClient) QueryAllFpBtcPubKeys(consumerId string) ([]string, error) {
 	pagination := &sdkquerytypes.PageRequest{}
-	resp, err := bbnClient.QueryClient.QueryConsumerFinalityProviders(consumerId, pagination)
+	resp, err := bbnClient.queryClient.QueryConsumerFinalityProviders(consumerId, pagination)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +99,7 @@ func (bbnClient *BabylonClient) QueryFpPower(fpPubkeyHex string, btcHeight uint6
 	totalPower := uint64(0)
 	pagination := &sdkquerytypes.PageRequest{}
 	// queries the BTCStaking module for all delegations of a finality provider
-	resp, err := bbnClient.QueryClient.FinalityProviderDelegations(fpPubkeyHex, pagination)
+	resp, err := bbnClient.queryClient.FinalityProviderDelegations(fpPubkeyHex, pagination)
 	if err != nil {
 		return 0, err
 	}
@@ -112,25 +166,25 @@ func (bbnClient *BabylonClient) QueryFpEarliestActiveDelBtcHeight(fpPubkeyHex st
 	}
 
 	// queries the BTCStaking module for all delegations of a finality provider
-	resp, err := bbnClient.QueryClient.FinalityProviderDelegations(fpPubkeyHex, pagination)
+	resp, err := bbnClient.queryClient.FinalityProviderDelegations(fpPubkeyHex, pagination)
 	if err != nil {
 		return math.MaxUint64, err
 	}
 
 	// queries BtcConfirmationDepth, CovenantQuorum, and the latest BTC header
-	btccheckpointParams, err := bbnClient.QueryClient.BTCCheckpointParams()
+	btccheckpointParams, err := bbnClient.queryClient.BTCCheckpointParams()
 	if err != nil {
 		return math.MaxUint64, err
 	}
 
 	// get the BTC staking params
-	btcstakingParams, err := bbnClient.QueryClient.BTCStakingParams()
+	btcstakingParams, err := bbnClient.queryClient.BTCStakingParams()
 	if err != nil {
 		return math.MaxUint64, err
 	}
 
 	// get the latest BTC header
-	btcHeader, err := bbnClient.QueryClient.BTCHeaderChainTip()
+	btcHeader, err := bbnClient.queryClient.BTCHeaderChainTip()
 	if err != nil {
 		return math.MaxUint64, err
 	}
@@ -168,11 +222,11 @@ func (bbnClient *BabylonClient) isDelegationActive(
 	btcDel *bbntypes.BTCDelegationResponse,
 	btcHeight uint64,
 ) (bool, error) {
-	btccheckpointParams, err := bbnClient.QueryClient.BTCCheckpointParams()
+	btccheckpointParams, err := bbnClient.queryClient.BTCCheckpointParams()
 	if err != nil {
 		return false, err
 	}
-	btcstakingParams, err := bbnClient.QueryClient.BTCStakingParams()
+	btcstakingParams, err := bbnClient.queryClient.BTCStakingParams()
 	if err != nil {
 		return false, err
 	}
