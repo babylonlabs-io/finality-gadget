@@ -1,4 +1,4 @@
-package db
+package pg
 
 //////////////////////////
 // CREATE TABLES
@@ -9,7 +9,7 @@ const (
     CREATE TABLE IF NOT EXISTS table_finalized_blocks (
       block_hash TEXT NOT NULL PRIMARY KEY,
       block_height BIGINT NOT NULL,
-      block_timestamp TIMESTAMP NOT NULL
+      block_timestamp BIGINT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS table_activated_timestamp (
@@ -32,7 +32,7 @@ const (
       height INT NOT NULL,
       voting_power INT NOT NULL,
       consumer_id TEXT NOT NULL
-    )
+    );
 
     CREATE TABLE IF NOT EXISTS table_initial_delegations (
       staker_addr TEXT NOT NULL,
@@ -51,7 +51,7 @@ const (
       unbonding_time INT NOT NULL,
       -- undelegation_response omitted
       params_version INT NOT NULL
-    )
+    );
 
     CREATE TABLE IF NOT EXISTS events_EventNewFinalityProvider (
       block_height BIGINT NOT NULL,

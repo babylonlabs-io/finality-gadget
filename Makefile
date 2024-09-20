@@ -13,9 +13,13 @@ mock-gen:
 	go install go.uber.org/mock/mockgen@latest
 	mockgen -source=db/interface.go -package mocks -destination $(MOCKS_DIR)/db_mock.go
 	mockgen -source=finalitygadget/expected_clients.go -package mocks -destination $(MOCKS_DIR)/expected_clients_mock.go
-
+	
 test:
-	go test -race ./... -v
+	@if [ -z "$(TEST_NAME)" ]; then \
+		go test ./... -v -race; \
+	else \
+		go test -v -race -run "^$(TEST_NAME)$$" ./...; \
+	fi
 
 lint:
 	golangci-lint run

@@ -1,4 +1,4 @@
-package db
+package pg
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	bsctypes "github.com/babylonlabs-io/babylon/x/btcstkconsumer/types"
 	cfg "github.com/babylonlabs-io/finality-gadget/config"
+	"github.com/babylonlabs-io/finality-gadget/db"
 	"github.com/babylonlabs-io/finality-gadget/types"
 	epg "github.com/fergusstrange/embedded-postgres"
 	"github.com/jackc/pgconn"
@@ -23,7 +24,7 @@ type PostgresHandler struct {
 	logger *zap.Logger
 }
 
-var _ IDatabaseHandler = &PostgresHandler{}
+var _ db.IDatabaseHandler = &PostgresHandler{}
 
 //////////////////////////////
 // CONSTRUCTOR
@@ -175,6 +176,9 @@ func (pg *PostgresHandler) GetActivatedTimestamp() (uint64, error) {
 	var timestamp uint64
 	err := row.Scan(&timestamp)
 	if err != nil {
+		if err == pgx.ErrNoRows {
+			return math.MaxUint64, types.ErrActivatedTimestampNotFound
+		}
 		pg.logger.Error("Failed to get activated timestamp", zap.Error(err))
 		return math.MaxUint64, err
 	}

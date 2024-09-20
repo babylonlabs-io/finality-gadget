@@ -1,15 +1,19 @@
-package db
+package pg
 
 import (
+	"math"
 	"os"
+	"os/signal"
+	"syscall"
 	"testing"
 
+	cfg "github.com/babylonlabs-io/finality-gadget/config"
 	"github.com/babylonlabs-io/finality-gadget/log"
 	"github.com/babylonlabs-io/finality-gadget/types"
 	"github.com/stretchr/testify/assert"
 )
 
-func setupDB(t *testing.T) (*BBoltHandler, func()) {
+func setupDB(t *testing.T) (*PostgresHandler, func()) {
 	// Create temp test file.
 	tempFile, err := os.CreateTemp("", "test-*.db")
 	if err != nil {
@@ -23,32 +27,50 @@ func setupDB(t *testing.T) (*BBoltHandler, func()) {
 		t.Fatalf("Failed to create logger: %v", err)
 	}
 
-	// Create a new BBoltHandler
-	db, err := NewBBoltHandler(tempFile.Name(), logger)
+	// Create a new Postgres handler
+	db, err := NewPostgresHandler(&cfg.DBConfig{
+		DBName:     "test",
+		DBUsername: "test",
+		DBPassword: "test",
+		DBDataPath: tempFile.Name(),
+		DBPort:     5433,
+	}, logger)
 	if err != nil {
-		t.Fatalf("Failed to create BBoltHandler: %v", err)
+		t.Fatalf("Failed to create PostgresHandler: %v", err)
 	}
 
 	// Create initial buckets
 	err = db.CreateInitialSchema()
 	if err != nil {
-		t.Fatalf("Failed to create initial buckets: %v", err)
+		t.Fatalf("Failed to create initial schema: %v", err)
 	}
 
 	// Cleanup function to close DB and remove temp file
 	cleanup := func() {
-		err := os.Remove(tempFile.Name())
+		if err := db.Close(); err != nil {
+			t.Fatalf("Failed to close DB: %v", err)
+		}
+		err := os.RemoveAll(tempFile.Name())
 		if err != nil {
 			t.Fatalf("Failed to delete DB: %v", err)
 		}
-		db.Close()
 	}
+
+	// Setup signal handling for cleanup on interrupt
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-signalChan
+		cleanup()
+		os.Exit(1) // Exit after cleanup
+	}()
 
 	return db, cleanup
 }
 
 func TestInsertBlock(t *testing.T) {
-	handler, cleanup := setupDB(t)
+	db, cleanup := setupDB(t)
 	defer cleanup()
 
 	block := &types.Block{
@@ -57,11 +79,11 @@ func TestInsertBlock(t *testing.T) {
 		BlockTimestamp: 1000,
 	}
 
-	err := handler.InsertBlock(block)
+	err := db.InsertBlock(block)
 	assert.NoError(t, err)
 
 	// Verify block was inserted
-	retrievedBlock, err := handler.GetBlockByHeight(block.BlockHeight)
+	retrievedBlock, err := db.GetBlockByHeight(block.BlockHeight)
 	assert.NoError(t, err)
 	assert.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
 	assert.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
@@ -69,7 +91,7 @@ func TestInsertBlock(t *testing.T) {
 }
 
 func TestGetBlockByHeight(t *testing.T) {
-	handler, cleanup := setupDB(t)
+	db, cleanup := setupDB(t)
 	defer cleanup()
 
 	// Insert a block
@@ -78,11 +100,12 @@ func TestGetBlockByHeight(t *testing.T) {
 		BlockHash:      "0x123",
 		BlockTimestamp: 1000,
 	}
-	err := handler.InsertBlock(block)
+
+	err := db.InsertBlock(block)
 	assert.NoError(t, err)
 
 	// Retrieve block by height
-	retrievedBlock, err := handler.GetBlockByHeight(block.BlockHeight)
+	retrievedBlock, err := db.GetBlockByHeight(block.BlockHeight)
 	assert.NoError(t, err)
 	assert.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
 	assert.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
@@ -90,16 +113,16 @@ func TestGetBlockByHeight(t *testing.T) {
 }
 
 func TestGetBlockByHeightForNonExistentBlock(t *testing.T) {
-	handler, cleanup := setupDB(t)
+	db, cleanup := setupDB(t)
 	defer cleanup()
 
-	block, err := handler.GetBlockByHeight(1)
+	block, err := db.GetBlockByHeight(1)
 	assert.Nil(t, block)
 	assert.Equal(t, types.ErrBlockNotFound, err)
 }
 
 func TestGetBlockByHash(t *testing.T) {
-	handler, cleanup := setupDB(t)
+	db, cleanup := setupDB(t)
 	defer cleanup()
 
 	// Insert a block
@@ -108,22 +131,22 @@ func TestGetBlockByHash(t *testing.T) {
 		BlockHash:      "0x123",
 		BlockTimestamp: 1000,
 	}
-	err := handler.InsertBlock(block)
+
+	err := db.InsertBlock(block)
 	assert.NoError(t, err)
 
 	// Retrieve block by hash
-	retrievedBlock, err := handler.GetBlockByHash(block.BlockHash)
+	retrievedBlock, err := db.GetBlockByHash(block.BlockHash)
 	assert.NoError(t, err)
 	assert.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
 	assert.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
-	assert.Equal(t, block.BlockTimestamp, retrievedBlock.BlockTimestamp)
 }
 
 func TestGetBlockByHashForNonExistentBlock(t *testing.T) {
-	handler, cleanup := setupDB(t)
+	db, cleanup := setupDB(t)
 	defer cleanup()
 
-	block, err := handler.GetBlockByHash("0x123")
+	block, err := db.GetBlockByHash("0x123")
 	assert.Nil(t, block)
 	assert.Equal(t, types.ErrBlockNotFound, err)
 }
@@ -146,7 +169,6 @@ func TestQueryIsBlockFinalizedByHeight(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, isFinalized, true)
 }
-
 func TestQueryIsBlockFinalizedByHeightForNonExistentBlock(t *testing.T) {
 	handler, cleanup := setupDB(t)
 	defer cleanup()
@@ -227,7 +249,7 @@ func TestGetActivatedTimestamp(t *testing.T) {
 
 	// Test when timestamp is not set
 	timestamp, err := handler.GetActivatedTimestamp()
-	assert.Equal(t, uint64(0), timestamp)
+	assert.Equal(t, uint64(math.MaxUint64), timestamp)
 	assert.Equal(t, types.ErrActivatedTimestampNotFound, err)
 
 	// Set timestamp

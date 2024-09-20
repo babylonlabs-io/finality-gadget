@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/babylonlabs-io/finality-gadget/config"
-	"github.com/babylonlabs-io/finality-gadget/db"
+	"github.com/babylonlabs-io/finality-gadget/db/pg"
 	"github.com/babylonlabs-io/finality-gadget/finalitygadget"
 	"github.com/babylonlabs-io/finality-gadget/indexer"
 	"github.com/babylonlabs-io/finality-gadget/log"
@@ -52,7 +52,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	}
 
 	// Init local DB for storing and querying blocks
-	db, err := db.NewPostgresHandler(&cfg.DBConfig, logger)
+	db, err := pg.NewPostgresHandler(&cfg.DBConfig, logger)
 	if err != nil {
 		return fmt.Errorf("failed to create DB handler: %w", err)
 	}
