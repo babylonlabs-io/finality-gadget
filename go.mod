@@ -7,7 +7,7 @@ toolchain go1.22.5
 require (
 	github.com/CosmWasm/wasmd v0.51.0
 	github.com/avast/retry-go/v4 v4.5.1
-	github.com/babylonlabs-io/babylon v0.8.6
+	github.com/babylonlabs-io/babylon v0.9.0-rc.3.0.20240917185405-35a5a1b2e7a6
 	github.com/btcsuite/btcd v0.24.2
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0
 	github.com/cometbft/cometbft v0.38.10
@@ -265,7 +265,6 @@ require (
 replace (
 	// use cosmos fork of keyring
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
-	github.com/babylonlabs-io/babylon => github.com/babylonlabs-io/babylon v0.9.0-rc.3.0.20240917185405-35a5a1b2e7a6
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 )
