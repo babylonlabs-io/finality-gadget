@@ -40,12 +40,11 @@ type BBNConfig struct {
 }
 
 type DBConfig struct {
-	DBUsername      string `long:"db-username" description:"DB username"`
-	DBPassword      string `long:"db-password" description:"DB password"`
-	DBName          string `long:"db-name" description:"DB name"`
-	DBDataPath      string `long:"db-data-path" description:"path to the DB file"`
-	DBPort          uint32 `long:"db-port" description:"DB port"`
-	DBBBoltFilePath string `long:"db-bbolt-file-path" description:"path to the DB bbolt file"`
+	DBUsername string `long:"db-username" description:"DB username"`
+	DBPassword string `long:"db-password" description:"DB password"`
+	DBName     string `long:"db-name" description:"DB name"`
+	DBDataPath string `long:"db-data-path" description:"path to the DB file"`
+	DBPort     uint32 `long:"db-port" description:"DB port"`
 }
 
 func Load(configPath string) (*Config, error) {

@@ -1,12 +1,27 @@
-L2RPCHost = "https://mainnet.optimism.io"
-BitcoinRPCHost = "rpc.ankr.com/btc"
-BitcoinRPCUser = "user" // optional
-BitcoinRPCPass = "pass" // optional
-BitcoinDisableTLS = true // optional
-DBFilePath = "data.db"
-FGContractAddress = "bbn1ghd753shjuwexxywmgs4xz7x2q732vcnkm6h2pyv9s6ah3hylvrqxxvh0f"
-BBNChainID = "euphrates-0.4.0"
-BBNRPCAddress = "https://rpc-euphrates.devnet.babylonchain.io"
-GRPCListener = "0.0.0.0:50051"
-HTTPListener = "0.0.0.0:8080"
-PollInterval = "10s"
+[fg]
+grpc-listener = "0.0.0.0:50051"
+http-listener = "0.0.0.0:8080"
+start-height = 0
+indexing-poll-interval = "10s"
+block-poll-interval = "10s"
+
+[l2]
+l2-rpc-host = "https://mainnet.optimism.io"
+
+[btc]
+btc-rpc-host = "rpc.ankr.com/btc"
+btc-rpc-user = "user"
+btc-rpc-pass = "pass"
+btc-disable-tls = false
+
+[bbn]
+bbn-rpc-addr = "https://rpc-euphrates.devnet.babylonchain.io"
+bbn-chain-id = "euphrates-0.4.0"
+fg-contract-address = "bbn1436kxs0w2es6xlqpp9rd35e3d0cjnw4sv8j3a7483sgks29jqwgsdem28a"
+
+[db]
+db-username = "root"
+db-password = "root"
+db-name = "babylon"
+db-data-path = "postgres.db"
+db-port = 5432
