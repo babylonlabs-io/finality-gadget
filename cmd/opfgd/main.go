@@ -24,6 +24,7 @@ func main() {
 	cmd := NewRootCmd()
 
 	cmd.AddCommand(CommandStart())
+	cmd.AddCommand(CommandIndex())
 
 	cmd.PersistentFlags().String("cfg", "config.toml", "config file")
 	if err := viper.BindPFlag("cfg", cmd.PersistentFlags().Lookup("cfg")); err != nil {
