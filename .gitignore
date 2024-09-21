@@ -5,3 +5,4 @@
 *.db
 config.toml
 build/
+vendor/
