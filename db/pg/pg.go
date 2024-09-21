@@ -373,6 +373,42 @@ func (pg *PostgresHandler) SaveEventBTCDelegationStateUpdate(tx pgx.Tx, txInfo *
 	return nil
 }
 
+func (pg *PostgresHandler) SaveEventJailedFinalityProvider(tx pgx.Tx, txInfo *types.TxInfo, evtIdx int, evt *types.EventJailedFinalityProvider) error {
+	_, err := tx.Exec(
+		context.Background(),
+		sqlInsertEventJailedFinalityProvider,
+		txInfo.BlockHeight,
+		txInfo.BlockTimestamp,
+		txInfo.TxHash,
+		txInfo.TxIndex,
+		evtIdx,
+		evt.PublicKey,
+	)
+	if err != nil {
+		pg.logger.Error("Failed to save event", zap.Error(err))
+		return err
+	}
+	return nil
+}
+
+func (pg *PostgresHandler) SaveEventUnjailedFinalityProvider(tx pgx.Tx, txInfo *types.TxInfo, evtIdx int, evt *types.EventUnjailedFinalityProvider) error {
+	_, err := tx.Exec(
+		context.Background(),
+		sqlInsertEventUnjailedFinalityProvider,
+		txInfo.BlockHeight,
+		txInfo.BlockTimestamp,
+		txInfo.TxHash,
+		txInfo.TxIndex,
+		evtIdx,
+		evt.PublicKey,
+	)
+	if err != nil {
+		pg.logger.Error("Failed to save event", zap.Error(err))
+		return err
+	}
+	return nil
+}
+
 func (pg *PostgresHandler) SaveEventSelectiveSlashing(tx pgx.Tx, txInfo *types.TxInfo, evtIdx int, evt *types.EventSelectiveSlashing) error {
 	_, err := tx.Exec(
 		context.Background(),

@@ -93,6 +93,24 @@ func (idx *Indexer) ParseEvent(pgTx pgx.Tx, txInfo *types.TxInfo, evt Event) err
 		if err != nil {
 			return err
 		}
+	case "babylon.finality.v1.EventJailedFinalityProvider":
+		parsed, err := idx.ParseEventJailedFinalityProvider(evt)
+		if err != nil {
+			return err
+		}
+		err = idx.db.SaveEventJailedFinalityProvider(pgTx, txInfo, evt.Index, parsed)
+		if err != nil {
+			return err
+		}
+	case "babylon.finality.v1.EventUnjailedFinalityProvider":
+		parsed, err := idx.ParseEventUnjailedFinalityProvider(evt)
+		if err != nil {
+			return err
+		}
+		err = idx.db.SaveEventUnjailedFinalityProvider(pgTx, txInfo, evt.Index, parsed)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -183,6 +201,30 @@ func (idx *Indexer) ParseEventSlashedFinalityProvider(evt Event) (*types.EventSl
 			event.ForkAppHash = evidence.ForkAppHash
 			event.CanonicalFinalitySig = evidence.CanonicalFinalitySig
 			event.ForkFinalitySig = evidence.ForkFinalitySig
+		}
+	}
+	return &event, nil
+}
+
+func (idx *Indexer) ParseEventJailedFinalityProvider(evt Event) (*types.EventJailedFinalityProvider, error) {
+	idx.logger.Info("Parsing event", zap.String("type", evt.Type))
+	var event types.EventJailedFinalityProvider
+	for _, attr := range evt.Attributes {
+		switch attr.Key {
+		case "public_key":
+			event.PublicKey = attr.Value
+		}
+	}
+	return &event, nil
+}
+
+func (idx *Indexer) ParseEventUnjailedFinalityProvider(evt Event) (*types.EventUnjailedFinalityProvider, error) {
+	idx.logger.Info("Parsing event", zap.String("type", evt.Type))
+	var event types.EventUnjailedFinalityProvider
+	for _, attr := range evt.Attributes {
+		switch attr.Key {
+		case "public_key":
+			event.PublicKey = attr.Value
 		}
 	}
 	return &event, nil

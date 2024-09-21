@@ -245,6 +245,20 @@ func (mr *MockIDatabaseHandlerMockRecorder) SaveEventBTCDelegationStateUpdate(tx
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveEventBTCDelegationStateUpdate", reflect.TypeOf((*MockIDatabaseHandler)(nil).SaveEventBTCDelegationStateUpdate), tx, txInfo, evtIdx, evt)
 }
 
+// SaveEventJailedFinalityProvider mocks base method.
+func (m *MockIDatabaseHandler) SaveEventJailedFinalityProvider(tx pgx.Tx, txInfo *types1.TxInfo, evtIdx int, evt *types1.EventJailedFinalityProvider) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveEventJailedFinalityProvider", tx, txInfo, evtIdx, evt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveEventJailedFinalityProvider indicates an expected call of SaveEventJailedFinalityProvider.
+func (mr *MockIDatabaseHandlerMockRecorder) SaveEventJailedFinalityProvider(tx, txInfo, evtIdx, evt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveEventJailedFinalityProvider", reflect.TypeOf((*MockIDatabaseHandler)(nil).SaveEventJailedFinalityProvider), tx, txInfo, evtIdx, evt)
+}
+
 // SaveEventNewFinalityProvider mocks base method.
 func (m *MockIDatabaseHandler) SaveEventNewFinalityProvider(tx pgx.Tx, txInfo *types1.TxInfo, evtIdx int, evt *types1.EventNewFinalityProvider) error {
 	m.ctrl.T.Helper()
@@ -285,6 +299,20 @@ func (m *MockIDatabaseHandler) SaveEventSlashedFinalityProvider(tx pgx.Tx, txInf
 func (mr *MockIDatabaseHandlerMockRecorder) SaveEventSlashedFinalityProvider(tx, txInfo, evtIdx, evt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveEventSlashedFinalityProvider", reflect.TypeOf((*MockIDatabaseHandler)(nil).SaveEventSlashedFinalityProvider), tx, txInfo, evtIdx, evt)
+}
+
+// SaveEventUnjailedFinalityProvider mocks base method.
+func (m *MockIDatabaseHandler) SaveEventUnjailedFinalityProvider(tx pgx.Tx, txInfo *types1.TxInfo, evtIdx int, evt *types1.EventUnjailedFinalityProvider) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveEventUnjailedFinalityProvider", tx, txInfo, evtIdx, evt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveEventUnjailedFinalityProvider indicates an expected call of SaveEventUnjailedFinalityProvider.
+func (mr *MockIDatabaseHandlerMockRecorder) SaveEventUnjailedFinalityProvider(tx, txInfo, evtIdx, evt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveEventUnjailedFinalityProvider", reflect.TypeOf((*MockIDatabaseHandler)(nil).SaveEventUnjailedFinalityProvider), tx, txInfo, evtIdx, evt)
 }
 
 // SaveInitialDelegations mocks base method.

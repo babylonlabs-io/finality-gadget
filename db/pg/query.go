@@ -90,6 +90,26 @@ const (
       PRIMARY KEY (tx_hash, event_index)
     );
 
+    CREATE TABLE IF NOT EXISTS events_EventJailedFinalityProvider (
+      block_height BIGINT NOT NULL,
+      block_timestamp TIMESTAMP NOT NULL,
+      tx_hash TEXT NOT NULL,
+      tx_index SMALLINT,
+      event_index SMALLINT,
+      public_key TEXT NOT NULL,
+      PRIMARY KEY (tx_hash, event_index)
+    );
+
+    CREATE TABLE IF NOT EXISTS events_EventUnjailedFinalityProvider (
+      block_height BIGINT NOT NULL,
+      block_timestamp TIMESTAMP NOT NULL,
+      tx_hash TEXT NOT NULL,
+      tx_index SMALLINT,
+      event_index SMALLINT,
+      public_key TEXT NOT NULL,
+      PRIMARY KEY (tx_hash, event_index)
+    );
+
     CREATE TABLE IF NOT EXISTS events_EventSelectiveSlashing (
       block_height BIGINT NOT NULL,
       block_timestamp TIMESTAMP NOT NULL,
@@ -211,6 +231,26 @@ const (
       staking_tx_hash, 
       new_state
     ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`
+	sqlInsertEventJailedFinalityProvider = `
+		INSERT INTO events_EventJailedFinalityProvider (
+      block_height,
+      block_timestamp,
+      tx_hash,
+      tx_index,
+      event_index,
+      public_key
+    ) VALUES ($1, $2, $3, $4, $5, $6)
+	`
+	sqlInsertEventUnjailedFinalityProvider = `
+		INSERT INTO events_EventUnjailedFinalityProvider (
+      block_height,
+      block_timestamp,
+      tx_hash,
+      tx_index,
+      event_index,
+      public_key
+    ) VALUES ($1, $2, $3, $4, $5, $6)
 	`
 	sqlInsertEventSelectiveSlashing = `
 		INSERT INTO events_EventSelectiveSlashing (
