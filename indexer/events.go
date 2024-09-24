@@ -58,13 +58,17 @@ func (idx *Indexer) ParseEvent(pgTx pgx.Tx, txInfo *types.TxInfo, evt Event) err
 	// 		fmt.Printf("[tx] %v: %v\n", attr.Key, string(attr.Value))
 	// 	}
 	case "babylon.btcstaking.v1.EventNewFinalityProvider":
+		// Parse event
 		parsed, err := idx.ParseEventNewFinalityProvider(evt)
 		if err != nil {
 			return err
 		}
-		err = idx.db.SaveEventNewFinalityProvider(pgTx, txInfo, evt.Index, parsed)
-		if err != nil {
-			return err
+		// If consumer id matches, save event to db
+		if parsed.ConsumerId == idx.cfg.BabylonChainId {
+			err = idx.db.SaveEventNewFinalityProvider(pgTx, txInfo, evt.Index, parsed)
+			if err != nil {
+				return err
+			}
 		}
 	case "babylon.btcstaking.v1.EventBTCDelegationStateUpdate":
 		parsed, err := idx.ParseEventBTCDelegationStateUpdate(evt)

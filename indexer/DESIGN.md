@@ -31,9 +31,8 @@ _TODO: consider if we need seperate queries by btc block vs babylon block vs tim
    1. Babylon RPC endpoint
    2. Consumer chain id - `consumer_id`
 2. Startup - Populate start info
-   1. Calculate and save activated timestamp
-   2. Fetch all finality providers for a consumer chain with `QueryConsumerFinalityProviders` (passing `consumer_id`), and populate `table_initial_finality_providers`
-   3. Loop through each fp and fetch all delegations, storing to `table_initial_delegations`
+   1. Fetch all finality providers for a consumer chain with `QueryConsumerFinalityProviders` (passing `consumer_id`), and populate `table_initial_finality_providers`
+   2. Loop through each fp and fetch all delegations, storing to `table_initial_delegations`
 3. Chain poller: Loop through each block sequentially and parse relevant events, populating tables
    1. Case `EventNewFinalityProvider` : if `consumer_id` matches, store to `table_EventNewFinalityProvider`
    2. Case `EventBTCDelegationStateUpdate`
