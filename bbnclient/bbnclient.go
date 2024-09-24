@@ -60,6 +60,17 @@ func (bbnClient *BabylonClient) QueryAllFinalityProviders(consumerId string) ([]
 	return pkArr, nil
 }
 
+func (bbnClient *BabylonClient) QueryBTCDelegation(stakingTxHashHex string) (*bbntypes.BTCDelegationResponse, error) {
+	bbnClient.logger.Info("Querying finality provider delegation", zap.String("staking_tx_hex_hash", stakingTxHashHex))
+
+	resp, err := bbnClient.queryClient.BTCDelegation(stakingTxHashHex)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.GetBtcDelegation(), nil
+}
+
 func (bbnClient *BabylonClient) QueryFPDelegations(fpBtcPk string) ([]*bbntypes.BTCDelegationResponse, error) {
 	bbnClient.logger.Info("Querying finality provider delegations", zap.String("fp_btc_pk", fpBtcPk))
 

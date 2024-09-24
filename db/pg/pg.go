@@ -453,6 +453,30 @@ func (pg *PostgresHandler) SaveEventSlashedFinalityProvider(tx pgx.Tx, txInfo *t
 	return nil
 }
 
+func (pg *PostgresHandler) SaveBTCDelegationInfo(del *bbntypes.BTCDelegationResponse) error {
+	_, err := pg.conn.Exec(
+		context.Background(),
+		sqlInsertBTCDelegationInfo,
+		del.StakerAddr,
+		del.BtcPk.MarshalHex(),
+		del.FpBtcPkList,
+		del.StartHeight,
+		del.EndHeight,
+		del.TotalSat,
+		len(del.CovenantSigs),
+	)
+	if err != nil {
+		pg.logger.Error("Failed to save event", zap.Error(err))
+		return err
+	}
+	return nil
+}
+
+func (pg *PostgresHandler) GetBTCDelegationInfo(btcPk string) (*bbntypes.BTCDelegationResponse, error) {
+	// TODO: implement
+	return nil, nil
+}
+
 func (pg *PostgresHandler) Close() error {
 	pg.logger.Info("Closing embedded postgres...")
 	err := pg.conn.Close(context.Background())

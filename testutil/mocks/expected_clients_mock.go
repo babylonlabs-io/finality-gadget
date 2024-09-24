@@ -14,10 +14,11 @@ import (
 	big "math/big"
 	reflect "reflect"
 
-	types "github.com/babylonlabs-io/finality-gadget/types"
+	types "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+	types0 "github.com/babylonlabs-io/finality-gadget/types"
 	chainhash "github.com/btcsuite/btcd/chaincfg/chainhash"
 	wire "github.com/btcsuite/btcd/wire"
-	types0 "github.com/ethereum/go-ethereum/core/types"
+	types1 "github.com/ethereum/go-ethereum/core/types"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -157,6 +158,21 @@ func (mr *MockIBabylonClientMockRecorder) QueryAllFpBtcPubKeys(consumerId any) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryAllFpBtcPubKeys", reflect.TypeOf((*MockIBabylonClient)(nil).QueryAllFpBtcPubKeys), consumerId)
 }
 
+// QueryBTCDelegation mocks base method.
+func (m *MockIBabylonClient) QueryBTCDelegation(stakingTxHashHex string) (*types.BTCDelegationResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryBTCDelegation", stakingTxHashHex)
+	ret0, _ := ret[0].(*types.BTCDelegationResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryBTCDelegation indicates an expected call of QueryBTCDelegation.
+func (mr *MockIBabylonClientMockRecorder) QueryBTCDelegation(stakingTxHashHex any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryBTCDelegation", reflect.TypeOf((*MockIBabylonClient)(nil).QueryBTCDelegation), stakingTxHashHex)
+}
+
 // QueryEarliestActiveDelBtcHeight mocks base method.
 func (m *MockIBabylonClient) QueryEarliestActiveDelBtcHeight(fpPubkeyHexList []string) (uint64, error) {
 	m.ctrl.T.Helper()
@@ -256,7 +272,7 @@ func (mr *MockICosmWasmClientMockRecorder) QueryIsEnabled() *gomock.Call {
 }
 
 // QueryListOfVotedFinalityProviders mocks base method.
-func (m *MockICosmWasmClient) QueryListOfVotedFinalityProviders(queryParams *types.Block) ([]string, error) {
+func (m *MockICosmWasmClient) QueryListOfVotedFinalityProviders(queryParams *types0.Block) ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "QueryListOfVotedFinalityProviders", queryParams)
 	ret0, _ := ret[0].([]string)
@@ -306,10 +322,10 @@ func (mr *MockIEthL2ClientMockRecorder) Close() *gomock.Call {
 }
 
 // HeaderByNumber mocks base method.
-func (m *MockIEthL2Client) HeaderByNumber(ctx context.Context, number *big.Int) (*types0.Header, error) {
+func (m *MockIEthL2Client) HeaderByNumber(ctx context.Context, number *big.Int) (*types1.Header, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "HeaderByNumber", ctx, number)
-	ret0, _ := ret[0].(*types0.Header)
+	ret0, _ := ret[0].(*types1.Header)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -321,10 +337,10 @@ func (mr *MockIEthL2ClientMockRecorder) HeaderByNumber(ctx, number any) *gomock.
 }
 
 // TransactionReceipt mocks base method.
-func (m *MockIEthL2Client) TransactionReceipt(ctx context.Context, txHash string) (*types0.Receipt, error) {
+func (m *MockIEthL2Client) TransactionReceipt(ctx context.Context, txHash string) (*types1.Receipt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TransactionReceipt", ctx, txHash)
-	ret0, _ := ret[0].(*types0.Receipt)
+	ret0, _ := ret[0].(*types1.Receipt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

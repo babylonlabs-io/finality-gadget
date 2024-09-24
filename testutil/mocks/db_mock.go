@@ -114,6 +114,21 @@ func (mr *MockIDatabaseHandlerMockRecorder) GetActivatedTimestamp() *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActivatedTimestamp", reflect.TypeOf((*MockIDatabaseHandler)(nil).GetActivatedTimestamp))
 }
 
+// GetBTCDelegationInfo mocks base method.
+func (m *MockIDatabaseHandler) GetBTCDelegationInfo(btcPk string) (*types.BTCDelegationResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBTCDelegationInfo", btcPk)
+	ret0, _ := ret[0].(*types.BTCDelegationResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBTCDelegationInfo indicates an expected call of GetBTCDelegationInfo.
+func (mr *MockIDatabaseHandlerMockRecorder) GetBTCDelegationInfo(btcPk any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBTCDelegationInfo", reflect.TypeOf((*MockIDatabaseHandler)(nil).GetBTCDelegationInfo), btcPk)
+}
+
 // GetBlockByHash mocks base method.
 func (m *MockIDatabaseHandler) GetBlockByHash(hash string) (*types1.Block, error) {
 	m.ctrl.T.Helper()
@@ -229,6 +244,20 @@ func (m *MockIDatabaseHandler) SaveActivatedTimestamp(timestamp uint64) error {
 func (mr *MockIDatabaseHandlerMockRecorder) SaveActivatedTimestamp(timestamp any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveActivatedTimestamp", reflect.TypeOf((*MockIDatabaseHandler)(nil).SaveActivatedTimestamp), timestamp)
+}
+
+// SaveBTCDelegationInfo mocks base method.
+func (m *MockIDatabaseHandler) SaveBTCDelegationInfo(del *types.BTCDelegationResponse) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveBTCDelegationInfo", del)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveBTCDelegationInfo indicates an expected call of SaveBTCDelegationInfo.
+func (mr *MockIDatabaseHandlerMockRecorder) SaveBTCDelegationInfo(del any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveBTCDelegationInfo", reflect.TypeOf((*MockIDatabaseHandler)(nil).SaveBTCDelegationInfo), del)
 }
 
 // SaveEventBTCDelegationStateUpdate mocks base method.

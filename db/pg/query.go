@@ -151,6 +151,7 @@ const (
 	// sqlInsertEvent = `
 	// 	INSERT INTO events (tx_hash, name) VALUES ($1, $2)
 	// `
+	// TODO: consider if we can remove any fields from below if not needed
 	sqlInsertInitialFinalityProvider = `
     INSERT INTO table_initial_finality_providers (
       description_moniker,
@@ -172,6 +173,7 @@ const (
       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
     )
   `
+	// TODO: consider if we can remove any fields from below if not needed
 	sqlInsertInitialDelegation = `
     INSERT INTO table_initial_delegations (
       staker_addr,
@@ -292,6 +294,18 @@ const (
       module, 
       msg_index
     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+  `
+	// TODO: consider if we need to add more fields to below from `BTCDelegationResponse`
+	sqlInsertBTCDelegationInfo = `
+    INSERT INTO table_btc_delegations (
+      staker_addr,
+      btc_pk,
+      fp_btc_pk_list,
+      start_height,
+      end_height,
+      total_sat,
+      num_covenant_sigs
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7)
   `
 )
 
