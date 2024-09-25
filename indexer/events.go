@@ -76,6 +76,8 @@ func (idx *Indexer) ParseEvent(pgTx pgx.Tx, txInfo *types.TxInfo, evt Event) err
 		if err != nil {
 			return err
 		}
+		// Note: we store all delegations, including those not to FPs in our consumer chain
+		// to avoid an extra query here
 		err = idx.db.SaveEventBTCDelegationStateUpdate(pgTx, txInfo, evt.Index, parsed)
 		if err != nil {
 			return err
@@ -90,15 +92,6 @@ func (idx *Indexer) ParseEvent(pgTx pgx.Tx, txInfo *types.TxInfo, evt Event) err
 			if err != nil {
 				return err
 			}
-		}
-	case "babylon.btcstaking.v1.EventSelectiveSlashing":
-		parsed, err := idx.parseEventSelectiveSlashing(evt)
-		if err != nil {
-			return err
-		}
-		err = idx.db.SaveEventSelectiveSlashing(pgTx, txInfo, evt.Index, parsed)
-		if err != nil {
-			return err
 		}
 	case "babylon.finality.v1.EventSlashedFinalityProvider":
 		parsed, err := idx.parseEventSlashedFinalityProvider(evt)
@@ -128,7 +121,6 @@ func (idx *Indexer) ParseEvent(pgTx pgx.Tx, txInfo *types.TxInfo, evt Event) err
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -211,25 +203,6 @@ func (idx *Indexer) queryAndStoreBTCDelegation(stakingTxHash string) error {
 		return err
 	}
 	return nil
-}
-
-func (idx *Indexer) parseEventSelectiveSlashing(evt Event) (*types.EventSelectiveSlashing, error) {
-	idx.logger.Info("Parsing event", zap.String("type", evt.Type))
-	var event types.EventSelectiveSlashing
-	for _, attr := range evt.Attributes {
-		switch attr.Key {
-		case "evidence":
-			var evidence types.SelectiveSlashingEvidence
-			err := json.Unmarshal([]byte(string(attr.Value)), &evidence)
-			if err != nil {
-				return nil, err
-			}
-			event.StakingTxHash = evidence.StakingTxHash
-			event.FpBtcPk = evidence.FpBtcPk
-			event.RecoveredFpBtcSk = evidence.RecoveredFpBtcSk
-		}
-	}
-	return &event, nil
 }
 
 func (idx *Indexer) parseEventSlashedFinalityProvider(evt Event) (*types.EventSlashedFinalityProvider, error) {

@@ -54,12 +54,6 @@ type EventUnjailedFinalityProvider struct {
 	PublicKey []byte `json:"public_key"`
 }
 
-type EventSelectiveSlashing struct {
-	StakingTxHash    string `json:"staking_tx_hash"`
-	FpBtcPk          []byte `json:"fp_btc_pk"`
-	RecoveredFpBtcSk []byte `json:"recovered_fp_btc_sk"`
-}
-
 type EventMessage struct {
 	Action   string `json:"action"`
 	Sender   string `json:"sender"`

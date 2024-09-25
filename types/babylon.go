@@ -34,9 +34,3 @@ type Evidence struct {
 	CanonicalFinalitySig []byte `json:"canonical_finality_sig"`
 	ForkFinalitySig      []byte `json:"fork_finality_sig"`
 }
-
-type SelectiveSlashingEvidence struct {
-	StakingTxHash    string `json:"staking_tx_hash"`
-	FpBtcPk          []byte `json:"fp_btc_pk"`
-	RecoveredFpBtcSk []byte `json:"recovered_fp_btc_sk"`
-}

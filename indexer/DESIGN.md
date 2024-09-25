@@ -9,8 +9,7 @@ SQL tables
 3. `table_btc_delegations` : table of identifying information on BTC delegations, such as the FP, staked amount etc, queried from Babylon RPC
 4. `table_EventNewFinalityProvider` : table of `EventNewFinalityProvider` events with emitted identifying info
 5. `table_EventBTCDelegationStateUpdate` : table of `EventBTCDelegationStateUpdate` events with status changes
-6. `table_EventSelectiveSlashing` : table of `EventSelectiveSlashing` events with status changes
-7. `table_EventSlashedFinalityProvider` : table of `EventSlashedFinalityProvider` events with status changes
+6. `table_EventSlashedFinalityProvider` : table of `EventSlashedFinalityProvider` events with status changes
 
 Views
 
@@ -36,22 +35,20 @@ _TODO: consider if we need seperate queries by btc block vs babylon block vs tim
 3. Chain poller: Loop through each block sequentially and parse relevant events, populating tables
    1. Case `EventNewFinalityProvider` : if `consumer_id` matches, store to `table_EventNewFinalityProvider`
    2. Case `EventBTCDelegationStateUpdate`
-      1. Check `table_btc_delegations` for btc delegation info
-      2. If it does not exist, query RPC for it and store it (we want to store all delegations, not just those in our consumer chain, to avoid repeated querying on future delegation state update events)
-      3. If delegation is made to FP in our consumer chain, then store to `table_EventBTCDelegationStateUpdate`
-   3. Case `EventSelectiveSlashing`
-      1. Check if FP exists in our table
-      2. If so, store to `table_EventSelectiveSlashing`
-   4. Case `EventSlashedFinalityProvider`
-      1. Check if FP exists in our table
-      2. If so, store to `table_EventSlashedFinalityProvider`
+      1. Store delegation to `table_EventBTCDelegationStateUpdate`
+      2. Check `table_btc_delegations` for btc delegation info
+      3. If it does not exist, query RPC for it and store it (we want to store all delegations, not just those in our consumer chain, to avoid repeated querying on future delegation state update events)
+   3. Case `EventSlashedFinalityProvider`
+      1. Store to `table_EventSlashedFinalityProvider`
 4. Queries
    1. Get all finality providers at block
       1. Query `table_initial_finality_providers` and `table_EventNewFinalityProvider` for all `block_height <= $block`
-      2. Deduct voting power of FPs based on `events_EventPowerDistUpdate` at block `block_height <= $block` and remove any FPs with 0 voting power
+      2. Deduct voting power of FPs based on `events_EventPowerDistUpdate` at block `block_height <= $block`
+      3. Remove any delegations that have been slashed by `EventSlashedFinalityProvider` (only consider FPs in our consumer chain)
+      4. Remove any FPs with 0 voting power
    2. Get all delegations at block
       1. Start with `table_initial_delegations` and `table_btc_delegations`
-      2. Query `table_EventBTCDelegationStateUpdate` for all `block_height <= $block` and apply deltas
+      2. Query `table_EventBTCDelegationStateUpdate` for all `block_height <= $block`, filtering for delegations to FPs in our consumer chain, and apply deltas
       3. Exclude all naturally unbound delegations based on the timelock date
    3. Check if any FPs are jailed, and if so, remove them from the list of finality providers
    4. Get voting power distribution at block based on the above

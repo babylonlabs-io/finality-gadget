@@ -115,18 +115,18 @@ func (mr *MockIDatabaseHandlerMockRecorder) GetActivatedTimestamp() *gomock.Call
 }
 
 // GetBTCDelegationInfo mocks base method.
-func (m *MockIDatabaseHandler) GetBTCDelegationInfo(btcPk string) (*types1.BTCDelegation, error) {
+func (m *MockIDatabaseHandler) GetBTCDelegationInfo(stakingTxHash string) (*types1.BTCDelegation, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBTCDelegationInfo", btcPk)
+	ret := m.ctrl.Call(m, "GetBTCDelegationInfo", stakingTxHash)
 	ret0, _ := ret[0].(*types1.BTCDelegation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetBTCDelegationInfo indicates an expected call of GetBTCDelegationInfo.
-func (mr *MockIDatabaseHandlerMockRecorder) GetBTCDelegationInfo(btcPk any) *gomock.Call {
+func (mr *MockIDatabaseHandlerMockRecorder) GetBTCDelegationInfo(stakingTxHash any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBTCDelegationInfo", reflect.TypeOf((*MockIDatabaseHandler)(nil).GetBTCDelegationInfo), btcPk)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBTCDelegationInfo", reflect.TypeOf((*MockIDatabaseHandler)(nil).GetBTCDelegationInfo), stakingTxHash)
 }
 
 // GetBlockByHash mocks base method.
@@ -300,20 +300,6 @@ func (m *MockIDatabaseHandler) SaveEventNewFinalityProvider(tx pgx.Tx, txInfo *t
 func (mr *MockIDatabaseHandlerMockRecorder) SaveEventNewFinalityProvider(tx, txInfo, evtIdx, evt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveEventNewFinalityProvider", reflect.TypeOf((*MockIDatabaseHandler)(nil).SaveEventNewFinalityProvider), tx, txInfo, evtIdx, evt)
-}
-
-// SaveEventSelectiveSlashing mocks base method.
-func (m *MockIDatabaseHandler) SaveEventSelectiveSlashing(tx pgx.Tx, txInfo *types1.TxInfo, evtIdx int, evt *types1.EventSelectiveSlashing) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveEventSelectiveSlashing", tx, txInfo, evtIdx, evt)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SaveEventSelectiveSlashing indicates an expected call of SaveEventSelectiveSlashing.
-func (mr *MockIDatabaseHandlerMockRecorder) SaveEventSelectiveSlashing(tx, txInfo, evtIdx, evt any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveEventSelectiveSlashing", reflect.TypeOf((*MockIDatabaseHandler)(nil).SaveEventSelectiveSlashing), tx, txInfo, evtIdx, evt)
 }
 
 // SaveEventSlashedFinalityProvider mocks base method.

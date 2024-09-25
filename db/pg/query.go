@@ -110,18 +110,6 @@ const (
       PRIMARY KEY (tx_hash, event_index)
     );
 
-    CREATE TABLE IF NOT EXISTS events_EventSelectiveSlashing (
-      block_height BIGINT NOT NULL,
-      block_timestamp TIMESTAMP NOT NULL,
-      tx_hash TEXT NOT NULL,
-      tx_index SMALLINT,
-      event_index SMALLINT,
-      staking_tx_hash TEXT NOT NULL,
-      fp_btc_pk TEXT NOT NULL,
-      recovered_fp_btc_sk TEXT NOT NULL,
-      PRIMARY KEY (tx_hash, event_index)
-    );
-
     CREATE TABLE IF NOT EXISTS events_EventMessage (
       block_height BIGINT NOT NULL,
       block_timestamp TIMESTAMP NOT NULL,
@@ -253,18 +241,6 @@ const (
       event_index,
       public_key
     ) VALUES ($1, $2, $3, $4, $5, $6)
-	`
-	sqlInsertEventSelectiveSlashing = `
-		INSERT INTO events_EventSelectiveSlashing (
-      block_height,
-      block_timestamp,
-      tx_hash,
-      tx_index,
-      event_index,
-      staking_tx_hash, 
-      fp_btc_pk, 
-      recovered_fp_btc_sk
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 	sqlInsertEventSlashedFinalityProvider = `
 		INSERT INTO events_EventSlashedFinalityProvider (
