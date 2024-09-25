@@ -59,7 +59,7 @@ func (idx *Indexer) ParseEvent(pgTx pgx.Tx, txInfo *types.TxInfo, evt Event) err
 	// 	}
 	case "babylon.btcstaking.v1.EventNewFinalityProvider":
 		// Parse event
-		parsed, err := idx.ParseEventNewFinalityProvider(evt)
+		parsed, err := idx.parseEventNewFinalityProvider(evt)
 		if err != nil {
 			return err
 		}
@@ -71,7 +71,8 @@ func (idx *Indexer) ParseEvent(pgTx pgx.Tx, txInfo *types.TxInfo, evt Event) err
 			}
 		}
 	case "babylon.btcstaking.v1.EventBTCDelegationStateUpdate":
-		parsed, err := idx.ParseEventBTCDelegationStateUpdate(evt)
+		// Parse and save event to db
+		parsed, err := idx.parseEventBTCDelegationStateUpdate(evt)
 		if err != nil {
 			return err
 		}
@@ -79,8 +80,19 @@ func (idx *Indexer) ParseEvent(pgTx pgx.Tx, txInfo *types.TxInfo, evt Event) err
 		if err != nil {
 			return err
 		}
+		// If btc delegation info not found, query for it and save in db
+		del, err := idx.db.GetBTCDelegationInfo(parsed.StakingTxHash)
+		if err != nil {
+			return err
+		}
+		if del == nil {
+			err = idx.queryAndStoreBTCDelegation(parsed.StakingTxHash)
+			if err != nil {
+				return err
+			}
+		}
 	case "babylon.btcstaking.v1.EventSelectiveSlashing":
-		parsed, err := idx.ParseEventSelectiveSlashing(evt)
+		parsed, err := idx.parseEventSelectiveSlashing(evt)
 		if err != nil {
 			return err
 		}
@@ -89,7 +101,7 @@ func (idx *Indexer) ParseEvent(pgTx pgx.Tx, txInfo *types.TxInfo, evt Event) err
 			return err
 		}
 	case "babylon.finality.v1.EventSlashedFinalityProvider":
-		parsed, err := idx.ParseEventSlashedFinalityProvider(evt)
+		parsed, err := idx.parseEventSlashedFinalityProvider(evt)
 		if err != nil {
 			return err
 		}
@@ -98,7 +110,7 @@ func (idx *Indexer) ParseEvent(pgTx pgx.Tx, txInfo *types.TxInfo, evt Event) err
 			return err
 		}
 	case "babylon.finality.v1.EventJailedFinalityProvider":
-		parsed, err := idx.ParseEventJailedFinalityProvider(evt)
+		parsed, err := idx.parseEventJailedFinalityProvider(evt)
 		if err != nil {
 			return err
 		}
@@ -107,7 +119,7 @@ func (idx *Indexer) ParseEvent(pgTx pgx.Tx, txInfo *types.TxInfo, evt Event) err
 			return err
 		}
 	case "babylon.finality.v1.EventUnjailedFinalityProvider":
-		parsed, err := idx.ParseEventUnjailedFinalityProvider(evt)
+		parsed, err := idx.parseEventUnjailedFinalityProvider(evt)
 		if err != nil {
 			return err
 		}
@@ -120,7 +132,7 @@ func (idx *Indexer) ParseEvent(pgTx pgx.Tx, txInfo *types.TxInfo, evt Event) err
 	return nil
 }
 
-func (idx *Indexer) ParseEventNewFinalityProvider(evt Event) (*types.EventNewFinalityProvider, error) {
+func (idx *Indexer) parseEventNewFinalityProvider(evt Event) (*types.EventNewFinalityProvider, error) {
 	idx.logger.Info("Parsing event", zap.String("type", evt.Type))
 	var event types.EventNewFinalityProvider
 	for _, attr := range evt.Attributes {
@@ -154,7 +166,7 @@ func (idx *Indexer) ParseEventNewFinalityProvider(evt Event) (*types.EventNewFin
 	return &event, nil
 }
 
-func (idx *Indexer) ParseEventBTCDelegationStateUpdate(evt Event) (*types.EventBTCDelegationStateUpdate, error) {
+func (idx *Indexer) parseEventBTCDelegationStateUpdate(evt Event) (*types.EventBTCDelegationStateUpdate, error) {
 	idx.logger.Info("Parsing event", zap.String("type", evt.Type))
 	var event types.EventBTCDelegationStateUpdate
 	for _, attr := range evt.Attributes {
@@ -168,7 +180,40 @@ func (idx *Indexer) ParseEventBTCDelegationStateUpdate(evt Event) (*types.EventB
 	return &event, nil
 }
 
-func (idx *Indexer) ParseEventSelectiveSlashing(evt Event) (*types.EventSelectiveSlashing, error) {
+func (idx *Indexer) queryAndStoreBTCDelegation(stakingTxHash string) error {
+	// Query for btc delegation info
+	res, err := idx.bbnClient.QueryBTCDelegation(stakingTxHash)
+	if err != nil {
+		return err
+	}
+	// Save btc delegation info to db
+	fpBtcPkList := make([]string, len(res.FpBtcPkList))
+	for i, fpBtcPk := range res.FpBtcPkList {
+		fpBtcPkList[i] = fpBtcPk.MarshalHex()
+	}
+	err = idx.db.SaveBTCDelegationInfo(&types.BTCDelegation{
+		StakerAddr:       res.StakerAddr,
+		BtcPk:            res.BtcPk.MarshalHex(),
+		FpBtcPkList:      fpBtcPkList,
+		StartHeight:      res.StartHeight,
+		EndHeight:        res.EndHeight,
+		TotalSat:         res.TotalSat,
+		StakingTxHex:     res.StakingTxHex,
+		SlashingTxHex:    res.SlashingTxHex,
+		NumCovenantSigs:  uint32(len(res.CovenantSigs)),
+		StakingOutputIdx: res.StakingOutputIdx,
+		Active:           res.Active,
+		StatusDesc:       res.StatusDesc,
+		UnbondingTime:    res.UnbondingTime,
+		ParamsVersion:    res.ParamsVersion,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (idx *Indexer) parseEventSelectiveSlashing(evt Event) (*types.EventSelectiveSlashing, error) {
 	idx.logger.Info("Parsing event", zap.String("type", evt.Type))
 	var event types.EventSelectiveSlashing
 	for _, attr := range evt.Attributes {
@@ -187,7 +232,7 @@ func (idx *Indexer) ParseEventSelectiveSlashing(evt Event) (*types.EventSelectiv
 	return &event, nil
 }
 
-func (idx *Indexer) ParseEventSlashedFinalityProvider(evt Event) (*types.EventSlashedFinalityProvider, error) {
+func (idx *Indexer) parseEventSlashedFinalityProvider(evt Event) (*types.EventSlashedFinalityProvider, error) {
 	idx.logger.Info("Parsing event", zap.String("type", evt.Type))
 	var event types.EventSlashedFinalityProvider
 	for _, attr := range evt.Attributes {
@@ -210,7 +255,7 @@ func (idx *Indexer) ParseEventSlashedFinalityProvider(evt Event) (*types.EventSl
 	return &event, nil
 }
 
-func (idx *Indexer) ParseEventJailedFinalityProvider(evt Event) (*types.EventJailedFinalityProvider, error) {
+func (idx *Indexer) parseEventJailedFinalityProvider(evt Event) (*types.EventJailedFinalityProvider, error) {
 	idx.logger.Info("Parsing event", zap.String("type", evt.Type))
 	var event types.EventJailedFinalityProvider
 	for _, attr := range evt.Attributes {
@@ -222,7 +267,7 @@ func (idx *Indexer) ParseEventJailedFinalityProvider(evt Event) (*types.EventJai
 	return &event, nil
 }
 
-func (idx *Indexer) ParseEventUnjailedFinalityProvider(evt Event) (*types.EventUnjailedFinalityProvider, error) {
+func (idx *Indexer) parseEventUnjailedFinalityProvider(evt Event) (*types.EventUnjailedFinalityProvider, error) {
 	idx.logger.Info("Parsing event", zap.String("type", evt.Type))
 	var event types.EventUnjailedFinalityProvider
 	for _, attr := range evt.Attributes {

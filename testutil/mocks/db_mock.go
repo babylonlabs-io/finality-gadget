@@ -115,10 +115,10 @@ func (mr *MockIDatabaseHandlerMockRecorder) GetActivatedTimestamp() *gomock.Call
 }
 
 // GetBTCDelegationInfo mocks base method.
-func (m *MockIDatabaseHandler) GetBTCDelegationInfo(btcPk string) (*types.BTCDelegationResponse, error) {
+func (m *MockIDatabaseHandler) GetBTCDelegationInfo(btcPk string) (*types1.BTCDelegation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBTCDelegationInfo", btcPk)
-	ret0, _ := ret[0].(*types.BTCDelegationResponse)
+	ret0, _ := ret[0].(*types1.BTCDelegation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -247,7 +247,7 @@ func (mr *MockIDatabaseHandlerMockRecorder) SaveActivatedTimestamp(timestamp any
 }
 
 // SaveBTCDelegationInfo mocks base method.
-func (m *MockIDatabaseHandler) SaveBTCDelegationInfo(del *types.BTCDelegationResponse) error {
+func (m *MockIDatabaseHandler) SaveBTCDelegationInfo(del *types1.BTCDelegation) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveBTCDelegationInfo", del)
 	ret0, _ := ret[0].(error)

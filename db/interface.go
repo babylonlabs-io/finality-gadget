@@ -34,6 +34,6 @@ type IDatabaseHandler interface {
 	SaveEventUnjailedFinalityProvider(tx pgx.Tx, txInfo *types.TxInfo, evtIdx int, evt *types.EventUnjailedFinalityProvider) error
 	SaveEventSelectiveSlashing(tx pgx.Tx, txInfo *types.TxInfo, evtIdx int, evt *types.EventSelectiveSlashing) error
 	SaveEventSlashedFinalityProvider(tx pgx.Tx, txInfo *types.TxInfo, evtIdx int, evt *types.EventSlashedFinalityProvider) error
-	SaveBTCDelegationInfo(del *bbntypes.BTCDelegationResponse) error
-	GetBTCDelegationInfo(btcPk string) (*bbntypes.BTCDelegationResponse, error)
+	SaveBTCDelegationInfo(del *types.BTCDelegation) error
+	GetBTCDelegationInfo(stakingTxHash string) (*types.BTCDelegation, error)
 }

@@ -453,17 +453,25 @@ func (pg *PostgresHandler) SaveEventSlashedFinalityProvider(tx pgx.Tx, txInfo *t
 	return nil
 }
 
-func (pg *PostgresHandler) SaveBTCDelegationInfo(del *bbntypes.BTCDelegationResponse) error {
+func (pg *PostgresHandler) SaveBTCDelegationInfo(del *types.BTCDelegation) error {
 	_, err := pg.conn.Exec(
 		context.Background(),
 		sqlInsertBTCDelegationInfo,
 		del.StakerAddr,
-		del.BtcPk.MarshalHex(),
+		del.BtcPk,
 		del.FpBtcPkList,
 		del.StartHeight,
 		del.EndHeight,
 		del.TotalSat,
-		len(del.CovenantSigs),
+		del.StakingTxHex,
+		del.SlashingTxHex,
+		del.DelegatorSlashSigHex,
+		del.NumCovenantSigs,
+		del.StakingOutputIdx,
+		del.Active,
+		del.StatusDesc,
+		del.UnbondingTime,
+		del.ParamsVersion,
 	)
 	if err != nil {
 		pg.logger.Error("Failed to save event", zap.Error(err))
@@ -472,9 +480,34 @@ func (pg *PostgresHandler) SaveBTCDelegationInfo(del *bbntypes.BTCDelegationResp
 	return nil
 }
 
-func (pg *PostgresHandler) GetBTCDelegationInfo(btcPk string) (*bbntypes.BTCDelegationResponse, error) {
-	// TODO: implement
-	return nil, nil
+func (pg *PostgresHandler) GetBTCDelegationInfo(stakingTxHash string) (*types.BTCDelegation, error) {
+	row := pg.conn.QueryRow(context.Background(), sqlQueryBTCDelegationInfo, stakingTxHash)
+	var del types.BTCDelegation
+	err := row.Scan(
+		&del.StakerAddr,
+		&del.BtcPk,
+		&del.FpBtcPkList,
+		&del.StartHeight,
+		&del.EndHeight,
+		&del.TotalSat,
+		&del.StakingTxHex,
+		&del.SlashingTxHex,
+		&del.DelegatorSlashSigHex,
+		&del.NumCovenantSigs,
+		&del.StakingOutputIdx,
+		&del.Active,
+		&del.StatusDesc,
+		&del.UnbondingTime,
+		&del.ParamsVersion,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		pg.logger.Error("Failed to get btc delegation info", zap.Error(err))
+		return nil, err
+	}
+	return &del, nil
 }
 
 func (pg *PostgresHandler) Close() error {

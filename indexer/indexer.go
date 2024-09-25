@@ -315,7 +315,7 @@ func (idx *Indexer) CollectEvents(ctx context.Context, txs []Tx) error {
 		}
 		// Loop through events
 		for _, evt := range events {
-			// Parse event and save to DB
+			// Parse event and handle
 			err := idx.ParseEvent(pgTx, txInfo, evt)
 			if err != nil {
 				return err

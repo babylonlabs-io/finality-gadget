@@ -326,4 +326,23 @@ const (
 	sqlQueryActivatedTimestamp = `
 		SELECT timestamp FROM table_activated_timestamp ORDER BY timestamp DESC LIMIT 1
 	`
+	sqlQueryBTCDelegationInfo = `
+		SELECT 
+      staker_addr, 
+      btc_pk, 
+      fp_btc_pk_list, 
+      start_height, 
+      end_height, 
+      total_sat, 
+      staking_tx_hex, 
+      slashing_tx_hex, 
+      delegator_slash_sig_hex, 
+      num_covenant_sigs, 
+      staking_output_idx, 
+      active, 
+      status_desc, 
+      unbonding_time, 
+      params_version 
+    FROM table_btc_delegations WHERE staking_tx_hash = $1
+	`
 )
