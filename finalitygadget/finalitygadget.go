@@ -279,6 +279,11 @@ func (fg *FinalityGadget) GetBlockByHash(hash string) (*types.Block, error) {
 }
 
 func (fg *FinalityGadget) QueryTransactionStatus(txHash string) (*types.TransactionInfo, error) {
+	// Validate the tx hash is a valid EVM tx hash
+	if len(txHash) != 66 || txHash[:2] != "0x" {
+		return nil, fmt.Errorf("invalid EVM transaction hash")
+	}
+
 	// get block info
 	ctx := context.Background()
 	txReceipt, err := fg.l2Client.TransactionReceipt(ctx, txHash)
