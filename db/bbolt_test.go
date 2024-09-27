@@ -1,6 +1,7 @@
 package db
 
 import (
+	"math"
 	"os"
 	"testing"
 
@@ -227,7 +228,7 @@ func TestGetActivatedTimestamp(t *testing.T) {
 
 	// Test when timestamp is not set
 	timestamp, err := handler.GetActivatedTimestamp()
-	assert.Equal(t, uint64(0), timestamp)
+	assert.Equal(t, uint64(math.MaxUint64), timestamp)
 	assert.Equal(t, types.ErrActivatedTimestampNotFound, err)
 
 	// Set timestamp
