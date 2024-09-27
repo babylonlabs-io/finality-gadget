@@ -279,6 +279,10 @@ func (fg *FinalityGadget) GetBlockByHash(hash string) (*types.Block, error) {
 }
 
 func (fg *FinalityGadget) QueryTransactionStatus(txHash string) (*types.TransactionInfo, error) {
+	if err := validateEVMTxHash(txHash); err != nil {
+		return nil, err
+	}
+
 	// get block info
 	ctx := context.Background()
 	txReceipt, err := fg.l2Client.TransactionReceipt(ctx, txHash)
@@ -548,4 +552,12 @@ func (fg *FinalityGadget) MonitorBtcStakingActivation(ctx context.Context) {
 
 func normalizeBlockHash(hash string) string {
 	return common.HexToHash(hash).Hex()
+}
+
+// validateEVMTxHash checks if the given string is a valid EVM transaction hash
+func validateEVMTxHash(txHash string) error {
+	if len(txHash) != 66 || txHash[:2] != "0x" {
+		return fmt.Errorf("invalid EVM transaction hash")
+	}
+	return nil
 }
