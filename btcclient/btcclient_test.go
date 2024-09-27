@@ -37,7 +37,10 @@ func TestBtcClient(t *testing.T) {
 	require.Equal(t, uint64(848681), blockHeight)
 
 	// a timestamp in the future i.e. year 2056
+	// expect the block height to be the latest block height
 	blockHeight, err = btc.GetBlockHeightByTimestamp(uint64(2718840690))
 	require.Nil(t, err)
-	require.Equal(t, uint64(0), blockHeight)
+	blockCount, err := btc.GetBlockCount()
+	require.Nil(t, err)
+	require.Equal(t, blockCount, blockHeight)
 }
