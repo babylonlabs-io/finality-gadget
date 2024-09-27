@@ -95,7 +95,7 @@ func (s *Server) RunUntilShutdown() error {
 
 	// Create http server.
 	httpServer := &http.Server{
-		Addr:    ":8080",
+		Addr:    s.cfg.HTTPListener,
 		Handler: corsHandler,
 	}
 
