@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"net/url"
 	"sync"
 	"sync/atomic"
 
@@ -76,27 +75,17 @@ func (s *Server) RunUntilShutdown() error {
 		return fmt.Errorf("failed to start gRPC listener: %v", err)
 	}
 
-	// Add cors handler to allow local development
-	corsHandler := cors.New(cors.Options{
-		AllowOriginFunc: func(origin string) bool {
-			u, err := url.Parse(origin)
-			if err != nil {
-				return false
-			}
-			if u.Hostname() == "localhost" || u.Hostname() == "127.0.0.1" {
-				return true
-			}
-			return false
-		},
+	// Add cors options to allow access form any origin
+	corsOpts := cors.Options{
+		AllowOriginFunc:  func(origin string) bool { return true },
 		AllowCredentials: true,
 		AllowedMethods:   []string{"GET", "POST"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
-	}).Handler(s.newHttpHandler())
+	}
 
-	// Create http server.
 	httpServer := &http.Server{
 		Addr:    s.cfg.HTTPListener,
-		Handler: corsHandler,
+		Handler: cors.New(corsOpts).Handler(s.newHttpHandler()),
 	}
 
 	s.logger.Info("Starting standalone HTTP server on port 8080")
