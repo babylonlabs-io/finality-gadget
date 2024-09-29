@@ -1,6 +1,7 @@
 package btcclient
 
 import (
+	"math"
 	"testing"
 
 	"github.com/babylonlabs-io/finality-gadget/log"
@@ -37,10 +38,7 @@ func TestBtcClient(t *testing.T) {
 	require.Equal(t, uint64(848681), blockHeight)
 
 	// a timestamp in the future i.e. year 2056
-	// expect the block height to be the latest block height
 	blockHeight, err = btc.GetBlockHeightByTimestamp(uint64(2718840690))
 	require.Nil(t, err)
-	blockCount, err := btc.GetBlockCount()
-	require.Nil(t, err)
-	require.Equal(t, blockCount, blockHeight)
+	require.Equal(t, uint64(math.MaxUint64), blockHeight)
 }

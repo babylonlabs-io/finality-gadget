@@ -2,6 +2,7 @@ package btcclient
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/avast/retry-go/v4"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
@@ -113,9 +114,9 @@ func (c *BitcoinClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint6
 	}
 
 	// timestamp is in the future (not in the most-work fully-validated chain)
-	// so we return the most recent BTC block height
+	// we return the max uint64 to indicate this
 	if lowerBound > blockHeight {
-		return blockHeight, nil
+		return math.MaxUint64, nil
 	}
 
 	return lowerBound - 1, nil
