@@ -18,7 +18,7 @@ ENV GOPRIVATE=github.com/babylonlabs-io/*
 WORKDIR /go/src/github.com/babylonlabs-io/finality-gadget
 # Cache dependencies
 COPY go.mod go.sum /go/src/github.com/babylonlabs-io/finality-gadget/
-RUN --mount=type=secret,id=sshKey,target=/root/.ssh/id_rsa go mod download
+RUN go mod download
 # Copy the rest of the files
 COPY ./ /go/src/github.com/babylonlabs-io/finality-gadget/
 
