@@ -32,7 +32,7 @@ build: go.sum $(BUILDDIR)/
 	CGO_CFLAGS="-O -D__BLST_PORTABLE__" go $@ -mod=readonly $(BUILD_FLAGS) $(BUILD_ARGS) ./...
 
 build-docker:
-	$(DOCKER) build --secret id=sshKey,src=${BBN_PRIV_DEPLOY_KEY} \
+	$(DOCKER) build \
 	--tag babylonlabs-io/finality-gadget \
 	-f Dockerfile \
 	$(GIT_ROOT)

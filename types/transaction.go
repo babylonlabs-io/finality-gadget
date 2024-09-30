@@ -2,10 +2,10 @@ package types
 
 type TransactionInfo struct {
 	TxHash           string         `json:"txHash"`
-	BlockTimestamp   uint64         `json:"blockTimestamp"`
-	BlockHeight      uint64         `json:"blockHeight"`
 	BlockHash        string         `json:"blockHash"`
 	Status           FinalityStatus `json:"status"`
+	BlockTimestamp   uint64         `json:"blockTimestamp"`
+	BlockHeight      uint64         `json:"blockHeight"`
 	BabylonFinalized bool           `json:"babylonFinalized"`
 }
 

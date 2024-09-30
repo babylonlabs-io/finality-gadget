@@ -286,26 +286,31 @@ func (fg *FinalityGadget) QueryTransactionStatus(txHash string) (*types.Transact
 	// get block info
 	ctx := context.Background()
 	txReceipt, err := fg.l2Client.TransactionReceipt(ctx, txHash)
+	fg.logger.Debug("Transaction receipt", zap.Uint64("block_number", txReceipt.BlockNumber.Uint64()))
 	if err != nil {
 		return nil, err
 	}
 	header, err := fg.l2Client.HeaderByNumber(ctx, txReceipt.BlockNumber)
+	fg.logger.Debug("Block info", zap.String("block_hash", header.Hash().Hex()), zap.Uint64("block_timestamp", header.Time))
 	if err != nil {
 		return nil, err
 	}
 
 	// get babylon finalized info
 	isBabylonFinalized, err := fg.QueryIsBlockFinalizedByHeight(txReceipt.BlockNumber.Uint64())
+	fg.logger.Debug("Babylon finalization status", zap.Bool("is_finalized", isBabylonFinalized))
 	if err != nil {
 		return nil, err
 	}
 
 	// get safe and finalized blocks
 	safeBlock, err := fg.l2Client.HeaderByNumber(ctx, big.NewInt(ethrpc.SafeBlockNumber.Int64()))
+	fg.logger.Debug("Safe block", zap.Uint64("block_number", safeBlock.Number.Uint64()))
 	if err != nil {
 		return nil, err
 	}
 	finalizedBlock, err := fg.l2Client.HeaderByNumber(ctx, big.NewInt(ethrpc.FinalizedBlockNumber.Int64()))
+	fg.logger.Debug("Finalized block", zap.Uint64("block_number", finalizedBlock.Number.Uint64()))
 	if err != nil {
 		return nil, err
 	}
