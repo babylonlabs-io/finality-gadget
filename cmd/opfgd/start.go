@@ -71,7 +71,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	}
 
 	// Create indexer
-	idx, err := indexer.NewIndexer(cfg, db, logger)
+	idx, err := indexer.NewIndexer(&cfg.BBNConfig, db, logger)
 	if err != nil {
 		logger.Fatal("Error creating fp indexer", zap.Error(err))
 		return err

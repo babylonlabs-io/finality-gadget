@@ -6,6 +6,7 @@ import (
 	bbnClient "github.com/babylonlabs-io/babylon/client/client"
 	bbncfg "github.com/babylonlabs-io/babylon/client/config"
 	"github.com/babylonlabs-io/babylon/client/query"
+	btcctypes "github.com/babylonlabs-io/babylon/x/btccheckpoint/types"
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 	bsctypes "github.com/babylonlabs-io/babylon/x/btcstkconsumer/types"
 	cfg "github.com/babylonlabs-io/finality-gadget/config"
@@ -22,7 +23,7 @@ type BabylonClient struct {
 // CONSTRUCTOR
 //////////////////////////////
 
-func NewBabylonClient(cfg cfg.BBNConfig, logger *zap.Logger) (*BabylonClient, error) {
+func NewBabylonClient(cfg *cfg.BBNConfig, logger *zap.Logger) (*BabylonClient, error) {
 	// Load configs
 	bbnConfig := bbncfg.DefaultBabylonConfig()
 	bbnConfig.RPCAddr = cfg.BabylonRPCAddress
@@ -69,6 +70,28 @@ func (bbnClient *BabylonClient) QueryBTCDelegation(stakingTxHashHex string) (*bb
 	}
 
 	return resp.GetBtcDelegation(), nil
+}
+
+func (bbnClient *BabylonClient) QueryBTCCheckpointParams() (*btcctypes.QueryParamsResponse, error) {
+	bbnClient.logger.Info("Querying BTC checkpoint params")
+
+	resp, err := bbnClient.queryClient.BTCCheckpointParams()
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (bbnClient *BabylonClient) QueryBTCStakingParams() (*bbntypes.QueryParamsResponse, error) {
+	bbnClient.logger.Info("Querying BTC staking params")
+
+	resp, err := bbnClient.queryClient.BTCStakingParams()
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
 
 func (bbnClient *BabylonClient) QueryFPDelegations(fpBtcPk string) ([]*bbntypes.BTCDelegationResponse, error) {

@@ -18,6 +18,7 @@ type IDatabaseHandler interface {
 	QueryIsBlockFinalizedByHeight(height uint64) (bool, error)
 	QueryIsBlockFinalizedByHash(hash string) (bool, error)
 	QueryLatestFinalizedBlock() (*types.Block, error)
+	GetFinalityProviders(blockHeight uint64) ([]types.EventNewFinalityProvider, error)
 	GetActivatedTimestamp() (uint64, error)
 	SaveActivatedTimestamp(timestamp uint64) error
 
@@ -26,6 +27,7 @@ type IDatabaseHandler interface {
 	CommitTx(tx pgx.Tx) error
 	RollbackTx(tx pgx.Tx) error
 	// SaveEvent(tx pgx.Tx, evt *types.Event) error
+	SaveChainParams(kValue uint64, wValue uint64, covQuorum uint32) error
 	SaveInitialFinalityProviders(fps []*bsctypes.FinalityProviderResponse) error
 	SaveInitialDelegations(dels []*bbntypes.BTCDelegationResponse) error
 	SaveEventNewFinalityProvider(tx pgx.Tx, txInfo *types.TxInfo, evtIdx int, evt *types.EventNewFinalityProvider) error
@@ -35,4 +37,5 @@ type IDatabaseHandler interface {
 	SaveEventSlashedFinalityProvider(tx pgx.Tx, txInfo *types.TxInfo, evtIdx int, evt *types.EventSlashedFinalityProvider) error
 	SaveBTCDelegationInfo(del *types.BTCDelegation) error
 	GetBTCDelegationInfo(stakingTxHash string) (*types.BTCDelegation, error)
+	GetVotingPowerDistAtBlock(blockHeight uint64) ([]*types.FPVotingPower, error)
 }

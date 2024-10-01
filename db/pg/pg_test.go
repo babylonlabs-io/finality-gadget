@@ -66,6 +66,8 @@ func setupDB(t *testing.T) (*PostgresHandler, func()) {
 		os.Exit(1) // Exit after cleanup
 	}()
 
+	t.Cleanup(cleanup)
+
 	return db, cleanup
 }
 

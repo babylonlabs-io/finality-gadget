@@ -159,6 +159,36 @@ func (mr *MockIDatabaseHandlerMockRecorder) GetBlockByHeight(height any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockByHeight", reflect.TypeOf((*MockIDatabaseHandler)(nil).GetBlockByHeight), height)
 }
 
+// GetFinalityProviders mocks base method.
+func (m *MockIDatabaseHandler) GetFinalityProviders(blockHeight uint64) ([]types1.EventNewFinalityProvider, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFinalityProviders", blockHeight)
+	ret0, _ := ret[0].([]types1.EventNewFinalityProvider)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFinalityProviders indicates an expected call of GetFinalityProviders.
+func (mr *MockIDatabaseHandlerMockRecorder) GetFinalityProviders(blockHeight any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFinalityProviders", reflect.TypeOf((*MockIDatabaseHandler)(nil).GetFinalityProviders), blockHeight)
+}
+
+// GetVotingPowerDistAtBlock mocks base method.
+func (m *MockIDatabaseHandler) GetVotingPowerDistAtBlock(blockHeight uint64) ([]*types1.FPVotingPower, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVotingPowerDistAtBlock", blockHeight)
+	ret0, _ := ret[0].([]*types1.FPVotingPower)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetVotingPowerDistAtBlock indicates an expected call of GetVotingPowerDistAtBlock.
+func (mr *MockIDatabaseHandlerMockRecorder) GetVotingPowerDistAtBlock(blockHeight any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVotingPowerDistAtBlock", reflect.TypeOf((*MockIDatabaseHandler)(nil).GetVotingPowerDistAtBlock), blockHeight)
+}
+
 // InsertBlock mocks base method.
 func (m *MockIDatabaseHandler) InsertBlock(block *types1.Block) error {
 	m.ctrl.T.Helper()
@@ -258,6 +288,20 @@ func (m *MockIDatabaseHandler) SaveBTCDelegationInfo(del *types1.BTCDelegation) 
 func (mr *MockIDatabaseHandlerMockRecorder) SaveBTCDelegationInfo(del any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveBTCDelegationInfo", reflect.TypeOf((*MockIDatabaseHandler)(nil).SaveBTCDelegationInfo), del)
+}
+
+// SaveChainParams mocks base method.
+func (m *MockIDatabaseHandler) SaveChainParams(kValue, wValue uint64, covQuorum uint32) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveChainParams", kValue, wValue, covQuorum)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveChainParams indicates an expected call of SaveChainParams.
+func (mr *MockIDatabaseHandlerMockRecorder) SaveChainParams(kValue, wValue, covQuorum any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveChainParams", reflect.TypeOf((*MockIDatabaseHandler)(nil).SaveChainParams), kValue, wValue, covQuorum)
 }
 
 // SaveEventBTCDelegationStateUpdate mocks base method.

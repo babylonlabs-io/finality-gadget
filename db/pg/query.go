@@ -1,11 +1,27 @@
 package pg
 
 //////////////////////////
+// CREATE TYPES
+//////////////////////////
+
+const (
+	sqlCreateTypeBTCDelegationStatus = `
+		CREATE TYPE BTCDelegationStatus AS ENUM ('PENDING', 'ACTIVE', 'UNBONDED');
+	`
+)
+
+//////////////////////////
 // CREATE TABLES
 //////////////////////////
 
 const (
 	sqlCreateInitialTables = `
+    CREATE TABLE IF NOT EXISTS table_chain_params (
+      k_value INT NOT NULL,
+      w_value INT NOT NULL,
+      cov_quorum INT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS table_finalized_blocks (
       block_hash TEXT NOT NULL PRIMARY KEY,
       block_height BIGINT NOT NULL,
@@ -25,12 +41,8 @@ const (
       commission TEXT NOT NULL,
       addr TEXT NOT NULL,
       btc_pk TEXT NOT NULL PRIMARY KEY,
-      pop_btc_sig_type TEXT NOT NULL,
-      pop_btc_sig TEXT NOT NULL,
-      slashed_babylon_height INT NOT NULL,
-      slashed_btc_height INT NOT NULL,
-      height INT NOT NULL,
-      voting_power INT NOT NULL,
+      slashed_babylon_height BIGINT NOT NULL,
+      slashed_btc_height BIGINT NOT NULL,
       consumer_id TEXT NOT NULL
     );
 
@@ -38,9 +50,9 @@ const (
       staker_addr TEXT NOT NULL,
       btc_pk TEXT NOT NULL PRIMARY KEY,
       fp_btc_pk_list TEXT NOT NULL,
-      start_height INT NOT NULL,
-      end_height INT NOT NULL,
-      total_sat INT NOT NULL,
+      start_height BIGINT NOT NULL,
+      end_height BIGINT NOT NULL,
+      total_sat BIGINT NOT NULL,
       staking_tx_hex TEXT NOT NULL,
       slashing_tx_hex TEXT NOT NULL,
       delegator_slash_sig_hex TEXT NOT NULL,
@@ -52,6 +64,25 @@ const (
       -- undelegation_response omitted
       params_version INT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS table_btc_delegations (
+      staker_addr TEXT NOT NULL,
+      btc_pk TEXT NOT NULL PRIMARY KEY,
+      fp_btc_pk_list TEXT NOT NULL,
+      start_height BIGINT NOT NULL,
+      end_height BIGINT NOT NULL,
+      total_sat BIGINT NOT NULL,
+      staking_tx_hex TEXT NOT NULL,
+      slashing_tx_hex TEXT NOT NULL,
+      delegator_slash_sig_hex TEXT NOT NULL,
+      num_covenant_sigs INT NOT NULL,
+      staking_output_idx INT NOT NULL,
+      active BOOLEAN NOT NULL,
+      status_desc TEXT NOT NULL,
+      unbonding_time INT NOT NULL,
+      params_version INT NOT NULL
+    );
+
 
     CREATE TABLE IF NOT EXISTS events_EventNewFinalityProvider (
       block_height BIGINT NOT NULL,
@@ -67,15 +98,9 @@ const (
       commission TEXT NOT NULL,
       babylon_pk_key TEXT NOT NULL,
       btc_pk TEXT NOT NULL,
-      pop_btc_sig_type TEXT NOT NULL,
-      pop_babylon_sig TEXT NOT NULL,
-      pop_btc_sig TEXT NOT NULL,
-      master_pub_rand TEXT NOT NULL,
-      registered_epoch TEXT NOT NULL,
-      slashed_babylon_height TEXT NOT NULL,
-      slashed_btc_height TEXT NOT NULL,
+      slashed_babylon_height BIGINT NOT NULL,
+      slashed_btc_height BIGINT NOT NULL,
       consumer_id TEXT NOT NULL,
-      msg_index TEXT NOT NULL,
       PRIMARY KEY (tx_hash, event_index)
     );
 
@@ -86,7 +111,7 @@ const (
       tx_index SMALLINT,
       event_index SMALLINT,
       staking_tx_hash TEXT NOT NULL,
-      new_state TEXT NOT NULL,
+      new_state BTCDelegationStatus NOT NULL,
       PRIMARY KEY (tx_hash, event_index)
     );
 
@@ -96,7 +121,7 @@ const (
       tx_hash TEXT NOT NULL,
       tx_index SMALLINT,
       event_index SMALLINT,
-      public_key TEXT NOT NULL,
+      btc_pk TEXT NOT NULL,
       PRIMARY KEY (tx_hash, event_index)
     );
 
@@ -106,7 +131,7 @@ const (
       tx_hash TEXT NOT NULL,
       tx_index SMALLINT,
       event_index SMALLINT,
-      public_key TEXT NOT NULL,
+      btc_pk TEXT NOT NULL,
       PRIMARY KEY (tx_hash, event_index)
     );
 
@@ -126,6 +151,123 @@ const (
 )
 
 //////////////////////////
+// CREATE FUNCTIONS
+//////////////////////////
+
+const (
+	sqlCreateFuncVotingPowerDistAtBlock = `
+		CREATE OR REPLACE FUNCTION func_voting_power_dist_at_block(_block_height BIGINT)
+    RETURNS TABLE (
+      fp_btc_pk TEXT,
+      voting_power BIGINT
+    ) AS $$
+    BEGIN
+      RETURN QUERY
+      WITH
+      -- Fetch chain params
+      ChainParams AS (
+        SELECT k_value, w_value, cov_quorum FROM table_chain_params
+      ),
+      -- Compile list of FPs belonging to consumer chain
+      ConsumerChainFPs AS (
+        SELECT btc_pk AS fp_btc_pk FROM table_initial_finality_providers
+        UNION ALL
+        SELECT btc_pk AS fp_btc_pk FROM events_EventNewFinalityProvider 
+        WHERE block_height <= _block_height
+      ),
+      -- Compile list of slashed FPs
+      SlashedFPs AS (
+        SELECT btc_pk AS fp_btc_pk FROM events_EventSlashedFinalityProvider
+        WHERE block_height <= _block_height
+      ),
+      -- Compile list of jailed FPs
+      JailedFPs AS (
+        SELECT j.btc_pk AS fp_btc_pk
+        FROM events_EventJailedFinalityProvider j
+        WHERE j.block_height <= _block_height
+        AND NOT EXISTS (
+          SELECT 1
+          FROM events_EventUnjailedFinalityProvider u
+          WHERE u.btc_pk = j.btc_pk
+            AND u.block_height <= _block_height
+        )
+      ),
+      -- Compile list of active FPs
+      ActiveFPs AS (
+        SELECT fp_btc_pk FROM ConsumerChainFPs
+        EXCEPT
+        SELECT fp_btc_pk FROM SlashedFPs
+        EXCEPT
+        SELECT fp_btc_pk FROM JailedFPs
+      ),
+      -- Compile list of delegation tx hexes
+      InitialDelegations AS (
+        SELECT 
+          id.staking_tx_hex, 
+          id.start_height,
+          id.end_height,
+          id.total_sat, 
+          id.num_covenant_sigs,
+          id.fp_btc_pk_list,
+          'ACTIVE'::BTCDelegationStatus AS state
+        FROM table_initial_delegations id
+        WHERE id.active
+      ),
+      -- Compile new delegations
+      DelegationUpdates AS (
+        SELECT DISTINCT ON (staking_tx_hash) 
+          su.staking_tx_hash, 
+          bd.start_height,
+          bd.end_height,
+          bd.total_sat,
+          bd.num_covenant_sigs,
+          bd.fp_btc_pk_list,
+          su.new_state AS state
+        FROM events_EventBTCDelegationStateUpdate su
+        JOIN table_btc_delegations bd ON su.staking_tx_hash = bd.staking_tx_hash
+        WHERE su.block_height <= _block_height
+        ORDER BY su.staking_tx_hash, su.block_height DESC
+      ),
+      -- Compile list of current delegations as of block n
+      Delegations AS (
+        SELECT
+          COALESCE(du.staking_tx_hex, id.staking_tx_hex) AS staking_tx_hex,
+          COALESCE(du.start_height, id.start_height) AS start_height,
+          COALESCE(du.end_height, id.end_height) AS end_height,
+          COALESCE(du.total_sat, id.total_sat) AS total_sat,
+          COALESCE(du.num_covenant_sigs, id.num_covenant_sigs) AS num_covenant_sigs,
+          COALESCE(du.fp_btc_pk_list, id.fp_btc_pk_list) AS fp_btc_pk_list,
+          COALESCE(du.state, id.state) AS state
+        FROM InitialDelegations id
+        LEFT JOIN DelegationUpdates du ON id.staking_tx_hash = du.staking_tx_hash
+        WHERE COALESCE(du.state, id.state) = 'ACTIVE'::BTCDelegationStatus
+      ),
+      -- Filter for active FPs and delegations
+      ActiveDelegations AS (
+        SELECT d.*
+        FROM Delegations d
+        JOIN ActiveFPs af ON d.fp_btc_pk_list @> ARRAY[af.fp_btc_pk]
+        JOIN ChainParams cp ON true
+        WHERE _block_height >= d.start_height + cp.k_value
+          AND _block_height + cp.w_value <= d.end_height
+          AND d.num_covenant_sigs >= cp.cov_quorum
+      ),
+      -- Return list of FPs and their voting power
+      VotingPowerDist AS (
+        SELECT 
+          af.fp_btc_pk,
+          SUM(d.total_sat) AS voting_power
+        FROM ActiveDelegations d
+        JOIN ActiveFPs af ON d.fp_btc_pk_list @> ARRAY[af.fp_btc_pk]
+        GROUP BY af.fp_btc_pk
+      )
+      SELECT * FROM VotingPowerDist;
+    END;
+    $$ LANGUAGE plpgsql;
+  `
+)
+
+//////////////////////////
 // INSERT ENTRIES
 //////////////////////////
 
@@ -139,6 +281,9 @@ const (
 	// sqlInsertEvent = `
 	// 	INSERT INTO events (tx_hash, name) VALUES ($1, $2)
 	// `
+	sqlInsertChainParams = `
+		INSERT INTO table_chain_params (k_value, w_value, cov_quorum) VALUES ($1, $2, $3)
+	`
 	// TODO: consider if we can remove any fields from below if not needed
 	sqlInsertInitialFinalityProvider = `
     INSERT INTO table_initial_finality_providers (
@@ -150,15 +295,11 @@ const (
       commission,
       addr,
       btc_pk,
-      pop_btc_sig_type,
-      pop_btc_sig,
-      slashed_babylon_height
+      slashed_babylon_height,
       slashed_btc_height,
-      height,
-      voting_power,
       consumer_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
     )
   `
 	// TODO: consider if we can remove any fields from below if not needed
@@ -198,17 +339,11 @@ const (
       commission,
       babylon_pk_key,
       btc_pk,
-      pop_btc_sig_type,
-      pop_babylon_sig,
-      pop_btc_sig,
-      master_pub_rand,
-      registered_epoch,
       slashed_babylon_height,
       slashed_btc_height,
-      consumer_id,
-      msg_index
+      consumer_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
     )
 	`
 	sqlInsertEventBTCDelegationStateUpdate = `
@@ -229,7 +364,7 @@ const (
       tx_hash,
       tx_index,
       event_index,
-      public_key
+      btc_pk
     ) VALUES ($1, $2, $3, $4, $5, $6)
 	`
 	sqlInsertEventUnjailedFinalityProvider = `
@@ -239,7 +374,7 @@ const (
       tx_hash,
       tx_index,
       event_index,
-      public_key
+      btc_pk
     ) VALUES ($1, $2, $3, $4, $5, $6)
 	`
 	sqlInsertEventSlashedFinalityProvider = `
@@ -280,8 +415,16 @@ const (
       start_height,
       end_height,
       total_sat,
-      num_covenant_sigs
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      staking_tx_hex,
+      slashing_tx_hex,
+      delegator_slash_sig_hex,
+      num_covenant_sigs,
+      staking_output_idx,
+      active,
+      status_desc,
+      unbonding_time,
+      params_version
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
   `
 )
 
@@ -290,6 +433,38 @@ const (
 //////////////////////////
 
 const (
+	sqlQueryFinalityProviders = `
+		SELECT 
+      description_moniker, 
+      description_identity, 
+      description_website, 
+      description_security_contact, 
+      description_details, 
+      commission, 
+      addr AS babylon_pk, 
+      btc_pk,
+      slashed_babylon_height,
+      slashed_btc_height,
+      consumer_id
+    FROM table_initial_finality_providers
+
+    UNION ALL
+    
+    SELECT 
+      description_moniker, 
+      description_identity, 
+      description_website, 
+      description_security_contact, 
+      description_details, 
+      commission, 
+      babylon_pk_key AS babylon_pk,
+      btc_pk,
+      slashed_babylon_height,
+      slashed_btc_height,
+      consumer_id
+    FROM events_EventNewFinalityProvider
+    WHERE block_height <= $1
+	`
 	sqlQueryFinalizedBlockByHeight = `
 		SELECT block_hash, block_height, block_timestamp FROM table_finalized_blocks WHERE block_height = $1
 	`
@@ -320,5 +495,8 @@ const (
       unbonding_time, 
       params_version 
     FROM table_btc_delegations WHERE staking_tx_hash = $1
+	`
+	sqlQueryVotingPowerDistAtBlock = `
+		SELECT btc_pk, voting_power FROM func_voting_power_dist_at_block($1)
 	`
 )

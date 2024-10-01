@@ -30,8 +30,12 @@ _TODO: consider if we need seperate queries by btc block vs babylon block vs tim
    1. Babylon RPC endpoint
    2. Consumer chain id - `consumer_id`
 2. Startup - Populate start info
-   1. Fetch all finality providers for a consumer chain with `QueryConsumerFinalityProviders` (passing `consumer_id`), and populate `table_initial_finality_providers`
-   2. Loop through each fp and fetch all delegations, storing to `table_initial_delegations`
+   1. Fetch and store chain configs
+      1. BTC confirmation depth
+      2. Checkpoint finalization timeout
+      3. Covenant quorum
+   2. Fetch all finality providers for a consumer chain with `QueryConsumerFinalityProviders` (passing `consumer_id`), and populate `table_initial_finality_providers`
+   3. Loop through each fp and fetch all delegations, storing to `table_initial_delegations`
 3. Chain poller: Loop through each block sequentially and parse relevant events, populating tables
    1. Case `EventNewFinalityProvider` : if `consumer_id` matches, store to `table_EventNewFinalityProvider`
    2. Case `EventBTCDelegationStateUpdate`
@@ -43,13 +47,28 @@ _TODO: consider if we need seperate queries by btc block vs babylon block vs tim
 4. Queries
    1. Get all finality providers at block
       1. Query `table_initial_finality_providers` and `table_EventNewFinalityProvider` for all `block_height <= $block`
-      2. Deduct voting power of FPs based on `events_EventPowerDistUpdate` at block `block_height <= $block`
-      3. Remove any delegations that have been slashed by `EventSlashedFinalityProvider` (only consider FPs in our consumer chain)
-      4. Remove any FPs with 0 voting power
+      2. Remove any delegations that have been slashed by `EventSlashedFinalityProvider` at block `block_height <= $block` (only consider FPs in our consumer chain)
+      3. Check if any FPs are jailed at block `$block`, and if so, remove them from the list of finality providers
+      4. Cleanup: Remove any FPs with 0 voting power
    2. Get all delegations at block
       1. Start with `table_initial_delegations` and `table_btc_delegations`
       2. Query `table_EventBTCDelegationStateUpdate` for all `block_height <= $block`, filtering for delegations to FPs in our consumer chain, and apply deltas
-      3. Exclude all naturally unbound delegations based on the timelock date
-   3. Check if any FPs are jailed, and if so, remove them from the list of finality providers
-   4. Get voting power distribution at block based on the above
-   5. Calculate whether block is finalized based on the above
+      3. Check whether each delegation is still active at given block height based on delegation info and chain configs
+      4. Exclude all naturally unbound delegations based on the timelock date
+   3. Get voting power distribution at block based on the above
+
+Existing logic
+
+1. Check if CW contract is enabled, and pass through if not
+2. Check whether btc staking is activated at height
+3. [Indexer] Query all FPs for the consumer chain
+4. [Indexer] Get voting powers (uint64) of all FPs (string pk hex)
+   1. Query all delegations of each FP
+   2. Check if each delegation is active at given height
+   3. Sum up active delegations to get voting power
+5. Calculate total power
+6. Calculate total power of voted FPs
+
+Test strategy
+
+1. Create mock stream of events and expect results

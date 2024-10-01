@@ -20,20 +20,20 @@ type EventNewFinalityProvider struct {
 	Commission                 string
 	BabylonPkKey               string
 	BtcPk                      string
-	PopBtcSigType              string
-	PopBabylonSig              string
-	PopBtcSig                  string
-	MasterPubRand              string
-	RegisteredEpoch            string
-	SlashedBabylonHeight       string
-	SlashedBtcHeight           string
-	ConsumerId                 string
-	MsgIndex                   string
+	// PopBtcSigType              string
+	// PopBabylonSig              string
+	// PopBtcSig                  string
+	// MasterPubRand              string
+	// RegisteredEpoch            string
+	SlashedBabylonHeight string
+	SlashedBtcHeight     string
+	ConsumerId           string
+	// MsgIndex                   string
 }
 
 type EventBTCDelegationStateUpdate struct {
-	StakingTxHash string `json:"staking_tx_hash"`
-	NewState      string `json:"new_state"`
+	StakingTxHash string              `json:"staking_tx_hash"`
+	NewState      BTCDelegationStatus `json:"new_state"`
 }
 
 type EventSlashedFinalityProvider struct {

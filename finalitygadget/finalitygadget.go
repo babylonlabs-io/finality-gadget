@@ -55,7 +55,7 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.L
 		&bbnConfig,
 		logger,
 	)
-	bbnClient, err := fgbbnclient.NewBabylonClient(cfg.BBNConfig, logger)
+	bbnClient, err := fgbbnclient.NewBabylonClient(&cfg.BBNConfig, logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Babylon client: %w", err)
 	}

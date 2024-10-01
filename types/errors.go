@@ -8,4 +8,5 @@ var (
 	ErrBtcStakingNotActivated     = errors.New("BTC staking is not activated for the consumer chain")
 	ErrActivatedTimestampNotFound = errors.New("BTC staking activated timestamp not found")
 	ErrBTCDelegationNotFound      = errors.New("BTC delegation info not found")
+	ErrInvalidBTCDelegationState  = errors.New("invalid BTC delegation state")
 )

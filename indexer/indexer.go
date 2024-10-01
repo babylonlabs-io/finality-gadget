@@ -15,6 +15,7 @@ import (
 	"github.com/babylonlabs-io/finality-gadget/bbnclient"
 	cfg "github.com/babylonlabs-io/finality-gadget/config"
 	"github.com/babylonlabs-io/finality-gadget/db"
+	"github.com/babylonlabs-io/finality-gadget/types"
 	ctypes "github.com/cometbft/cometbft/rpc/core/types"
 )
 
@@ -27,15 +28,15 @@ type Indexer struct {
 	rpcClient cosmosclient.Client
 	db        db.IDatabaseHandler
 	logger    *zap.Logger
-	cfg       *cfg.Config
+	cfg       *cfg.BBNConfig
 
 	pollInterval    time.Duration
 	processedHeight int64
 }
 
-func NewIndexer(cfg *cfg.Config, db db.IDatabaseHandler, logger *zap.Logger) (*Indexer, error) {
+func NewIndexer(cfg *cfg.BBNConfig, db db.IDatabaseHandler, logger *zap.Logger) (*Indexer, error) {
 	// Init Babylon client
-	bbnClient, err := bbnclient.NewBabylonClient(cfg.BBNConfig, logger)
+	bbnClient, err := bbnclient.NewBabylonClient(cfg, logger)
 	if err != nil {
 		logger.Error("Failed to create Babylon client", zap.Error(err))
 		return nil, err
@@ -68,13 +69,31 @@ func (idx *Indexer) LatestBlockHeight() (int64, error) {
 // Sync fetches all finality providers and delegations at the current block and saves them to the database.
 // It begins at the start height and continues until the latest block height.
 func (idx *Indexer) Sync() error {
+	// Fetch and store chain configs
+	btccheckpointParams, err := idx.bbnClient.QueryBTCCheckpointParams()
+	if err != nil {
+		return err
+	}
+	btcstakingParams, err := idx.bbnClient.QueryBTCStakingParams()
+	if err != nil {
+		return err
+	}
+	kValue := btccheckpointParams.GetParams().BtcConfirmationDepth
+	wValue := btccheckpointParams.GetParams().CheckpointFinalizationTimeout
+	covQuorum := btcstakingParams.GetParams().CovenantQuorum
+	err = idx.db.SaveChainParams(kValue, wValue, covQuorum)
+	if err != nil {
+		return err
+	}
+
+	// Fetch last processed height
 	latestHeight, err := idx.LatestBlockHeight()
 	if err != nil {
 		return err
 	}
 
 	// Get latest fps and save them to db
-	fps, err := idx.bbnClient.QueryAllFinalityProviders(idx.cfg.BBNConfig.BabylonChainId)
+	fps, err := idx.bbnClient.QueryAllFinalityProviders(idx.cfg.BabylonChainId)
 	if err != nil {
 		return err
 	}
@@ -120,7 +139,7 @@ func (idx *Indexer) Poll(ctx context.Context) error {
 				continue
 			}
 
-			err = idx.CollectBlocks(idx.processedHeight+1, latestHeight)
+			err = idx.ProcessBlocks(idx.processedHeight+1, latestHeight)
 			if err != nil {
 				return err
 			}
@@ -131,7 +150,7 @@ func (idx *Indexer) Poll(ctx context.Context) error {
 // Gathers transactions for all blocks starting from a specific height.
 // Each group of block transactions is saved sequentially after being collected.
 // Adapted from https://github.com/ignite/cli
-func (idx *Indexer) CollectBlocks(fromHeight int64, toHeight int64) error {
+func (idx *Indexer) ProcessBlocks(fromHeight int64, toHeight int64) error {
 	ctx := context.Background()
 	tc := make(chan []Tx)
 	wg, _ := errgroup.WithContext(ctx)
@@ -140,7 +159,7 @@ func (idx *Indexer) CollectBlocks(fromHeight int64, toHeight int64) error {
 	// The transactions channel is closed by the client when all transactions
 	// are collected or when an error occurs during the collection.
 	wg.Go(func() error {
-		err := idx.CollectTxs(ctx, fromHeight, toHeight, tc)
+		err := idx.collectTxs(ctx, fromHeight, toHeight, tc)
 		if err != nil {
 			idx.logger.Error("Error collecting transactions", zap.Error(err))
 			return err
@@ -154,7 +173,7 @@ func (idx *Indexer) CollectBlocks(fromHeight int64, toHeight int64) error {
 	// fail to be saved.
 	wg.Go(func() error {
 		for txs := range tc {
-			if err := idx.CollectEvents(ctx, txs); err != nil {
+			if err := idx.ProcessTransactions(ctx, txs); err != nil {
 				idx.logger.Error("Error parsing events", zap.Error(err))
 				return err
 			}
@@ -173,7 +192,7 @@ func (idx *Indexer) CollectBlocks(fromHeight int64, toHeight int64) error {
 // The channel might contain the transactions collected successfully up until that point
 // when an error is returned.
 // Adapted from https://github.com/ignite/cli
-func (idx *Indexer) CollectTxs(ctx context.Context, fromHeight int64, toHeight int64, tc chan<- []Tx) error {
+func (idx *Indexer) collectTxs(ctx context.Context, fromHeight int64, toHeight int64, tc chan<- []Tx) error {
 	defer close(tc)
 
 	if fromHeight == 0 {
@@ -297,7 +316,7 @@ func (idx *Indexer) getBlockTxsByPage(ctx context.Context, page int, query strin
 	return res.Txs, res.TotalCount, nil
 }
 
-func (idx *Indexer) CollectEvents(ctx context.Context, txs []Tx) error {
+func (idx *Indexer) ProcessTransactions(ctx context.Context, txs []Tx) error {
 	// Start atomic insert tx
 	pgTx, err := idx.db.BeginTx()
 	if err != nil {
@@ -315,11 +334,39 @@ func (idx *Indexer) CollectEvents(ctx context.Context, txs []Tx) error {
 		}
 		// Loop through events
 		for _, evt := range events {
-			// Parse event and handle
-			err := idx.ParseEvent(pgTx, txInfo, evt)
+			// Parse and handle event
+			err := idx.ProcessEvent(pgTx, txInfo, &evt)
 			if err != nil {
 				return err
 			}
+		}
+	}
+
+	return pgTx.Commit(ctx)
+}
+
+type EventWithTxInfo struct {
+	Event  *Event
+	TxInfo *types.TxInfo
+}
+
+// Mock function used for testing only
+func (idx *Indexer) ProcessMockEvents(ctx context.Context, evts []EventWithTxInfo) error {
+	idx.logger.Info("Processing mock events...")
+	// Start atomic insert tx
+	pgTx, err := idx.db.BeginTx()
+	if err != nil {
+		return fmt.Errorf("unable to start DB tx: %v", err)
+	}
+
+	defer pgTx.Rollback(ctx)
+
+	// Loop through events
+	for _, evt := range evts {
+		// Parse and handle event
+		err := idx.ProcessEvent(pgTx, evt.TxInfo, evt.Event)
+		if err != nil {
+			return err
 		}
 	}
 

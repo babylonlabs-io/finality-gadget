@@ -82,9 +82,20 @@ func NewPostgresHandler(cfg *cfg.DBConfig, logger *zap.Logger) (*PostgresHandler
 
 func (pg *PostgresHandler) CreateInitialSchema() error {
 	pg.logger.Info("Initialising DB...")
-	_, err := pg.conn.Exec(context.Background(), sqlCreateInitialTables)
+	// Must create types before creating tables
+	_, err := pg.conn.Exec(context.Background(), sqlCreateTypeBTCDelegationStatus)
+	if err != nil {
+		pg.logger.Error("Failed to create type BTCDelegationStatus", zap.Error(err))
+		return err
+	}
+	_, err = pg.conn.Exec(context.Background(), sqlCreateInitialTables)
 	if err != nil {
 		pg.logger.Error("Failed to create initial tables", zap.Error(err))
+		return err
+	}
+	_, err = pg.conn.Exec(context.Background(), sqlCreateFuncVotingPowerDistAtBlock)
+	if err != nil {
+		pg.logger.Error("Failed to create function voting power dist at block", zap.Error(err))
 		return err
 	}
 	return nil
@@ -221,6 +232,22 @@ func (pg *PostgresHandler) RollbackTx(tx pgx.Tx) error {
 // 	return nil
 // }
 
+// Saves chain params
+func (pg *PostgresHandler) SaveChainParams(kValue uint64, wValue uint64, covQuorum uint32) error {
+	_, err := pg.conn.Exec(
+		context.Background(),
+		sqlInsertChainParams,
+		kValue,
+		wValue,
+		covQuorum,
+	)
+	if err != nil {
+		pg.logger.Error("Failed to save chain params", zap.Error(err))
+		return err
+	}
+	return nil
+}
+
 // Saves initial fps
 func (pg *PostgresHandler) SaveInitialFinalityProviders(fps []*bsctypes.FinalityProviderResponse) error {
 	pg.logger.Info("Saving initial finality providers...")
@@ -242,12 +269,12 @@ func (pg *PostgresHandler) SaveInitialFinalityProviders(fps []*bsctypes.Finality
 			fp.Commission,
 			fp.Addr,
 			fp.BtcPk,
-			fp.Pop.BtcSigType,
-			fp.Pop.BtcSig,
+			// fp.Pop.BtcSigType,
+			// fp.Pop.BtcSig,
 			fp.SlashedBabylonHeight,
 			fp.SlashedBtcHeight,
-			fp.Height,
-			fp.VotingPower,
+			// fp.VotingPower,
+			// fp.Height,
 			fp.ConsumerId,
 		)
 		if err != nil {
@@ -336,15 +363,9 @@ func (pg *PostgresHandler) SaveEventNewFinalityProvider(tx pgx.Tx, txInfo *types
 		evt.Commission,
 		evt.BabylonPkKey,
 		evt.BtcPk,
-		evt.PopBtcSigType,
-		evt.PopBabylonSig,
-		evt.PopBtcSig,
-		evt.MasterPubRand,
-		evt.RegisteredEpoch,
 		evt.SlashedBabylonHeight,
 		evt.SlashedBtcHeight,
 		evt.ConsumerId,
-		evt.MsgIndex,
 	)
 	if err != nil {
 		pg.logger.Error("Failed to save event", zap.Error(err))
@@ -460,6 +481,44 @@ func (pg *PostgresHandler) SaveBTCDelegationInfo(del *types.BTCDelegation) error
 	return nil
 }
 
+func (pg *PostgresHandler) GetFinalityProviders(blockHeight uint64) ([]types.EventNewFinalityProvider, error) {
+	rows, err := pg.conn.Query(context.Background(), sqlQueryFinalityProviders, blockHeight)
+	if err != nil {
+		pg.logger.Error("Failed to get finality providers", zap.Error(err))
+		return nil, err
+	}
+	defer rows.Close()
+
+	var fps []types.EventNewFinalityProvider
+	for rows.Next() {
+		var fp types.EventNewFinalityProvider
+		err := rows.Scan(
+			&fp.DescriptionMoniker,
+			&fp.DescriptionIdentity,
+			&fp.DescriptionWebsite,
+			&fp.DescriptionSecurityContact,
+			&fp.DescriptionDetails,
+			&fp.Commission,
+			&fp.BabylonPkKey,
+			&fp.BtcPk,
+			// &fp.PopBtcSigType,
+			// &fp.PopBtcSig,
+			// &fp.MasterPubRand,
+			// &fp.RegisteredEpoch,
+			&fp.SlashedBabylonHeight,
+			&fp.SlashedBtcHeight,
+			&fp.ConsumerId,
+			// &fp.MsgIndex,
+		)
+		if err != nil {
+			pg.logger.Error("Failed to scan finality provider", zap.Error(err))
+			return nil, err
+		}
+		fps = append(fps, fp)
+	}
+	return fps, nil
+}
+
 func (pg *PostgresHandler) GetBTCDelegationInfo(stakingTxHash string) (*types.BTCDelegation, error) {
 	row := pg.conn.QueryRow(context.Background(), sqlQueryBTCDelegationInfo, stakingTxHash)
 	var del types.BTCDelegation
@@ -490,16 +549,42 @@ func (pg *PostgresHandler) GetBTCDelegationInfo(stakingTxHash string) (*types.BT
 	return &del, nil
 }
 
+func (pg *PostgresHandler) GetVotingPowerDistAtBlock(blockHeight uint64) ([]*types.FPVotingPower, error) {
+	vpDist, err := pg.conn.Query(context.Background(), sqlQueryVotingPowerDistAtBlock, blockHeight)
+	if err != nil {
+		pg.logger.Error("Failed to get voting power distribution at block", zap.Error(err))
+		return nil, err
+	}
+	defer vpDist.Close()
+
+	vpDistList := make([]*types.FPVotingPower, 0)
+	for vpDist.Next() {
+		var btcPk string
+		var votingPower int
+		err := vpDist.Scan(&btcPk, &votingPower)
+		if err != nil {
+			pg.logger.Error("Failed to scan voting power distribution", zap.Error(err))
+			return nil, err
+		}
+		vpDistList = append(vpDistList, &types.FPVotingPower{
+			BtcPk:       btcPk,
+			VotingPower: uint64(votingPower),
+		})
+	}
+	return vpDistList, nil
+}
+
 func (pg *PostgresHandler) Close() error {
 	pg.logger.Info("Closing embedded postgres...")
 	err := pg.conn.Close(context.Background())
 	if err != nil {
 		pg.logger.Error("Failed to close connection to postgres", zap.Error(err))
-		return err
 	}
 	err = pg.pg.Stop()
 	if err != nil {
 		pg.logger.Error("Failed to stop embedded postgres", zap.Error(err))
+	}
+	if err != nil {
 		return err
 	}
 	return nil
