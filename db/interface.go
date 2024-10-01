@@ -9,6 +9,7 @@ type IDatabaseHandler interface {
 	GetBlockByHash(hash string) (*types.Block, error)
 	QueryIsBlockFinalizedByHeight(height uint64) (bool, error)
 	QueryIsBlockFinalizedByHash(hash string) (bool, error)
+	QueryEarliestConsecutivelyFinalizedBlock() (*types.Block, error)
 	QueryLatestFinalizedBlock() (*types.Block, error)
 	GetActivatedTimestamp() (uint64, error)
 	SaveActivatedTimestamp(timestamp uint64) error

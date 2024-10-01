@@ -126,6 +126,21 @@ func (mr *MockIDatabaseHandlerMockRecorder) InsertBlock(block any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertBlock", reflect.TypeOf((*MockIDatabaseHandler)(nil).InsertBlock), block)
 }
 
+// QueryEarliestConsecutivelyFinalizedBlock mocks base method.
+func (m *MockIDatabaseHandler) QueryEarliestConsecutivelyFinalizedBlock() (*types.Block, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryEarliestConsecutivelyFinalizedBlock")
+	ret0, _ := ret[0].(*types.Block)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryEarliestConsecutivelyFinalizedBlock indicates an expected call of QueryEarliestConsecutivelyFinalizedBlock.
+func (mr *MockIDatabaseHandlerMockRecorder) QueryEarliestConsecutivelyFinalizedBlock() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryEarliestConsecutivelyFinalizedBlock", reflect.TypeOf((*MockIDatabaseHandler)(nil).QueryEarliestConsecutivelyFinalizedBlock))
+}
+
 // QueryIsBlockFinalizedByHash mocks base method.
 func (m *MockIDatabaseHandler) QueryIsBlockFinalizedByHash(hash string) (bool, error) {
 	m.ctrl.T.Helper()

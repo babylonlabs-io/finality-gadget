@@ -336,7 +336,40 @@ func (fg *FinalityGadget) QueryTransactionStatus(txHash string) (*types.Transact
 		Status:           status,
 		BabylonFinalized: isBabylonFinalized || status == types.FinalityStatusFinalized,
 	}, nil
+}
 
+func (fg *FinalityGadget) QueryLatestBlockInfo() (*types.LatestBlockInfo, error) {
+	// Query latest block number
+	ctx := context.Background()
+	latestBlock, err := fg.l2Client.HeaderByNumber(ctx, big.NewInt(ethrpc.LatestBlockNumber.Int64()))
+	if err != nil {
+		return nil, err
+	}
+
+	// Query latest btc finalized block number
+	latestBtcFinalizedBlock, err := fg.QueryLatestFinalizedBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	// Query earliest btc finalized block number
+	earliestBtcFinalizedBlock, err := fg.db.QueryEarliestConsecutivelyFinalizedBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	// Query latest eth finalized block number
+	latestEthFinalizedBlock, err := fg.l2Client.HeaderByNumber(ctx, big.NewInt(ethrpc.FinalizedBlockNumber.Int64()))
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.LatestBlockInfo{
+		LatestBlockHeight:               latestBlock.Number.Uint64(),
+		LatestBtcFinalizedBlockHeight:   latestBtcFinalizedBlock.BlockHeight,
+		EarliestBtcFinalizedBlockHeight: earliestBtcFinalizedBlock.BlockHeight,
+		LatestEthFinalizedBlockHeight:   latestEthFinalizedBlock.Number.Uint64(),
+	}, nil
 }
 
 func (fg *FinalityGadget) QueryIsBlockFinalizedByHeight(height uint64) (bool, error) {

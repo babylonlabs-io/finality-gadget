@@ -319,3 +319,18 @@ func (mr *MockIEthL2ClientMockRecorder) HeaderByNumber(ctx, number any) *gomock.
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HeaderByNumber", reflect.TypeOf((*MockIEthL2Client)(nil).HeaderByNumber), ctx, number)
 }
+
+// TransactionReceipt mocks base method.
+func (m *MockIEthL2Client) TransactionReceipt(ctx context.Context, txHash string) (*types0.Receipt, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TransactionReceipt", ctx, txHash)
+	ret0, _ := ret[0].(*types0.Receipt)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TransactionReceipt indicates an expected call of TransactionReceipt.
+func (mr *MockIEthL2ClientMockRecorder) TransactionReceipt(ctx, txHash any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransactionReceipt", reflect.TypeOf((*MockIEthL2Client)(nil).TransactionReceipt), ctx, txHash)
+}

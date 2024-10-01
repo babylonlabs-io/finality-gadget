@@ -188,6 +188,62 @@ func (bb *BBoltHandler) QueryIsBlockFinalizedByHash(hash string) (bool, error) {
 	return bb.QueryIsBlockFinalizedByHeight(blockHeight)
 }
 
+func (bb *BBoltHandler) QueryEarliestConsecutivelyFinalizedBlock() (*types.Block, error) {
+	// Get the latest finalized block
+	latestBlock, err := bb.QueryLatestFinalizedBlock()
+	if err != nil {
+		return nil, err
+	}
+	latestBlockHeight := latestBlock.BlockHeight
+
+	var earliestConsecutiveBlock *types.Block
+
+	// Use a cursor to efficiently scan the blocks bucket backwards
+	err = bb.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(blocksBucket))
+		if b == nil {
+			return errors.New("blocks bucket not found")
+		}
+
+		c := b.Cursor()
+
+		// Start by seeking to the latest block height
+		seekKey := bb.itob(latestBlockHeight)
+		k, _ := c.Seek(seekKey)
+		if k == nil {
+			return types.ErrBlockNotFound
+		}
+
+		// Iterate backwards to find the earliest consecutive block
+		expectedHeight := latestBlockHeight
+		for k, v := c.Last(); k != nil; k, v = c.Prev() {
+			blockHeight := bb.btoi(k)
+
+			// If the block height is not consecutive, stop
+			if blockHeight != expectedHeight {
+				break
+			}
+
+			// Unmarshal the block data
+			var block types.Block
+			if err := json.Unmarshal(v, &block); err != nil {
+				return err
+			}
+			earliestConsecutiveBlock = &block
+
+			// Decrease the expected height for the next iteration
+			expectedHeight--
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return earliestConsecutiveBlock, nil
+}
+
 func (bb *BBoltHandler) QueryLatestFinalizedBlock() (*types.Block, error) {
 	var latestBlockHeight uint64
 
