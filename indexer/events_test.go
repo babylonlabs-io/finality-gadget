@@ -126,12 +126,24 @@ func TestParseEventNewFinalityProvider(t *testing.T) {
 	err = idx.ProcessMockEvents(ctx, evts)
 	require.NoError(t, err)
 
-	// fetch fps
+	// get fps
 	fps, err := idx.db.GetFinalityProviders(uint64(txInfo.BlockHeight))
 	idx.logger.Info("Fetched fps", zap.Any("fps", fps))
 	require.NoError(t, err)
+
+	// run checks
 	require.Equal(t, 1, len(fps))
-	require.Equal(t, mockFp, fps[0])
+	require.Equal(t, mockFp.Description.Moniker, fps[0].DescriptionMoniker)
+	require.Equal(t, mockFp.Description.Identity, fps[0].DescriptionIdentity)
+	require.Equal(t, mockFp.Description.Website, fps[0].DescriptionWebsite)
+	require.Equal(t, mockFp.Description.SecurityContact, fps[0].DescriptionSecurityContact)
+	require.Equal(t, mockFp.Description.Details, fps[0].DescriptionDetails)
+	require.Equal(t, mockFp.Commission, fps[0].Commission)
+	require.Equal(t, mockFp.BabylonPk.Key, fps[0].BabylonPkKey)
+	require.Equal(t, mockFp.BtcPk, fps[0].BtcPk)
+	require.Equal(t, mockFp.SlashedBabylonHeight, fps[0].SlashedBabylonHeight)
+	require.Equal(t, mockFp.SlashedBtcHeight, fps[0].SlashedBtcHeight)
+	require.Equal(t, mockFp.ConsumerId, fps[0].ConsumerId)
 }
 
 // Internal helpers
@@ -142,9 +154,6 @@ func mockFp() types.FinalityProvider {
 		Commission:           "0.1",
 		BabylonPk:            mockBabylonPk(),
 		BtcPk:                "146e665eb6220a4a9db29f4bdf474af014f73ace48b959a098483774af490cc1",
-		Pop:                  mockPop(),
-		MasterPubRand:        "",
-		RegisteredEpoch:      "",
 		SlashedBabylonHeight: "0",
 		SlashedBtcHeight:     "0",
 		ConsumerId:           "test-chain",
@@ -161,16 +170,8 @@ func mockFpDescription() types.FinalityProviderDescription {
 	}
 }
 
-func mockBabylonPk() types.FinaltiyProviderBabylonPk {
-	return types.FinaltiyProviderBabylonPk{
+func mockBabylonPk() types.FinalityProviderBabylonPk {
+	return types.FinalityProviderBabylonPk{
 		Key: "tT3pEG0D5mhEZ2bwiEVhRidQFSpD65ns5VJmD8GPeLA",
-	}
-}
-
-func mockPop() types.FinalityProviderPop {
-	return types.FinalityProviderPop{
-		BtcSigType: "BIP340",
-		BabylonSig: "VGZXbmx0ay8zWVR3UmplZ291V1VGSTI5STZ3cE95NXhDeGFyWVoyOXp5M05lbEc5U2gxRUtEN1pGcGxYelJ2RQ==",
-		BtcSig:     "NWZhM2FsLzB1WHhtdXhTRlZFdUsxUStXMGZRNytxOGhVcWNYOEs0MTBGbW1ybHE1ZC9MVzFTOU1IaVVTeFBtbA==",
 	}
 }

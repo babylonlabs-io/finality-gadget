@@ -3,11 +3,8 @@ package types
 type FinalityProvider struct {
 	Description          FinalityProviderDescription `json:"description"`
 	Commission           string                      `json:"commission"`
-	BabylonPk            FinaltiyProviderBabylonPk   `json:"babylon_pk"`
+	BabylonPk            FinalityProviderBabylonPk   `json:"babylon_pk"`
 	BtcPk                string                      `json:"btc_pk"`
-	Pop                  FinalityProviderPop         `json:"pop"`
-	MasterPubRand        string                      `json:"master_pub_rand"`
-	RegisteredEpoch      string                      `json:"registered_epoch"`
 	SlashedBabylonHeight string                      `json:"slashed_babylon_height"`
 	SlashedBtcHeight     string                      `json:"slashed_btc_height"`
 	ConsumerId           string                      `json:"consumer_id"`
@@ -21,7 +18,7 @@ type FinalityProviderDescription struct {
 	Details         string `json:"details"`
 }
 
-type FinaltiyProviderBabylonPk struct {
+type FinalityProviderBabylonPk struct {
 	Key string `json:"key"`
 }
 
