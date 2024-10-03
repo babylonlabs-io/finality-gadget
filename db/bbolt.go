@@ -23,7 +23,8 @@ var _ IDatabaseHandler = &BBoltHandler{}
 const (
 	blocksBucket          = "blocks"
 	blockHeightsBucket    = "block_heights"
-	latestBlockBucket     = "latest_block"
+	indexerBucket         = "indexer"
+	earliestBlockKey      = "earliest"
 	latestBlockKey        = "latest"
 	activatedTimestampKey = "activated_timestamp"
 )
@@ -53,7 +54,7 @@ func NewBBoltHandler(path string, logger *zap.Logger) (*BBoltHandler, error) {
 func (bb *BBoltHandler) CreateInitialSchema() error {
 	bb.logger.Info("Initialising DB...")
 	return bb.db.Update(func(tx *bolt.Tx) error {
-		buckets := []string{blocksBucket, blockHeightsBucket, latestBlockBucket}
+		buckets := []string{blocksBucket, blockHeightsBucket, indexerBucket}
 		for _, bucket := range buckets {
 			if err := bb.tryCreateBucket(tx, bucket); err != nil {
 				return err
@@ -91,6 +92,24 @@ func (bb *BBoltHandler) InsertBlock(block *types.Block) error {
 		return err
 	}
 
+	// Get current earliest block
+	// If it is unset, update earliest block
+	earliestBlock, err := bb.QueryEarliestFinalizedBlock()
+	if earliestBlock == nil || errors.Is(err, types.ErrBlockNotFound) {
+		err = bb.db.Update(func(tx *bolt.Tx) error {
+			b := tx.Bucket([]byte(indexerBucket))
+			return b.Put([]byte(earliestBlockKey), bb.itob(block.BlockHeight))
+		})
+		if err != nil {
+			bb.logger.Error("Error updating earliest block", zap.Error(err))
+			return err
+		}
+	}
+	if err != nil {
+		bb.logger.Error("Error getting earliest block", zap.Error(err))
+		return err
+	}
+
 	// Get current latest block
 	latestBlock, err := bb.QueryLatestFinalizedBlock()
 	if latestBlock == nil {
@@ -103,7 +122,7 @@ func (bb *BBoltHandler) InsertBlock(block *types.Block) error {
 
 	// Update latest block if it's the latest
 	err = bb.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(latestBlockBucket))
+		b := tx.Bucket([]byte(indexerBucket))
 		if err != nil {
 			bb.logger.Error("Error getting latest block", zap.Error(err))
 			return err
@@ -188,12 +207,29 @@ func (bb *BBoltHandler) QueryIsBlockFinalizedByHash(hash string) (bool, error) {
 	return bb.QueryIsBlockFinalizedByHeight(blockHeight)
 }
 
+func (bb *BBoltHandler) QueryEarliestFinalizedBlock() (*types.Block, error) {
+	var earliestBlockHeight uint64
+	err := bb.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(indexerBucket))
+		v := b.Get([]byte(earliestBlockKey))
+		if v == nil {
+			return types.ErrBlockNotFound
+		}
+		earliestBlockHeight = bb.btoi(v)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return bb.GetBlockByHeight(earliestBlockHeight)
+}
+
 func (bb *BBoltHandler) QueryLatestFinalizedBlock() (*types.Block, error) {
 	var latestBlockHeight uint64
 
 	// Fetch latest block height
 	err := bb.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(latestBlockBucket))
+		b := tx.Bucket([]byte(indexerBucket))
 		v := b.Get([]byte(latestBlockKey))
 		if v == nil {
 			return types.ErrBlockNotFound
@@ -217,7 +253,7 @@ func (bb *BBoltHandler) QueryLatestFinalizedBlock() (*types.Block, error) {
 func (bb *BBoltHandler) GetActivatedTimestamp() (uint64, error) {
 	var timestamp uint64
 	err := bb.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(latestBlockBucket))
+		b := tx.Bucket([]byte(indexerBucket))
 		v := b.Get([]byte(activatedTimestampKey))
 		if v == nil {
 			return types.ErrActivatedTimestampNotFound
@@ -233,7 +269,7 @@ func (bb *BBoltHandler) GetActivatedTimestamp() (uint64, error) {
 
 func (bb *BBoltHandler) SaveActivatedTimestamp(timestamp uint64) error {
 	return bb.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(latestBlockBucket))
+		b := tx.Bucket([]byte(indexerBucket))
 		return b.Put([]byte(activatedTimestampKey), bb.itob(timestamp))
 	})
 }

@@ -33,6 +33,28 @@ func (s *Server) txStatusHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) chainSyncStatusHandler(w http.ResponseWriter, r *http.Request) {
+	// Get block from rpc.
+	chainSyncStatus, err := s.rpcServer.fg.QueryChainSyncStatus()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse, err := json.Marshal(chainSyncStatus)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(jsonResponse)
+	if err != nil {
+		s.logger.Error("Failed to write response", zap.Error(err))
+	}
+}
+
 func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
 	response := "Finality gadget is healthy"
 	_, err := w.Write([]byte(response))

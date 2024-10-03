@@ -185,6 +185,41 @@ func TestQueryIsBlockFinalizedByHashForNonExistentBlock(t *testing.T) {
 	assert.Equal(t, isFinalized, false)
 }
 
+func TestQueryEarliestFinalizedBlock(t *testing.T) {
+	handler, cleanup := setupDB(t)
+	defer cleanup()
+
+	// Insert two blocks
+	first := &types.Block{
+		BlockHeight:    1,
+		BlockHash:      "0x123",
+		BlockTimestamp: 1000,
+	}
+	second := &types.Block{
+		BlockHeight:    2,
+		BlockHash:      "0x456",
+		BlockTimestamp: 1050,
+	}
+	third := &types.Block{
+		BlockHeight:    3,
+		BlockHash:      "0x789",
+		BlockTimestamp: 1100,
+	}
+	err := handler.InsertBlock(first)
+	assert.NoError(t, err)
+	err = handler.InsertBlock(second)
+	assert.NoError(t, err)
+	err = handler.InsertBlock(third)
+	assert.NoError(t, err)
+
+	// Query earliest consecutively finalized block
+	earliestBlock, err := handler.QueryEarliestFinalizedBlock()
+	assert.NoError(t, err)
+	assert.Equal(t, earliestBlock.BlockHeight, first.BlockHeight)
+	assert.Equal(t, earliestBlock.BlockHash, first.BlockHash)
+	assert.Equal(t, earliestBlock.BlockTimestamp, first.BlockTimestamp)
+}
+
 func TestQueryLatestFinalizedBlock(t *testing.T) {
 	handler, cleanup := setupDB(t)
 	defer cleanup()

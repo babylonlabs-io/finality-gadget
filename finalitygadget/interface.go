@@ -75,4 +75,7 @@ type IFinalityGadget interface {
 
 	// QueryTransactionStatus returns the finality status of a transaction
 	QueryTransactionStatus(txHash string) (*types.TransactionInfo, error)
+
+	// QueryChainSyncStatus returns the latest finalized blocks for display by the finality explorer
+	QueryChainSyncStatus() (*types.ChainSyncStatus, error)
 }
