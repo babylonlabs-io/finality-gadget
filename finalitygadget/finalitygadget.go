@@ -353,7 +353,7 @@ func (fg *FinalityGadget) QueryChainSyncStatus() (*types.ChainSyncStatus, error)
 	}
 
 	// Query earliest btc finalized block number
-	earliestBtcFinalizedBlock, err := fg.db.QueryEarliestConsecutivelyFinalizedBlock()
+	earliestBtcFinalizedBlock, err := fg.db.QueryEarliestFinalizedBlock()
 	if err != nil {
 		return nil, err
 	}
