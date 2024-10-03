@@ -338,7 +338,7 @@ func (fg *FinalityGadget) QueryTransactionStatus(txHash string) (*types.Transact
 	}, nil
 }
 
-func (fg *FinalityGadget) QueryLatestBlockInfo() (*types.LatestBlockInfo, error) {
+func (fg *FinalityGadget) QueryChainSyncStatus() (*types.ChainSyncStatus, error) {
 	// Query latest block number
 	ctx := context.Background()
 	latestBlock, err := fg.l2Client.HeaderByNumber(ctx, big.NewInt(ethrpc.LatestBlockNumber.Int64()))
@@ -364,7 +364,7 @@ func (fg *FinalityGadget) QueryLatestBlockInfo() (*types.LatestBlockInfo, error)
 		return nil, err
 	}
 
-	return &types.LatestBlockInfo{
+	return &types.ChainSyncStatus{
 		LatestBlockHeight:               latestBlock.Number.Uint64(),
 		LatestBtcFinalizedBlockHeight:   latestBtcFinalizedBlock.BlockHeight,
 		EarliestBtcFinalizedBlockHeight: earliestBtcFinalizedBlock.BlockHeight,

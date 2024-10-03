@@ -6,7 +6,7 @@ type Block struct {
 	BlockTimestamp uint64 `json:"block_timestamp" description:"block timestamp"`
 }
 
-type LatestBlockInfo struct {
+type ChainSyncStatus struct {
 	LatestBlockHeight               uint64 `json:"latest_block"`
 	LatestBtcFinalizedBlockHeight   uint64 `json:"latest_btc_finalized_block"`
 	EarliestBtcFinalizedBlockHeight uint64 `json:"earliest_btc_finalized_block"`

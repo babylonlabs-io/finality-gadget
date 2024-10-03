@@ -33,15 +33,15 @@ func (s *Server) txStatusHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) latestBlockInfoHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) chainSyncStatusHandler(w http.ResponseWriter, r *http.Request) {
 	// Get block from rpc.
-	latestBlockInfo, err := s.rpcServer.fg.QueryLatestBlockInfo()
+	chainSyncStatus, err := s.rpcServer.fg.QueryChainSyncStatus()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	jsonResponse, err := json.Marshal(latestBlockInfo)
+	jsonResponse, err := json.Marshal(chainSyncStatus)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
