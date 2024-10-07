@@ -446,7 +446,7 @@ const (
 const (
 	sqlQueryFinalityProvidersAtHeight = `
 		SELECT 
-    addr, 
+      addr, 
       description_moniker, 
       description_identity, 
       description_website, 
@@ -462,13 +462,13 @@ const (
     UNION ALL
     
     SELECT 
+      addr,
       description_moniker, 
       description_identity, 
       description_website, 
       description_security_contact, 
       description_details, 
       commission, 
-      babylon_pk_key AS babylon_pk,
       btc_pk,
       slashed_babylon_height,
       slashed_btc_height,
@@ -478,13 +478,13 @@ const (
 	`
 	sqlQueryInitialFinalityProviders = `
     SELECT 
+      addr, 
       description_moniker, 
       description_identity, 
       description_website, 
       description_security_contact, 
       description_details, 
       commission, 
-      addr AS babylon_pk, 
       btc_pk,
       slashed_babylon_height,
       slashed_btc_height,

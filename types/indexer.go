@@ -9,7 +9,7 @@ type FinalityProvider struct {
 	DescriptionDetails         string `json:"description_details"`
 	Commission                 string `json:"commission"`
 	BtcPk                      string `json:"btc_pk"`
-	SlashedBabylonHeight       string `json:"slashed_babylon_height"`
-	SlashedBtcHeight           string `json:"slashed_btc_height"`
+	SlashedBabylonHeight       uint64 `json:"slashed_babylon_height"`
+	SlashedBtcHeight           uint64 `json:"slashed_btc_height"`
 	ConsumerId                 string `json:"consumer_id"`
 }
