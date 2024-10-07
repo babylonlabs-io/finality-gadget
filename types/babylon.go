@@ -1,21 +1,17 @@
 package types
 
-type FinalityProvider struct {
-	Description          FinalityProviderDescription `json:"description"`
-	Commission           string                      `json:"commission"`
-	BabylonPk            FinalityProviderBabylonPk   `json:"babylon_pk"`
-	BtcPk                string                      `json:"btc_pk"`
-	SlashedBabylonHeight string                      `json:"slashed_babylon_height"`
-	SlashedBtcHeight     string                      `json:"slashed_btc_height"`
-	ConsumerId           string                      `json:"consumer_id"`
-}
+import (
+	ctypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+)
 
-type FinalityProviderDescription struct {
-	Moniker         string `json:"moniker"`
-	Identity        string `json:"identity"`
-	Website         string `json:"website"`
-	SecurityContact string `json:"security_contact"`
-	Details         string `json:"details"`
+type FinalityProvider struct {
+	Description          *ctypes.Description        `json:"description"`
+	Commission           string                     `json:"commission"`
+	BabylonPk            *FinalityProviderBabylonPk `json:"babylon_pk"`
+	BtcPk                string                     `json:"btc_pk"`
+	SlashedBabylonHeight string                     `json:"slashed_babylon_height"`
+	SlashedBtcHeight     string                     `json:"slashed_btc_height"`
+	ConsumerId           string                     `json:"consumer_id"`
 }
 
 type FinalityProviderBabylonPk struct {

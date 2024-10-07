@@ -159,19 +159,34 @@ func (mr *MockIDatabaseHandlerMockRecorder) GetBlockByHeight(height any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockByHeight", reflect.TypeOf((*MockIDatabaseHandler)(nil).GetBlockByHeight), height)
 }
 
-// GetFinalityProviders mocks base method.
-func (m *MockIDatabaseHandler) GetFinalityProviders(blockHeight uint64) ([]types1.EventNewFinalityProvider, error) {
+// GetFinalityProvidersAtHeight mocks base method.
+func (m *MockIDatabaseHandler) GetFinalityProvidersAtHeight(blockHeight uint64) ([]*types1.EventNewFinalityProvider, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFinalityProviders", blockHeight)
-	ret0, _ := ret[0].([]types1.EventNewFinalityProvider)
+	ret := m.ctrl.Call(m, "GetFinalityProvidersAtHeight", blockHeight)
+	ret0, _ := ret[0].([]*types1.EventNewFinalityProvider)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetFinalityProviders indicates an expected call of GetFinalityProviders.
-func (mr *MockIDatabaseHandlerMockRecorder) GetFinalityProviders(blockHeight any) *gomock.Call {
+// GetFinalityProvidersAtHeight indicates an expected call of GetFinalityProvidersAtHeight.
+func (mr *MockIDatabaseHandlerMockRecorder) GetFinalityProvidersAtHeight(blockHeight any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFinalityProviders", reflect.TypeOf((*MockIDatabaseHandler)(nil).GetFinalityProviders), blockHeight)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFinalityProvidersAtHeight", reflect.TypeOf((*MockIDatabaseHandler)(nil).GetFinalityProvidersAtHeight), blockHeight)
+}
+
+// GetInitialFinalityProviders mocks base method.
+func (m *MockIDatabaseHandler) GetInitialFinalityProviders() ([]*types1.InitialFinalityProvider, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInitialFinalityProviders")
+	ret0, _ := ret[0].([]*types1.InitialFinalityProvider)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInitialFinalityProviders indicates an expected call of GetInitialFinalityProviders.
+func (mr *MockIDatabaseHandlerMockRecorder) GetInitialFinalityProviders() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInitialFinalityProviders", reflect.TypeOf((*MockIDatabaseHandler)(nil).GetInitialFinalityProviders))
 }
 
 // GetVotingPowerDistAtBlock mocks base method.

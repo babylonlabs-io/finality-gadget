@@ -61,6 +61,20 @@ type EventMessage struct {
 	MsgIndex string `json:"msg_index"`
 }
 
+type InitialFinalityProvider struct {
+	DescriptionMoniker         string `json:"description_moniker"`
+	DescriptionIdentity        string `json:"description_identity"`
+	DescriptionWebsite         string `json:"description_website"`
+	DescriptionSecurityContact string `json:"description_security_contact"`
+	DescriptionDetails         string `json:"description_details"`
+	Commission                 string `json:"commission"`
+	Addr                       string `json:"addr"`
+	BtcPk                      string `json:"btc_pk"`
+	SlashedBabylonHeight       string `json:"slashed_babylon_height"`
+	SlashedBtcHeight           string `json:"slashed_btc_height"`
+	ConsumerId                 string `json:"consumer_id"`
+}
+
 // TODO: replaced 'CovenantSigs' by 'NumCovenantSigs', consider if ok
 // TODO: omitted UndelegationResponse, consider if ok
 type BTCDelegation struct {

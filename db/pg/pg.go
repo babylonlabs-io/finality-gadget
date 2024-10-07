@@ -481,15 +481,15 @@ func (pg *PostgresHandler) SaveBTCDelegationInfo(del *types.BTCDelegation) error
 	return nil
 }
 
-func (pg *PostgresHandler) GetFinalityProviders(blockHeight uint64) ([]types.EventNewFinalityProvider, error) {
-	rows, err := pg.conn.Query(context.Background(), sqlQueryFinalityProviders, blockHeight)
+func (pg *PostgresHandler) GetFinalityProvidersAtHeight(blockHeight uint64) ([]*types.EventNewFinalityProvider, error) {
+	rows, err := pg.conn.Query(context.Background(), sqlQueryFinalityProvidersAtHeight, blockHeight)
 	if err != nil {
 		pg.logger.Error("Failed to get finality providers", zap.Error(err))
 		return nil, err
 	}
 	defer rows.Close()
 
-	var fps []types.EventNewFinalityProvider
+	var fps []*types.EventNewFinalityProvider
 	for rows.Next() {
 		var fp types.EventNewFinalityProvider
 		err := rows.Scan(
@@ -511,10 +511,43 @@ func (pg *PostgresHandler) GetFinalityProviders(blockHeight uint64) ([]types.Eve
 			// &fp.MsgIndex,
 		)
 		if err != nil {
-			pg.logger.Error("Failed to scan finality provider", zap.Error(err))
+			pg.logger.Error("Failed to get finality provider at height", zap.Error(err))
 			return nil, err
 		}
-		fps = append(fps, fp)
+		fps = append(fps, &fp)
+	}
+	return fps, nil
+}
+
+func (pg *PostgresHandler) GetInitialFinalityProviders() ([]*types.InitialFinalityProvider, error) {
+	rows, err := pg.conn.Query(context.Background(), sqlQueryInitialFinalityProviders)
+	if err != nil {
+		pg.logger.Error("Failed to get initial finality providers", zap.Error(err))
+		return nil, err
+	}
+	defer rows.Close()
+
+	var fps []*types.InitialFinalityProvider
+	for rows.Next() {
+		var fp types.InitialFinalityProvider
+		err := rows.Scan(
+			&fp.DescriptionMoniker,
+			&fp.DescriptionIdentity,
+			&fp.DescriptionWebsite,
+			&fp.DescriptionSecurityContact,
+			&fp.DescriptionDetails,
+			&fp.Commission,
+			&fp.Addr,
+			&fp.BtcPk,
+			&fp.SlashedBabylonHeight,
+			&fp.SlashedBtcHeight,
+			&fp.ConsumerId,
+		)
+		if err != nil {
+			pg.logger.Error("Failed to get initial finality provider", zap.Error(err))
+			return nil, err
+		}
+		fps = append(fps, &fp)
 	}
 	return fps, nil
 }

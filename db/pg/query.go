@@ -433,7 +433,7 @@ const (
 //////////////////////////
 
 const (
-	sqlQueryFinalityProviders = `
+	sqlQueryFinalityProvidersAtHeight = `
 		SELECT 
       description_moniker, 
       description_identity, 
@@ -465,6 +465,21 @@ const (
     FROM events_EventNewFinalityProvider
     WHERE block_height <= $1
 	`
+	sqlQueryInitialFinalityProviders = `
+    SELECT 
+      description_moniker, 
+      description_identity, 
+      description_website, 
+      description_security_contact, 
+      description_details, 
+      commission, 
+      addr, 
+      btc_pk,
+      slashed_babylon_height,
+      slashed_btc_height,
+      consumer_id
+    FROM table_initial_finality_providers
+  `
 	sqlQueryFinalizedBlockByHeight = `
 		SELECT block_hash, block_height, block_timestamp FROM table_finalized_blocks WHERE block_height = $1
 	`
