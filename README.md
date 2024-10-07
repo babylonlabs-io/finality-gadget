@@ -82,7 +82,11 @@ opfgd start --cfg config.toml
 To run tests:
 
 ```bash
+# To run all tests
 make test
+
+# To run tests for a specific package or file
+make test TEST_NAME=<test_name>
 ```
 
 ## Build Docker image
@@ -94,6 +98,7 @@ make test
 2. **Make**: Required for building service binaries. Installation guide available [here](https://sp21.datastructur.es/materials/guides/make-install.html).
 
 3. **GitHub SSH Key**:
+
    - Create a non-passphrase-protected SSH key.
    - Add it to GitHub ([instructions](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)).
    - Export the key path:
@@ -105,7 +110,7 @@ make test
    ```shell
    git clone https://github.com/babylonlabs-io/finality-gadget.git
    ```
-To build the docker image:
+   To build the docker image:
 
 ```bash
 make build-docker
