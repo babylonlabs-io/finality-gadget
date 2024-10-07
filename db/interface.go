@@ -18,8 +18,8 @@ type IDatabaseHandler interface {
 	QueryIsBlockFinalizedByHeight(height uint64) (bool, error)
 	QueryIsBlockFinalizedByHash(hash string) (bool, error)
 	QueryLatestFinalizedBlock() (*types.Block, error)
-	GetFinalityProvidersAtHeight(blockHeight uint64) ([]*types.EventNewFinalityProvider, error)
-	GetInitialFinalityProviders() ([]*types.InitialFinalityProvider, error)
+	GetInitialFinalityProviders() ([]*types.FinalityProvider, error)
+	GetFinalityProvidersAtHeight(blockHeight uint64) ([]*types.FinalityProvider, error)
 	GetActivatedTimestamp() (uint64, error)
 	SaveActivatedTimestamp(timestamp uint64) error
 

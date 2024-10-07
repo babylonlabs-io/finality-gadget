@@ -2,6 +2,8 @@ package types
 
 import (
 	"time"
+
+	bstypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
 )
 
 type TxInfo struct {
@@ -12,38 +14,35 @@ type TxInfo struct {
 }
 
 type EventNewFinalityProvider struct {
+	Addr                       string
 	DescriptionMoniker         string
 	DescriptionIdentity        string
 	DescriptionWebsite         string
 	DescriptionSecurityContact string
 	DescriptionDetails         string
 	Commission                 string
-	BabylonPkKey               string
 	BtcPk                      string
-	// PopBtcSigType              string
-	// PopBabylonSig              string
-	// PopBtcSig                  string
-	// MasterPubRand              string
-	// RegisteredEpoch            string
-	SlashedBabylonHeight string
-	SlashedBtcHeight     string
-	ConsumerId           string
-	// MsgIndex                   string
+	PopBtcSigType              string
+	PopBtcSig                  string
+	SlashedBabylonHeight       uint64
+	SlashedBtcHeight           uint64
+	Jailed                     bool
+	ConsumerId                 string
 }
 
 type EventBTCDelegationStateUpdate struct {
-	StakingTxHash string              `json:"staking_tx_hash"`
-	NewState      BTCDelegationStatus `json:"new_state"`
+	StakingTxHash string                      `json:"staking_tx_hash"`
+	NewState      bstypes.BTCDelegationStatus `json:"new_state"`
 }
 
 type EventSlashedFinalityProvider struct {
-	FpBtcPk              []byte `json:"fp_btc_pk"`
+	FpBtcPk              string `json:"fp_btc_pk"`
 	BlockHeight          uint64 `json:"block_height"`
-	PubRand              []byte `json:"pub_rand"`
-	CanonicalAppHash     []byte `json:"canonical_app_hash"`
-	ForkAppHash          []byte `json:"fork_app_hash"`
-	CanonicalFinalitySig []byte `json:"canonical_finality_sig"`
-	ForkFinalitySig      []byte `json:"fork_finality_sig"`
+	PubRand              string `json:"pub_rand"`
+	CanonicalAppHash     string `json:"canonical_app_hash"`
+	ForkAppHash          string `json:"fork_app_hash"`
+	CanonicalFinalitySig string `json:"canonical_finality_sig"`
+	ForkFinalitySig      string `json:"fork_finality_sig"`
 }
 
 type EventJailedFinalityProvider struct {
@@ -59,20 +58,6 @@ type EventMessage struct {
 	Sender   string `json:"sender"`
 	Module   string `json:"module"`
 	MsgIndex string `json:"msg_index"`
-}
-
-type InitialFinalityProvider struct {
-	DescriptionMoniker         string `json:"description_moniker"`
-	DescriptionIdentity        string `json:"description_identity"`
-	DescriptionWebsite         string `json:"description_website"`
-	DescriptionSecurityContact string `json:"description_security_contact"`
-	DescriptionDetails         string `json:"description_details"`
-	Commission                 string `json:"commission"`
-	Addr                       string `json:"addr"`
-	BtcPk                      string `json:"btc_pk"`
-	SlashedBabylonHeight       string `json:"slashed_babylon_height"`
-	SlashedBtcHeight           string `json:"slashed_btc_height"`
-	ConsumerId                 string `json:"consumer_id"`
 }
 
 // TODO: replaced 'CovenantSigs' by 'NumCovenantSigs', consider if ok

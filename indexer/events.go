@@ -1,11 +1,15 @@
 package indexer
 
 import (
+	"encoding/hex"
 	"encoding/json"
 
 	"github.com/babylonlabs-io/finality-gadget/types"
 	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"
+
+	bstypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
+	bftypes "github.com/babylonlabs-io/babylon/x/finality/types"
 )
 
 type Event struct {
@@ -130,26 +134,24 @@ func (idx *Indexer) parseEventNewFinalityProvider(evt *Event) (*types.EventNewFi
 	for _, attr := range evt.Attributes {
 		switch attr.Key {
 		case "fp":
-			var fp types.FinalityProvider
+			var fp bstypes.FinalityProvider
 			err := json.Unmarshal([]byte(string(attr.Value)), &fp)
 			if err != nil {
 				return nil, err
 			}
+			event.Addr = fp.Addr
 			event.DescriptionMoniker = fp.Description.Moniker
 			event.DescriptionIdentity = fp.Description.Identity
 			event.DescriptionWebsite = fp.Description.Website
 			event.DescriptionSecurityContact = fp.Description.SecurityContact
 			event.DescriptionDetails = fp.Description.Details
-			event.Commission = fp.Commission
-			event.BabylonPkKey = fp.BabylonPk.Key
-			event.BtcPk = fp.BtcPk
-			// event.PopBtcSigType = fp.Pop.BtcSigType
-			// event.PopBabylonSig = fp.Pop.BabylonSig
-			// event.PopBtcSig = fp.Pop.BtcSig
-			// event.MasterPubRand = fp.MasterPubRand
-			// event.RegisteredEpoch = fp.RegisteredEpoch
+			event.Commission = fp.Commission.BigInt().String()
+			event.BtcPk = fp.BtcPk.MarshalHex()
+			event.PopBtcSigType = fp.Pop.BtcSigType.String()
+			event.PopBtcSig = hex.EncodeToString(fp.Pop.BtcSig)
 			event.SlashedBabylonHeight = fp.SlashedBabylonHeight
 			event.SlashedBtcHeight = fp.SlashedBtcHeight
+			event.Jailed = fp.Jailed
 			event.ConsumerId = fp.ConsumerId
 			// case "msg_index":
 			// 	event.MsgIndex = string(attr.Value)
@@ -166,7 +168,8 @@ func (idx *Indexer) parseEventBTCDelegationStateUpdate(evt *Event) (*types.Event
 		case "staking_tx_hash":
 			event.StakingTxHash = string(attr.Value)
 		case "new_state":
-			newState, err := parseDelegationStatus(string(attr.Value))
+			var newState bstypes.BTCDelegationStatus
+			err := json.Unmarshal([]byte(string(attr.Value)), &newState)
 			if err != nil {
 				return nil, err
 			}
@@ -174,19 +177,6 @@ func (idx *Indexer) parseEventBTCDelegationStateUpdate(evt *Event) (*types.Event
 		}
 	}
 	return &event, nil
-}
-
-func parseDelegationStatus(state string) (types.BTCDelegationStatus, error) {
-	switch state {
-	case "PENDING":
-		return types.BTCDelegationPending, nil
-	case "ACTIVE":
-		return types.BTCDelegationActive, nil
-	case "UNBONDED":
-		return types.BTCDelegationUnbonded, nil
-	default:
-		return types.BTCDelegationPending, types.ErrInvalidBTCDelegationState
-	}
 }
 
 func (idx *Indexer) queryAndStoreBTCDelegation(stakingTxHash string) error {
@@ -228,18 +218,18 @@ func (idx *Indexer) parseEventSlashedFinalityProvider(evt *Event) (*types.EventS
 	for _, attr := range evt.Attributes {
 		switch attr.Key {
 		case "evidence":
-			var evidence types.Evidence
+			var evidence bftypes.Evidence
 			err := json.Unmarshal([]byte(string(attr.Value)), &evidence)
 			if err != nil {
 				return nil, err
 			}
-			event.FpBtcPk = evidence.FpBtcPk
+			event.FpBtcPk = evidence.FpBtcPk.MarshalHex()
 			event.BlockHeight = evidence.BlockHeight
-			event.PubRand = evidence.PubRand
-			event.CanonicalAppHash = evidence.CanonicalAppHash
-			event.ForkAppHash = evidence.ForkAppHash
-			event.CanonicalFinalitySig = evidence.CanonicalFinalitySig
-			event.ForkFinalitySig = evidence.ForkFinalitySig
+			event.PubRand = evidence.PubRand.MarshalHex()
+			event.CanonicalAppHash = hex.EncodeToString(evidence.CanonicalAppHash)
+			event.ForkAppHash = hex.EncodeToString(evidence.ForkAppHash)
+			event.CanonicalFinalitySig = evidence.CanonicalFinalitySig.ToHexStr()
+			event.ForkFinalitySig = evidence.ForkFinalitySig.ToHexStr()
 		}
 	}
 	return &event, nil

@@ -41,8 +41,12 @@ const (
       commission TEXT NOT NULL,
       addr TEXT NOT NULL,
       btc_pk TEXT NOT NULL PRIMARY KEY,
+      pop_btc_sig_type TEXT NOT NULL,
+      pop_btc_sig TEXT NOT NULL,
       slashed_babylon_height BIGINT NOT NULL,
       slashed_btc_height BIGINT NOT NULL,
+      height BIGINT NOT NULL,
+      voting_power BIGINT NOT NULL,
       consumer_id TEXT NOT NULL
     );
 
@@ -295,11 +299,15 @@ const (
       commission,
       addr,
       btc_pk,
+      pop_btc_sig_type,
+      pop_btc_sig,
       slashed_babylon_height,
       slashed_btc_height,
+      height,
+      voting_power,
       consumer_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
     )
   `
 	// TODO: consider if we can remove any fields from below if not needed
@@ -331,19 +339,22 @@ const (
       tx_hash,
       tx_index,
       event_index,
+      addr,
       description_moniker,
       description_identity,
       description_website,
       description_security_contact,
       description_details,
       commission,
-      babylon_pk_key,
       btc_pk,
+      pop_btc_sig_type,
+      pop_btc_sig,
       slashed_babylon_height,
       slashed_btc_height,
+      jailed,
       consumer_id
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
     )
 	`
 	sqlInsertEventBTCDelegationStateUpdate = `
@@ -435,13 +446,13 @@ const (
 const (
 	sqlQueryFinalityProvidersAtHeight = `
 		SELECT 
+    addr, 
       description_moniker, 
       description_identity, 
       description_website, 
       description_security_contact, 
       description_details, 
       commission, 
-      addr AS babylon_pk, 
       btc_pk,
       slashed_babylon_height,
       slashed_btc_height,
@@ -473,7 +484,7 @@ const (
       description_security_contact, 
       description_details, 
       commission, 
-      addr, 
+      addr AS babylon_pk, 
       btc_pk,
       slashed_babylon_height,
       slashed_btc_height,

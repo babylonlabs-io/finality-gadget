@@ -160,10 +160,10 @@ func (mr *MockIDatabaseHandlerMockRecorder) GetBlockByHeight(height any) *gomock
 }
 
 // GetFinalityProvidersAtHeight mocks base method.
-func (m *MockIDatabaseHandler) GetFinalityProvidersAtHeight(blockHeight uint64) ([]*types1.EventNewFinalityProvider, error) {
+func (m *MockIDatabaseHandler) GetFinalityProvidersAtHeight(blockHeight uint64) ([]*types1.FinalityProvider, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFinalityProvidersAtHeight", blockHeight)
-	ret0, _ := ret[0].([]*types1.EventNewFinalityProvider)
+	ret0, _ := ret[0].([]*types1.FinalityProvider)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -175,10 +175,10 @@ func (mr *MockIDatabaseHandlerMockRecorder) GetFinalityProvidersAtHeight(blockHe
 }
 
 // GetInitialFinalityProviders mocks base method.
-func (m *MockIDatabaseHandler) GetInitialFinalityProviders() ([]*types1.InitialFinalityProvider, error) {
+func (m *MockIDatabaseHandler) GetInitialFinalityProviders() ([]*types1.FinalityProvider, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetInitialFinalityProviders")
-	ret0, _ := ret[0].([]*types1.InitialFinalityProvider)
+	ret0, _ := ret[0].([]*types1.FinalityProvider)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

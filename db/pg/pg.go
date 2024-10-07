@@ -2,7 +2,7 @@ package pg
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/hex"
 	"math"
 
 	bbntypes "github.com/babylonlabs-io/babylon/x/btcstaking/types"
@@ -266,15 +266,15 @@ func (pg *PostgresHandler) SaveInitialFinalityProviders(fps []*bsctypes.Finality
 			fp.Description.Website,
 			fp.Description.SecurityContact,
 			fp.Description.Details,
-			fp.Commission,
+			fp.Commission.BigInt().String(),
 			fp.Addr,
-			fp.BtcPk,
-			// fp.Pop.BtcSigType,
-			// fp.Pop.BtcSig,
+			fp.BtcPk.MarshalHex(),
+			fp.Pop.BtcSigType.String(),
+			hex.EncodeToString(fp.Pop.BtcSig),
 			fp.SlashedBabylonHeight,
 			fp.SlashedBtcHeight,
-			// fp.VotingPower,
-			// fp.Height,
+			fp.Height,
+			fp.VotingPower,
 			fp.ConsumerId,
 		)
 		if err != nil {
@@ -301,16 +301,15 @@ func (pg *PostgresHandler) SaveInitialDelegations(dels []*bbntypes.BTCDelegation
 	}
 
 	for _, del := range dels {
-		fpBtcPkList, err := json.Marshal(del.FpBtcPkList)
-		if err != nil {
-			pg.logger.Error("Failed to marshal fpBtcPkList", zap.Error(err))
-			return err
+		var fpBtcPkList []string
+		for _, fpBtcPk := range del.FpBtcPkList {
+			fpBtcPkList = append(fpBtcPkList, fpBtcPk.MarshalHex())
 		}
 		_, err = pg.conn.Exec(
 			context.Background(),
 			sqlInsertInitialDelegation,
 			del.StakerAddr,
-			del.BtcPk,
+			del.BtcPk.MarshalHex(),
 			fpBtcPkList,
 			del.StartHeight,
 			del.EndHeight,
@@ -355,16 +354,19 @@ func (pg *PostgresHandler) SaveEventNewFinalityProvider(tx pgx.Tx, txInfo *types
 		txInfo.TxHash,
 		txInfo.TxIndex,
 		evtIdx,
+		evt.Addr,
 		evt.DescriptionMoniker,
 		evt.DescriptionIdentity,
 		evt.DescriptionWebsite,
 		evt.DescriptionSecurityContact,
 		evt.DescriptionDetails,
 		evt.Commission,
-		evt.BabylonPkKey,
 		evt.BtcPk,
+		evt.PopBtcSigType,
+		evt.PopBtcSig,
 		evt.SlashedBabylonHeight,
 		evt.SlashedBtcHeight,
+		evt.Jailed,
 		evt.ConsumerId,
 	)
 	if err != nil {
@@ -385,7 +387,7 @@ func (pg *PostgresHandler) SaveEventBTCDelegationStateUpdate(tx pgx.Tx, txInfo *
 		txInfo.TxIndex,
 		evtIdx,
 		evt.StakingTxHash,
-		evt.NewState,
+		evt.NewState.String(),
 	)
 	if err != nil {
 		pg.logger.Error("Failed to save event", zap.Error(err))
@@ -403,7 +405,7 @@ func (pg *PostgresHandler) SaveEventJailedFinalityProvider(tx pgx.Tx, txInfo *ty
 		txInfo.TxHash,
 		txInfo.TxIndex,
 		evtIdx,
-		evt.PublicKey,
+		hex.EncodeToString(evt.PublicKey),
 	)
 	if err != nil {
 		pg.logger.Error("Failed to save event", zap.Error(err))
@@ -421,7 +423,7 @@ func (pg *PostgresHandler) SaveEventUnjailedFinalityProvider(tx pgx.Tx, txInfo *
 		txInfo.TxHash,
 		txInfo.TxIndex,
 		evtIdx,
-		evt.PublicKey,
+		hex.EncodeToString(evt.PublicKey),
 	)
 	if err != nil {
 		pg.logger.Error("Failed to save event", zap.Error(err))
@@ -481,7 +483,7 @@ func (pg *PostgresHandler) SaveBTCDelegationInfo(del *types.BTCDelegation) error
 	return nil
 }
 
-func (pg *PostgresHandler) GetFinalityProvidersAtHeight(blockHeight uint64) ([]*types.EventNewFinalityProvider, error) {
+func (pg *PostgresHandler) GetFinalityProvidersAtHeight(blockHeight uint64) ([]*types.FinalityProvider, error) {
 	rows, err := pg.conn.Query(context.Background(), sqlQueryFinalityProvidersAtHeight, blockHeight)
 	if err != nil {
 		pg.logger.Error("Failed to get finality providers", zap.Error(err))
@@ -489,26 +491,21 @@ func (pg *PostgresHandler) GetFinalityProvidersAtHeight(blockHeight uint64) ([]*
 	}
 	defer rows.Close()
 
-	var fps []*types.EventNewFinalityProvider
+	var fps []*types.FinalityProvider
 	for rows.Next() {
-		var fp types.EventNewFinalityProvider
+		var fp types.FinalityProvider
 		err := rows.Scan(
+			&fp.Addr,
 			&fp.DescriptionMoniker,
 			&fp.DescriptionIdentity,
 			&fp.DescriptionWebsite,
 			&fp.DescriptionSecurityContact,
 			&fp.DescriptionDetails,
 			&fp.Commission,
-			&fp.BabylonPkKey,
 			&fp.BtcPk,
-			// &fp.PopBtcSigType,
-			// &fp.PopBtcSig,
-			// &fp.MasterPubRand,
-			// &fp.RegisteredEpoch,
 			&fp.SlashedBabylonHeight,
 			&fp.SlashedBtcHeight,
 			&fp.ConsumerId,
-			// &fp.MsgIndex,
 		)
 		if err != nil {
 			pg.logger.Error("Failed to get finality provider at height", zap.Error(err))
@@ -519,7 +516,7 @@ func (pg *PostgresHandler) GetFinalityProvidersAtHeight(blockHeight uint64) ([]*
 	return fps, nil
 }
 
-func (pg *PostgresHandler) GetInitialFinalityProviders() ([]*types.InitialFinalityProvider, error) {
+func (pg *PostgresHandler) GetInitialFinalityProviders() ([]*types.FinalityProvider, error) {
 	rows, err := pg.conn.Query(context.Background(), sqlQueryInitialFinalityProviders)
 	if err != nil {
 		pg.logger.Error("Failed to get initial finality providers", zap.Error(err))
@@ -527,17 +524,17 @@ func (pg *PostgresHandler) GetInitialFinalityProviders() ([]*types.InitialFinali
 	}
 	defer rows.Close()
 
-	var fps []*types.InitialFinalityProvider
+	var fps []*types.FinalityProvider
 	for rows.Next() {
-		var fp types.InitialFinalityProvider
+		var fp types.FinalityProvider
 		err := rows.Scan(
+			&fp.Addr,
 			&fp.DescriptionMoniker,
 			&fp.DescriptionIdentity,
 			&fp.DescriptionWebsite,
 			&fp.DescriptionSecurityContact,
 			&fp.DescriptionDetails,
 			&fp.Commission,
-			&fp.Addr,
 			&fp.BtcPk,
 			&fp.SlashedBabylonHeight,
 			&fp.SlashedBtcHeight,
