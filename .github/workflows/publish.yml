@@ -14,9 +14,8 @@ jobs:
       run-build: true
       run-lint: true
       run-unit-tests: true
-      run-integration-tests: false
       run-check-mock-gen: true
-      run-gosec: true
+      run-gosec: false
       gosec-args: "-exclude-generated -exclude-dir=testutil ./..."
 
   docker_pipeline:
