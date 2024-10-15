@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'chore/ci-publish-docker'
+      - 'main'
     tags:
       - '*'
 
