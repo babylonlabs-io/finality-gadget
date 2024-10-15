@@ -9,8 +9,9 @@ BUILD_ARGS := $(BUILD_ARGS) -o $(BUILDDIR)
 DOCKER ?= $(shell which docker)
 GIT_ROOT := $(shell git rev-parse --show-toplevel)
 
+# https://github.com/babylonlabs-io/finality-gadget/issues/28
 mock-gen:
-	go install go.uber.org/mock/mockgen@latest
+	@which mockgen > /dev/null || CGO_ENABLED=0 go install go.uber.org/mock/mockgen@latest
 	mockgen -source=db/interface.go -package mocks -destination $(MOCKS_DIR)/db_mock.go
 	mockgen -source=finalitygadget/expected_clients.go -package mocks -destination $(MOCKS_DIR)/expected_clients_mock.go
 
