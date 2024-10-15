@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - 'chore/ci-publish-docker'
-      - 'bourne/gosec-fix'
+      - 'main'
     tags:
       - '*'
 
