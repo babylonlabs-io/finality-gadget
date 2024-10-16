@@ -5,7 +5,6 @@ on:
     branches:
       - 'chore/ci-publish-docker'
       - 'main'
-      - 'bourne/gosec-followup'
     tags:
       - '*'
 
