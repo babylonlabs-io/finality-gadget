@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/babylonlabs-io/finality-gadget/config"
 	"github.com/babylonlabs-io/finality-gadget/db"
@@ -51,8 +52,11 @@ func (s *Server) RunUntilShutdown() error {
 
 	defer func() {
 		s.logger.Info("Closing database...")
-		s.db.Close()
-		s.logger.Info("Database closed")
+		if err := s.db.Close(); err != nil {
+			s.logger.Error("Failed to close database", zap.Error(err))
+		} else {
+			s.logger.Info("Database closed")
+		}
 	}()
 
 	// we create listeners from the GRPCListener defined in the config.
@@ -84,8 +88,9 @@ func (s *Server) RunUntilShutdown() error {
 	}
 
 	httpServer := &http.Server{
-		Addr:    s.cfg.HTTPListener,
-		Handler: cors.New(corsOpts).Handler(s.newHttpHandler()),
+		Addr:              s.cfg.HTTPListener,
+		Handler:           cors.New(corsOpts).Handler(s.newHttpHandler()),
+		ReadHeaderTimeout: 30 * time.Second,
 	}
 
 	s.logger.Info("Starting standalone HTTP server on port 8080")

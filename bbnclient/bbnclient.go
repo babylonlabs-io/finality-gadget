@@ -200,7 +200,7 @@ func (bbnClient *BabylonClient) isDelegationActive(
 		return false, nil
 	}
 
-	if uint32(len(btcDel.CovenantSigs)) < covQuorum {
+	if len(btcDel.CovenantSigs) < int(covQuorum) {
 		return false, nil
 	}
 	if len(ud.CovenantUnbondingSigList) < int(covQuorum) {
@@ -223,7 +223,7 @@ func (bbnClient *BabylonClient) isDelegationActive(
 func getDelFirstActiveHeight(btcDel *bbntypes.BTCDelegationResponse, latestBtcHeight, kValue uint64, covQuorum uint32) uint64 {
 	activationHeight := btcDel.StartHeight + kValue
 	// not activated yet
-	if latestBtcHeight < activationHeight || uint32(len(btcDel.CovenantSigs)) < covQuorum {
+	if latestBtcHeight < activationHeight || len(btcDel.CovenantSigs) < int(covQuorum) {
 		return math.MaxUint64
 	}
 	return activationHeight
