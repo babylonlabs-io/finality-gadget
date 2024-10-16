@@ -501,6 +501,10 @@ func (fg *FinalityGadget) handleBlock(ctx context.Context, latestFinalizedHeight
 		case <-ctx.Done():
 			return nil
 		default:
+			// Safely convert uint64 to int64
+			if height > math.MaxInt64 {
+				return fmt.Errorf("block height %d exceeds maximum int64 value", height)
+			}
 			block, err := fg.queryBlockByHeight(int64(height))
 			if err != nil {
 				return fmt.Errorf("error getting block at height %d: %w", height, err)
