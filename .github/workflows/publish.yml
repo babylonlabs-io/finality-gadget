@@ -1,0 +1,28 @@
+name: docker_publish
+
+on:
+  push:
+    branches:
+      - 'chore/ci-publish-docker'
+      - 'main'
+    tags:
+      - '*'
+
+jobs:
+  lint_test:
+    uses: babylonlabs-io/.github/.github/workflows/reusable_go_lint_test.yml@v0.7.0
+    with:
+      run-build: true
+      run-lint: true
+      run-unit-tests: true
+      run-check-mock-gen: true
+      run-gosec: true
+      gosec-args: "-exclude=G115,G112,G104 -exclude-generated -exclude-dir=testutil ./..."
+
+  docker_pipeline:
+    needs: ["lint_test"]
+    uses: babylonlabs-io/.github/.github/workflows/reusable_docker_pipeline.yml@v0.7.0
+    secrets: inherit
+    with:
+      publish: true
+      repoName: finality-gadget
