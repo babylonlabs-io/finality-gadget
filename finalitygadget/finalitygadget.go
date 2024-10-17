@@ -460,7 +460,11 @@ func (fg *FinalityGadget) InsertBlock(block *types.Block) error {
 
 func (fg *FinalityGadget) Close() {
 	fg.l2Client.Close()
-	fg.db.Close()
+
+	if err := fg.db.Close(); err != nil {
+		fg.logger.Error("Error closing database", zap.Error(err))
+	}
+
 }
 
 //////////////////////////////
@@ -501,6 +505,9 @@ func (fg *FinalityGadget) handleBlock(ctx context.Context, latestFinalizedHeight
 		case <-ctx.Done():
 			return nil
 		default:
+			if height > math.MaxInt64 {
+				return fmt.Errorf("block height %d exceeds maximum int64 value", height)
+			}
 			block, err := fg.queryBlockByHeight(int64(height))
 			if err != nil {
 				return fmt.Errorf("error getting block at height %d: %w", height, err)

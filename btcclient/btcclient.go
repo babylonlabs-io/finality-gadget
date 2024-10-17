@@ -57,11 +57,18 @@ func (c *BitcoinClient) GetBlockCount() (uint64, error) {
 		return 0, fmt.Errorf("failed to get block count: %w", err)
 	}
 
+	if blockCount.count < 0 {
+		return 0, fmt.Errorf("unexpected negative block count: %d", blockCount.count)
+	}
+
 	return uint64(blockCount.count), nil
 }
 
 func (c *BitcoinClient) GetBlockHashByHeight(height uint64) (*chainhash.Hash, error) {
 	callForBlockHash := func() (*chainhash.Hash, error) {
+		if height > math.MaxInt64 {
+			return nil, fmt.Errorf("block height %d exceeds maximum int64 value", height)
+		}
 		return c.client.GetBlockHash(int64(height))
 	}
 
@@ -135,7 +142,11 @@ func (c *BitcoinClient) GetBlockTimestampByHeight(height uint64) (uint64, error)
 		return 0, err
 	}
 
-	return uint64(blockHeader.Timestamp.Unix()), nil
+	timestamp := blockHeader.Timestamp.Unix()
+	if timestamp < 0 {
+		return 0, fmt.Errorf("negative timestamp encountered: %d", timestamp)
+	}
+	return uint64(timestamp), nil
 }
 
 //////////////////////////////

@@ -17,7 +17,7 @@ jobs:
       run-unit-tests: true
       run-check-mock-gen: true
       run-gosec: true
-      gosec-args: "-exclude=G115,G112,G104 -exclude-generated -exclude-dir=testutil ./..."
+      gosec-args: "-exclude-generated -exclude-dir=testutil ./..."
 
   docker_pipeline:
     needs: ["lint_test"]
