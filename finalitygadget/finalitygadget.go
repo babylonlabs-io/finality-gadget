@@ -384,8 +384,14 @@ func (fg *FinalityGadget) QueryLatestFinalizedBlock() (*types.Block, error) {
 	return fg.db.QueryLatestFinalizedBlock()
 }
 
-// This function process blocks indefinitely, starting from the last finalized block.
-func (fg *FinalityGadget) ProcessBlocks(ctx context.Context) error {
+// This function is run once at startup and starts the FG from the last finalized block.
+// Note that this logic will fail if the FG is started before the chain has ETH finalized its first block.
+// The intended startup order for new chains is:
+// 1. Integrate FG with it disabled on CW contract
+// 2. Start chain and wait for it to finalize its first block (note for existing chains, this won't be an issue)
+// 3. Enable finality gadget
+func (fg *FinalityGadget) Startup(ctx context.Context) error {
+	fg.logger.Info("Starting up finality gadget...")
 	// Start polling for new blocks at set interval
 	ticker := time.NewTicker(fg.pollInterval)
 	defer ticker.Stop()
@@ -428,11 +434,34 @@ func (fg *FinalityGadget) ProcessBlocks(ctx context.Context) error {
 				fg.lastProcessedHeight = latestFinalizedHeight - 1
 			}
 
-			// if the latest finalized block is greater than the last processed block, process it
-			if latestFinalizedHeight > fg.lastProcessedHeight {
-				fg.logger.Info("Processing block", zap.Uint64("block_height", latestFinalizedHeight))
-				if err := fg.handleBlock(ctx, latestFinalizedHeight); err != nil {
-					return fmt.Errorf("error processing block %d: %w", latestFinalizedHeight, err)
+			return nil
+		}
+	}
+}
+
+// This function process blocks indefinitely, starting from the last finalized block.
+func (fg *FinalityGadget) ProcessBlocks(ctx context.Context) error {
+	fg.logger.Info("Processing blocks...")
+	// Start polling for new blocks at set interval
+	ticker := time.NewTicker(fg.pollInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+			// get latest block
+			latestBlock, err := fg.l2Client.HeaderByNumber(ctx, big.NewInt(ethrpc.LatestBlockNumber.Int64()))
+			if err != nil {
+				return fmt.Errorf("error fetching latest L2 block: %w", err)
+			}
+
+			// if the last processed block is less than the latest block, process it
+			if fg.lastProcessedHeight < latestBlock.Number.Uint64() {
+				fg.logger.Info("Processing block", zap.Uint64("block_height", latestBlock.Number.Uint64()))
+				if err := fg.handleBlock(ctx, latestBlock.Number.Uint64()); err != nil {
+					return fmt.Errorf("error processing block %d: %w", latestBlock.Number.Uint64(), err)
 				}
 			}
 		}
@@ -499,8 +528,8 @@ func (fg *FinalityGadget) queryBlockByHeight(blockNumber int64) (*types.Block, e
 	}, nil
 }
 
-func (fg *FinalityGadget) handleBlock(ctx context.Context, latestFinalizedHeight uint64) error {
-	for height := fg.lastProcessedHeight + 1; height <= latestFinalizedHeight; height++ {
+func (fg *FinalityGadget) handleBlock(ctx context.Context, latestHeight uint64) error {
+	for height := fg.lastProcessedHeight + 1; height <= latestHeight; height++ {
 		select {
 		case <-ctx.Done():
 			return nil
@@ -518,9 +547,9 @@ func (fg *FinalityGadget) handleBlock(ctx context.Context, latestFinalizedHeight
 			if err != nil && !errors.Is(err, types.ErrBtcStakingNotActivated) {
 				return fmt.Errorf("error checking block %d: %v", block.BlockHeight, err)
 			}
-			// If not finalized, throw error
+			// If not finalized, break block processing loop until next poll
 			if !isFinal {
-				return fmt.Errorf("block %d should be finalized according to client but is not", block.BlockHeight)
+				return nil
 			}
 
 			// If finalised, store the block in DB
