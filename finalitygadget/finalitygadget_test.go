@@ -341,6 +341,115 @@ func TestInsertBlock(t *testing.T) {
 	require.Equal(t, block.BlockTimestamp, retrievedBlock.BlockTimestamp)
 }
 
+func TestBatchInsertBlocks(t *testing.T) {
+	// Setup mock controller
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	// Create a larger set of test blocks
+	numBlocks := 25 // Testing with 25 blocks
+	blocks := make([]*types.Block, numBlocks)
+	for i := 0; i < numBlocks; i++ {
+		blocks[i] = &types.Block{
+			BlockHeight:    uint64(i + 1),
+			BlockHash:      fmt.Sprintf("0x%x", i+1000), // unique hash for each block
+			BlockTimestamp: uint64(1000 + i*100),        // increasing timestamps
+		}
+	}
+
+	// Create normalized versions of the blocks
+	normalizedBlocks := make([]*types.Block, len(blocks))
+	for i, block := range blocks {
+		normalizedBlocks[i] = &types.Block{
+			BlockHeight:    block.BlockHeight,
+			BlockHash:      normalizeBlockHash(block.BlockHash),
+			BlockTimestamp: block.BlockTimestamp,
+		}
+	}
+
+	testCases := []struct {
+		name      string
+		batchSize uint64
+		blocks    []*types.Block
+	}{
+		{
+			name:      "small batch size",
+			batchSize: 5,
+			blocks:    blocks,
+		},
+		{
+			name:      "medium batch size",
+			batchSize: 10,
+			blocks:    blocks,
+		},
+		{
+			name:      "large batch size",
+			batchSize: 20,
+			blocks:    blocks,
+		},
+		{
+			name:      "batch size larger than number of blocks",
+			batchSize: 30,
+			blocks:    blocks,
+		},
+		{
+			name:      "single block batch",
+			batchSize: 1,
+			blocks:    blocks[:1], // Test with just one block
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup mock database handler
+			mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
+
+			// Create normalized versions specific to this test case
+			tcNormalizedBlocks := make([]*types.Block, len(tc.blocks))
+			for i, block := range tc.blocks {
+				tcNormalizedBlocks[i] = &types.Block{
+					BlockHeight:    block.BlockHeight,
+					BlockHash:      normalizeBlockHash(block.BlockHash),
+					BlockTimestamp: block.BlockTimestamp,
+				}
+			}
+
+			// Expect batch insert call with normalized blocks
+			if len(tc.blocks) > 0 {
+				mockDbHandler.EXPECT().InsertBlocks(tcNormalizedBlocks).Return(nil).Times(1)
+			}
+
+			// Setup verification calls for each block
+			for i, block := range tc.blocks {
+				mockDbHandler.EXPECT().
+					GetBlockByHeight(block.BlockHeight).
+					Return(tcNormalizedBlocks[i], nil).
+					Times(1)
+			}
+
+			// Create finality gadget instance with mock DB and specified batch size
+			mockFinalityGadget := &FinalityGadget{
+				db:        mockDbHandler,
+				batchSize: tc.batchSize,
+			}
+
+			// Test batch insert
+			err := mockFinalityGadget.InsertBlocks(tc.blocks)
+			require.NoError(t, err)
+
+			// Verify each block was inserted correctly
+			for _, block := range tc.blocks {
+				retrievedBlock, err := mockFinalityGadget.GetBlockByHeight(block.BlockHeight)
+				require.NoError(t, err)
+				require.NotNil(t, retrievedBlock)
+				require.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
+				require.Equal(t, normalizeBlockHash(block.BlockHash), retrievedBlock.BlockHash)
+				require.Equal(t, block.BlockTimestamp, retrievedBlock.BlockTimestamp)
+			}
+		})
+	}
+}
+
 func TestGetBlockByHeight(t *testing.T) {
 	block := &types.Block{
 		BlockHeight:    1,
