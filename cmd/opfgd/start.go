@@ -89,7 +89,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	}()
 
 	// Start finality gadget
-	if err := fg.Startup(); err != nil {
+	if err := fg.Startup(fgCtx); err != nil {
 		logger.Fatal("Error starting finality gadget", zap.Error(err))
 	}
 

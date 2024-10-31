@@ -19,6 +19,7 @@ type Config struct {
 	HTTPListener      string        `long:"http-listener" description:"host:port to listen for HTTP connections"`
 	BitcoinDisableTLS bool          `long:"bitcoin-disable-tls" description:"disable TLS for RPC connections"`
 	PollInterval      time.Duration `long:"retry-interval" description:"interval in seconds to recheck Babylon finality of block"`
+	BatchSize         uint64        `long:"batch-size" description:"number of blocks to process in a batch"`
 }
 
 func Load(configPath string) (*Config, error) {

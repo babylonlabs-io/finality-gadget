@@ -274,7 +274,8 @@ func TestInsertBlock(t *testing.T) {
 	ctl := gomock.NewController(t)
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
 	// note: the block hash is normalized before passing to the db handler
-	mockDbHandler.EXPECT().InsertBlock(normalizedBlock(block)).Return(nil).Times(1)
+	blocks := []*types.Block{normalizedBlock(block)}
+	mockDbHandler.EXPECT().InsertBlocks(blocks).Return(nil).Times(1)
 	mockDbHandler.EXPECT().GetBlockByHeight(block.BlockHeight).Return(block, nil).Times(1)
 
 	mockFinalityGadget := &FinalityGadget{
@@ -282,7 +283,7 @@ func TestInsertBlock(t *testing.T) {
 	}
 
 	// insert block
-	err := mockFinalityGadget.InsertBlock(block)
+	err := mockFinalityGadget.InsertBlocks(blocks)
 	require.NoError(t, err)
 
 	// verify block was inserted
@@ -304,7 +305,8 @@ func TestGetBlockByHeight(t *testing.T) {
 	ctl := gomock.NewController(t)
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
 	// note: the block hash is normalized before passing to the db handler
-	mockDbHandler.EXPECT().InsertBlock(normalizedBlock(block)).Return(nil).Times(1)
+	blocks := []*types.Block{normalizedBlock(block)}
+	mockDbHandler.EXPECT().InsertBlocks(blocks).Return(nil).Times(1)
 	mockDbHandler.EXPECT().GetBlockByHeight(block.BlockHeight).Return(block, nil).Times(1)
 
 	mockFinalityGadget := &FinalityGadget{
@@ -312,7 +314,7 @@ func TestGetBlockByHeight(t *testing.T) {
 	}
 
 	// insert block
-	err := mockFinalityGadget.InsertBlock(block)
+	err := mockFinalityGadget.InsertBlocks(blocks)
 	require.NoError(t, err)
 
 	// fetch block by height
@@ -350,7 +352,8 @@ func TestGetBlockByHashWith0xPrefix(t *testing.T) {
 	ctl := gomock.NewController(t)
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
 	// note: the block hash is normalized before passing to the db handler
-	mockDbHandler.EXPECT().InsertBlock(normalizedBlock(block)).Return(nil).Times(1)
+	blocks := []*types.Block{normalizedBlock(block)}
+	mockDbHandler.EXPECT().InsertBlocks(blocks).Return(nil).Times(1)
 	mockDbHandler.EXPECT().GetBlockByHash(normalizeBlockHash(block.BlockHash)).Return(block, nil).Times(2)
 
 	mockFinalityGadget := &FinalityGadget{
@@ -358,7 +361,7 @@ func TestGetBlockByHashWith0xPrefix(t *testing.T) {
 	}
 
 	// insert block
-	err := mockFinalityGadget.InsertBlock(block)
+	err := mockFinalityGadget.InsertBlocks(blocks)
 	require.NoError(t, err)
 
 	// fetch block by hash including 0x prefix
@@ -387,7 +390,8 @@ func TestGetBlockByHashWithout0xPrefix(t *testing.T) {
 	ctl := gomock.NewController(t)
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
 	// note: the block hash is normalized before passing to the db handler
-	mockDbHandler.EXPECT().InsertBlock(normalizedBlock(block)).Return(nil).Times(1)
+	blocks := []*types.Block{normalizedBlock(block)}
+	mockDbHandler.EXPECT().InsertBlocks(blocks).Return(nil).Times(1)
 	mockDbHandler.EXPECT().GetBlockByHash(normalizeBlockHash(block.BlockHash)).Return(block, nil).Times(2)
 
 	mockFinalityGadget := &FinalityGadget{
@@ -395,7 +399,7 @@ func TestGetBlockByHashWithout0xPrefix(t *testing.T) {
 	}
 
 	// insert block
-	err := mockFinalityGadget.InsertBlock(block)
+	err := mockFinalityGadget.InsertBlocks(blocks)
 	require.NoError(t, err)
 
 	// fetch block by hash including 0x prefix
@@ -539,8 +543,8 @@ func TestQueryLatestFinalizedBlock(t *testing.T) {
 	// mock db and finality gadget
 	ctl := gomock.NewController(t)
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
-	mockDbHandler.EXPECT().InsertBlock(normalizedFirst).Return(nil).Times(1)
-	mockDbHandler.EXPECT().InsertBlock(normalizedSecond).Return(nil).Times(1)
+	blocks := []*types.Block{normalizedFirst, normalizedSecond}
+	mockDbHandler.EXPECT().InsertBlocks(blocks).Return(nil).Times(1)
 	mockDbHandler.EXPECT().QueryLatestFinalizedBlock().Return(normalizedSecond, nil).Times(1)
 
 	mockFinalityGadget := &FinalityGadget{
@@ -548,9 +552,7 @@ func TestQueryLatestFinalizedBlock(t *testing.T) {
 	}
 
 	// insert two blocks
-	err := mockFinalityGadget.InsertBlock(first)
-	require.NoError(t, err)
-	err = mockFinalityGadget.InsertBlock(second)
+	err := mockFinalityGadget.InsertBlocks(blocks)
 	require.NoError(t, err)
 
 	// fetch latest block

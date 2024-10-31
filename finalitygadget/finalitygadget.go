@@ -40,6 +40,7 @@ type FinalityGadget struct {
 
 	pollInterval        time.Duration
 	lastProcessedHeight uint64
+	batchSize           uint64
 }
 
 //////////////////////////////
@@ -107,6 +108,7 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.L
 		l2Client:            l2Client,
 		db:                  db,
 		pollInterval:        cfg.PollInterval,
+		batchSize:           cfg.BatchSize,
 		lastProcessedHeight: lastProcessedHeight,
 		logger:              logger,
 	}, nil
@@ -460,7 +462,7 @@ func (fg *FinalityGadget) ProcessBlocks(ctx context.Context) error {
 			// if the last processed block is less than the latest block, process it
 			if fg.lastProcessedHeight < latestBlock.Number.Uint64() {
 				fg.logger.Info("Processing block", zap.Uint64("block_height", latestBlock.Number.Uint64()))
-				if err := fg.handleBlock(ctx, latestBlock.Number.Uint64()); err != nil {
+				if err := fg.processBlocksTillHeight(ctx, latestBlock.Number.Uint64()); err != nil {
 					return fmt.Errorf("error processing block %d: %w", latestBlock.Number.Uint64(), err)
 				}
 			}
@@ -468,21 +470,25 @@ func (fg *FinalityGadget) ProcessBlocks(ctx context.Context) error {
 	}
 }
 
-func (fg *FinalityGadget) InsertBlock(block *types.Block) error {
+func (fg *FinalityGadget) InsertBlocks(blocks []*types.Block) error {
 	// Lock mutex
 	fg.mutex.Lock()
-	// Store block in DB
-	err := fg.db.InsertBlock(&types.Block{
-		BlockHeight:    block.BlockHeight,
-		BlockHash:      normalizeBlockHash(block.BlockHash),
-		BlockTimestamp: block.BlockTimestamp,
-	})
-	if err != nil {
-		return err
+	defer fg.mutex.Unlock()
+
+	// Normalize block hashes
+	normalizedBlocks := make([]*types.Block, len(blocks))
+	for i, block := range blocks {
+		normalizedBlocks[i] = &types.Block{
+			BlockHeight:    block.BlockHeight,
+			BlockHash:      normalizeBlockHash(block.BlockHash),
+			BlockTimestamp: block.BlockTimestamp,
+		}
 	}
 
-	// Unlock mutex
-	fg.mutex.Unlock()
+	// Store blocks in DB
+	if err := fg.db.InsertBlocks(normalizedBlocks); err != nil {
+		return fmt.Errorf("failed to batch insert blocks: %w", err)
+	}
 
 	return nil
 }
@@ -528,41 +534,114 @@ func (fg *FinalityGadget) queryBlockByHeight(blockNumber int64) (*types.Block, e
 	}, nil
 }
 
-func (fg *FinalityGadget) handleBlock(ctx context.Context, latestHeight uint64) error {
-	for height := fg.lastProcessedHeight + 1; height <= latestHeight; height++ {
+type blockResult struct {
+	height      uint64
+	block       *types.Block
+	isFinalized bool
+	err         error
+}
+
+func (fg *FinalityGadget) processBlocksTillHeight(ctx context.Context, latestHeight uint64) error {
+	for startHeight := fg.lastProcessedHeight + 1; startHeight <= latestHeight; {
 		select {
 		case <-ctx.Done():
 			return nil
 		default:
-			if height > math.MaxInt64 {
-				return fmt.Errorf("block height %d exceeds maximum int64 value", height)
+			// Calculate batch start and end heights
+			endHeight := startHeight + fg.batchSize - 1
+			if endHeight > latestHeight {
+				endHeight = latestHeight
 			}
-			block, err := fg.queryBlockByHeight(int64(height))
-			if err != nil {
-				return fmt.Errorf("error getting block at height %d: %w", height, err)
+			fg.logger.Info("Processing batch of blocks", zap.Uint64("start_height", startHeight), zap.Uint64("end_height", endHeight))
+
+			// Create batch of blocks to check in parallel
+			results := make(chan blockResult, endHeight-startHeight+1)
+			var wg sync.WaitGroup
+
+			// Query batch in parallel
+			for height := startHeight; height <= endHeight; height++ {
+				if height > math.MaxInt64 {
+					return fmt.Errorf("block height %d exceeds maximum int64 value", height)
+				}
+				wg.Add(1)
+				go func(h uint64) {
+					defer wg.Done()
+					results <- fg.processBlockHeight(h)
+				}(height)
 			}
 
-			// Check the block is babylon finalized using sdk client
-			isFinal, err := fg.QueryIsBlockBabylonFinalized(block)
-			if err != nil && !errors.Is(err, types.ErrBtcStakingNotActivated) {
-				return fmt.Errorf("error checking block %d: %v", block.BlockHeight, err)
+			// Close results channel once all goroutines complete
+			go func() {
+				wg.Wait()
+				close(results)
+			}()
+
+			// Process results and extract error (if any)
+			statusMap := make(map[uint64]blockResult)
+			var processingError error
+			for result := range results {
+				if result.err != nil {
+					processingError = result.err
+					break
+				}
+				statusMap[result.height] = result
 			}
-			// If not finalized, break block processing loop until next poll
-			if !isFinal {
+			if processingError != nil {
+				return processingError
+			}
+
+			// Find the last consecutive finalized block
+			var lastFinalizedHeight uint64
+			for height := startHeight; height <= endHeight; height++ {
+				status, exists := statusMap[height]
+				if !exists || !status.isFinalized {
+					break
+				}
+				lastFinalizedHeight = height
+			}
+
+			// If no blocks were finalized, wait for next poll
+			if lastFinalizedHeight < startHeight {
 				return nil
 			}
 
-			// If finalised, store the block in DB
-			err = fg.InsertBlock(block)
-			if err != nil {
-				return fmt.Errorf("error storing block %d: %v", block.BlockHeight, err)
+			// Batch insert all consecutive finalized blocks
+			finalizedBlocks := make([]*types.Block, lastFinalizedHeight-startHeight+1)
+			for height := startHeight; height <= lastFinalizedHeight; height++ {
+				finalizedBlocks[height-startHeight] = statusMap[height].block
 			}
-			fg.lastProcessedHeight = block.BlockHeight
-			fg.logger.Info("Inserted new finalized block", zap.Uint64("block_height", block.BlockHeight))
+			if err := fg.InsertBlocks(finalizedBlocks); err != nil {
+				return fmt.Errorf("error storing blocks: %w", err)
+			}
+			fg.lastProcessedHeight = lastFinalizedHeight
+
+			// Update start height for next batch
+			startHeight = lastFinalizedHeight + 1
 		}
 	}
 
 	return nil
+}
+
+func (fg *FinalityGadget) processBlockHeight(height uint64) blockResult {
+	result := blockResult{height: height}
+
+	// Fetch block from rpc
+	block, err := fg.queryBlockByHeight(int64(height))
+	if err != nil {
+		result.err = fmt.Errorf("error getting block at height %d: %w", height, err)
+		return result
+	}
+	result.block = block
+
+	// Check finalization
+	isFinalized, err := fg.QueryIsBlockBabylonFinalized(block)
+	if err != nil && !errors.Is(err, types.ErrBtcStakingNotActivated) {
+		result.err = fmt.Errorf("error checking block %d: %w", height, err)
+		return result
+	}
+	result.isFinalized = isFinalized
+	return result
 }
 
 // Query the BTC staking activation timestamp from bbnClient

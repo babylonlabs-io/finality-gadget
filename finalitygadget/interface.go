@@ -55,8 +55,8 @@ type IFinalityGadget interface {
 	 */
 	QueryBtcStakingActivatedTimestamp() (uint64, error)
 
-	// InsertBlock inserts a btc finalized block into the local db
-	InsertBlock(block *types.Block) error
+	// InsertBlocks inserts a batch of btc finalized blocks into the local db
+	InsertBlocks(blocks []*types.Block) error
 
 	// GetBlockByHeight returns the btc finalized block at given height by querying the local db
 	GetBlockByHeight(height uint64) (*types.Block, error)

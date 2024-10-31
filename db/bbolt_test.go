@@ -48,25 +48,62 @@ func setupDB(t *testing.T) (*BBoltHandler, func()) {
 	return db, cleanup
 }
 
-func TestInsertBlock(t *testing.T) {
+func TestInsertBlocks(t *testing.T) {
 	handler, cleanup := setupDB(t)
 	defer cleanup()
 
-	block := &types.Block{
-		BlockHeight:    1,
-		BlockHash:      "0x123",
-		BlockTimestamp: 1000,
+	// Create test blocks
+	blocks := []*types.Block{
+		{
+			BlockHeight:    1,
+			BlockHash:      "0x123",
+			BlockTimestamp: 1000,
+		},
+		{
+			BlockHeight:    2,
+			BlockHash:      "0x456",
+			BlockTimestamp: 1050,
+		},
+		{
+			BlockHeight:    3,
+			BlockHash:      "0x789",
+			BlockTimestamp: 1100,
+		},
 	}
 
-	err := handler.InsertBlock(block)
+	// Test batch insert
+	err := handler.InsertBlocks(blocks)
 	assert.NoError(t, err)
 
-	// Verify block was inserted
-	retrievedBlock, err := handler.GetBlockByHeight(block.BlockHeight)
+	// Verify all blocks were inserted correctly
+	for _, block := range blocks {
+		// Check by height
+		retrievedBlock, err := handler.GetBlockByHeight(block.BlockHeight)
+		assert.NoError(t, err)
+		assert.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
+		assert.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
+		assert.Equal(t, block.BlockTimestamp, retrievedBlock.BlockTimestamp)
+
+		// Check by hash
+		retrievedBlock, err = handler.GetBlockByHash(block.BlockHash)
+		assert.NoError(t, err)
+		assert.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
+		assert.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
+		assert.Equal(t, block.BlockTimestamp, retrievedBlock.BlockTimestamp)
+	}
+
+	// Verify earliest and latest blocks
+	earliest, err := handler.QueryEarliestFinalizedBlock()
 	assert.NoError(t, err)
-	assert.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
-	assert.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
-	assert.Equal(t, block.BlockTimestamp, retrievedBlock.BlockTimestamp)
+	assert.Equal(t, uint64(1), earliest.BlockHeight)
+
+	latest, err := handler.QueryLatestFinalizedBlock()
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(3), latest.BlockHeight)
+
+	// Test empty slice
+	err = handler.InsertBlocks([]*types.Block{})
+	assert.NoError(t, err)
 }
 
 func TestGetBlockByHeight(t *testing.T) {
@@ -79,7 +116,7 @@ func TestGetBlockByHeight(t *testing.T) {
 		BlockHash:      "0x123",
 		BlockTimestamp: 1000,
 	}
-	err := handler.InsertBlock(block)
+	err := handler.InsertBlocks([]*types.Block{block})
 	assert.NoError(t, err)
 
 	// Retrieve block by height
@@ -109,7 +146,7 @@ func TestGetBlockByHash(t *testing.T) {
 		BlockHash:      "0x123",
 		BlockTimestamp: 1000,
 	}
-	err := handler.InsertBlock(block)
+	err := handler.InsertBlocks([]*types.Block{block})
 	assert.NoError(t, err)
 
 	// Retrieve block by hash
@@ -139,7 +176,7 @@ func TestQueryIsBlockFinalizedByHeight(t *testing.T) {
 		BlockHash:      "0x123",
 		BlockTimestamp: 1000,
 	}
-	err := handler.InsertBlock(block)
+	err := handler.InsertBlocks([]*types.Block{block})
 	assert.NoError(t, err)
 
 	// Retrieve block status by height
@@ -167,7 +204,7 @@ func TestQueryIsBlockFinalizedByHash(t *testing.T) {
 		BlockHash:      "0x123",
 		BlockTimestamp: 1000,
 	}
-	err := handler.InsertBlock(block)
+	err := handler.InsertBlocks([]*types.Block{block})
 	assert.NoError(t, err)
 
 	// Retrieve block status by hash
@@ -205,11 +242,7 @@ func TestQueryEarliestFinalizedBlock(t *testing.T) {
 		BlockHash:      "0x789",
 		BlockTimestamp: 1100,
 	}
-	err := handler.InsertBlock(first)
-	assert.NoError(t, err)
-	err = handler.InsertBlock(second)
-	assert.NoError(t, err)
-	err = handler.InsertBlock(third)
+	err := handler.InsertBlocks([]*types.Block{first, second, third})
 	assert.NoError(t, err)
 
 	// Query earliest consecutively finalized block
@@ -235,9 +268,7 @@ func TestQueryLatestFinalizedBlock(t *testing.T) {
 		BlockHash:      "0x456",
 		BlockTimestamp: 1050,
 	}
-	err := handler.InsertBlock(first)
-	assert.NoError(t, err)
-	err = handler.InsertBlock(second)
+	err := handler.InsertBlocks([]*types.Block{first, second})
 	assert.NoError(t, err)
 
 	// Retrieve latest block

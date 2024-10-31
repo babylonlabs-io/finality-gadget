@@ -112,18 +112,18 @@ func (mr *MockIDatabaseHandlerMockRecorder) GetBlockByHeight(height any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockByHeight", reflect.TypeOf((*MockIDatabaseHandler)(nil).GetBlockByHeight), height)
 }
 
-// InsertBlock mocks base method.
-func (m *MockIDatabaseHandler) InsertBlock(block *types.Block) error {
+// InsertBlocks mocks base method.
+func (m *MockIDatabaseHandler) InsertBlocks(block []*types.Block) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InsertBlock", block)
+	ret := m.ctrl.Call(m, "InsertBlocks", block)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// InsertBlock indicates an expected call of InsertBlock.
-func (mr *MockIDatabaseHandlerMockRecorder) InsertBlock(block any) *gomock.Call {
+// InsertBlocks indicates an expected call of InsertBlocks.
+func (mr *MockIDatabaseHandlerMockRecorder) InsertBlocks(block any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertBlock", reflect.TypeOf((*MockIDatabaseHandler)(nil).InsertBlock), block)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertBlocks", reflect.TypeOf((*MockIDatabaseHandler)(nil).InsertBlocks), block)
 }
 
 // QueryEarliestFinalizedBlock mocks base method.
