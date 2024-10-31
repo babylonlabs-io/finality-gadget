@@ -118,7 +118,7 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.L
 // METHODS
 //////////////////////////////
 
-/* QueryIsBlockBabylonFinalized checks if the given L2 block is finalized by the Babylon finality gadget
+/* QueryIsBlockBabylonFinalizedFromBabylon checks if the given L2 block is finalized by querying the Babylon node
  *
  * - if the finality gadget is not enabled, always return true
  * - else, check if the given L2 block is finalized
@@ -134,7 +134,7 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.L
  *   - calculate voted voting power
  *   - check if the voted voting power is more than 2/3 of the total voting power
  */
-func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(block *types.Block) (bool, error) {
+func (fg *FinalityGadget) QueryIsBlockBabylonFinalizedFromBabylon(block *types.Block) (bool, error) {
 	// check if the finality gadget is enabled
 	// if not, always return true to pass through op derivation pipeline
 	isEnabled, err := fg.cwClient.QueryIsEnabled()
@@ -209,8 +209,7 @@ func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(block *types.Block) (bool
 	return true, nil
 }
 
-/* QueryBlockRangeBabylonFinalized searches for a row of consecutive finalized blocks in the block range, and returns
- * the last finalized block height
+/* QueryBlockRangeBabylonFinalized searches the internal db and returns the last consecutively finalized block in the block range
  *
  * Example: if give block range 1-10, and block 1-5 are finalized, and block 6-10 are not finalized, then return 5
  *
@@ -237,7 +236,7 @@ func (fg *FinalityGadget) QueryBlockRangeBabylonFinalized(
 	}
 	var finalizedBlockHeight *uint64
 	for _, block := range queryBlocks {
-		isFinalized, err := fg.QueryIsBlockBabylonFinalized(block)
+		isFinalized, err := fg.QueryIsBlockFinalizedByHeight(block.BlockHeight)
 		if err != nil {
 			return finalizedBlockHeight, err
 		}
@@ -635,7 +634,7 @@ func (fg *FinalityGadget) processBlockHeight(height uint64) blockResult {
 	result.block = block
 
 	// Check finalization
-	isFinalized, err := fg.QueryIsBlockBabylonFinalized(block)
+	isFinalized, err := fg.QueryIsBlockBabylonFinalizedFromBabylon(block)
 	if err != nil && !errors.Is(err, types.ErrBtcStakingNotActivated) {
 		result.err = fmt.Errorf("error checking block %d: %w", height, err)
 		return result

@@ -35,9 +35,9 @@ func (r *rpcServer) RegisterWithGrpcServer(grpcServer *grpc.Server) error {
 	return nil
 }
 
-// QueryIsBlockBabylonFinalized is an RPC method that returns the finality status of a block by querying Babylon chain.
-func (r *rpcServer) QueryIsBlockBabylonFinalized(ctx context.Context, req *proto.QueryIsBlockBabylonFinalizedRequest) (*proto.QueryIsBlockFinalizedResponse, error) {
-	isFinalized, err := r.fg.QueryIsBlockBabylonFinalized(&types.Block{
+// QueryIsBlockBabylonFinalizedFromBabylon is an RPC method that returns the finality status of a block by querying Babylon chain.
+func (r *rpcServer) QueryIsBlockBabylonFinalizedFromBabylon(ctx context.Context, req *proto.QueryIsBlockBabylonFinalizedRequest) (*proto.QueryIsBlockFinalizedResponse, error) {
+	isFinalized, err := r.fg.QueryIsBlockBabylonFinalizedFromBabylon(&types.Block{
 		BlockHash:      req.Block.BlockHash,
 		BlockHeight:    req.Block.BlockHeight,
 		BlockTimestamp: req.Block.BlockTimestamp,

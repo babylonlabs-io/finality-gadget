@@ -3,7 +3,7 @@ package finalitygadget
 import "github.com/babylonlabs-io/finality-gadget/types"
 
 type IFinalityGadget interface {
-	/* QueryIsBlockBabylonFinalized checks if the given L2 block is finalized by the Babylon finality gadget
+	/* QueryIsBlockBabylonFinalizedFromBabylon checks if the given L2 block is finalized by the Babylon finality gadget
 	 *
 	 * - if the finality gadget is not enabled, always return true
 	 * - else, check if the given L2 block is finalized
@@ -19,7 +19,7 @@ type IFinalityGadget interface {
 	 *   - calculate voted voting power
 	 *   - check if the voted voting power is more than 2/3 of the total voting power
 	 */
-	QueryIsBlockBabylonFinalized(block *types.Block) (bool, error)
+	QueryIsBlockBabylonFinalizedFromBabylon(block *types.Block) (bool, error)
 
 	/* QueryBlockRangeBabylonFinalized searches for a row of consecutive finalized blocks in the block range, and returns
 	 * the last finalized block height

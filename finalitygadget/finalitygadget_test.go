@@ -31,7 +31,7 @@ func TestFinalityGadgetDisabled(t *testing.T) {
 	}
 
 	// check QueryIsBlockBabylonFinalized always returns true when finality gadget is not enabled
-	res, err := mockFinalityGadget.QueryIsBlockBabylonFinalized(&types.Block{})
+	res, err := mockFinalityGadget.QueryIsBlockBabylonFinalizedFromBabylon(&types.Block{})
 	require.NoError(t, err)
 	require.True(t, res)
 }
@@ -185,7 +185,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 				btcClient: mockBTCClient,
 			}
 
-			res, err := mockFinalityGadget.QueryIsBlockBabylonFinalized(tc.block)
+			res, err := mockFinalityGadget.QueryIsBlockBabylonFinalizedFromBabylon(tc.block)
 			require.Equal(t, tc.expectResult, res)
 			require.Equal(t, tc.expectedErr, err)
 		})
@@ -196,28 +196,79 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	l2BlockTime := uint64(2)
-	blockA, blockAWithHashTrimmed := testutil.RandomL2Block(rng)
-	blockB, blockBWithHashTrimmed := testutil.GenL2Block(rng, &blockA, l2BlockTime, 1)
-	blockC, blockCWithHashTrimmed := testutil.GenL2Block(rng, &blockB, l2BlockTime, 1)
-	blockD, blockDWithHashTrimmed := testutil.GenL2Block(rng, &blockC, l2BlockTime, 300) // 10 minutes later
-	blockE, blockEWithHashTrimmed := testutil.GenL2Block(rng, &blockD, l2BlockTime, 1)
-	blockF, blockFWithHashTrimmed := testutil.GenL2Block(rng, &blockE, l2BlockTime, 300)
-	blockG, blockGWithHashTrimmed := testutil.GenL2Block(rng, &blockF, l2BlockTime, 1)
+	blockA, _ := testutil.RandomL2Block(rng)
+	blockB, _ := testutil.GenL2Block(rng, &blockA, l2BlockTime, 1)
+	blockC, _ := testutil.GenL2Block(rng, &blockB, l2BlockTime, 1)
+	blockD, _ := testutil.GenL2Block(rng, &blockC, l2BlockTime, 300)
+	blockE, _ := testutil.GenL2Block(rng, &blockD, l2BlockTime, 1)
 
 	testCases := []struct {
 		name         string
 		expectedErr  error
 		expectResult *uint64
 		queryBlocks  []*types.Block
+		dbResponses  map[uint64]bool
+		dbErrors     map[uint64]error
 	}{
-		{"empty query blocks", fmt.Errorf("no blocks provided"), nil, []*types.Block{}},
-		{"single block with finalized", nil, &blockA.BlockHeight, []*types.Block{&blockA}},
-		{"single block with error", fmt.Errorf("RPC rate limit error"), nil, []*types.Block{&blockD}},
-		{"non-consecutive blocks", fmt.Errorf("blocks are not consecutive"), nil, []*types.Block{&blockA, &blockD}},
-		{"the first two blocks are finalized and the last block has error", fmt.Errorf("RPC rate limit error"), &blockB.BlockHeight, []*types.Block{&blockA, &blockB, &blockC}},
-		{"all consecutive blocks are finalized", nil, &blockB.BlockHeight, []*types.Block{&blockA, &blockB}},
-		{"none of the block is finalized and the first block has error", fmt.Errorf("RPC rate limit error"), nil, []*types.Block{&blockD, &blockE}},
-		{"none of the block is finalized and the second block has error", nil, nil, []*types.Block{&blockF, &blockG}},
+		{
+			name:         "empty query blocks",
+			expectedErr:  fmt.Errorf("no blocks provided"),
+			expectResult: nil,
+			queryBlocks:  []*types.Block{},
+		},
+		{
+			name:         "single block with finalized",
+			expectedErr:  nil,
+			expectResult: &blockA.BlockHeight,
+			queryBlocks:  []*types.Block{&blockA},
+			dbResponses:  map[uint64]bool{blockA.BlockHeight: true},
+		},
+		{
+			name:         "single block with error",
+			expectedErr:  fmt.Errorf("database error"),
+			expectResult: nil,
+			queryBlocks:  []*types.Block{&blockD},
+			dbErrors:     map[uint64]error{blockD.BlockHeight: fmt.Errorf("database error")},
+		},
+		{
+			name:         "non-consecutive blocks",
+			expectedErr:  fmt.Errorf("blocks are not consecutive"),
+			expectResult: nil,
+			queryBlocks:  []*types.Block{&blockA, &blockD},
+		},
+		{
+			name:         "all consecutive blocks are finalized",
+			expectedErr:  nil,
+			expectResult: &blockB.BlockHeight,
+			queryBlocks:  []*types.Block{&blockA, &blockB},
+			dbResponses: map[uint64]bool{
+				blockA.BlockHeight: true,
+				blockB.BlockHeight: true,
+			},
+		},
+		{
+			name:         "first two blocks finalized, third has error",
+			expectedErr:  fmt.Errorf("database error"),
+			expectResult: &blockB.BlockHeight,
+			queryBlocks:  []*types.Block{&blockA, &blockB, &blockC},
+			dbResponses: map[uint64]bool{
+				blockA.BlockHeight: true,
+				blockB.BlockHeight: true,
+			},
+			dbErrors: map[uint64]error{
+				blockC.BlockHeight: fmt.Errorf("database error"),
+			},
+		},
+		{
+			name:         "none of the blocks are finalized",
+			expectedErr:  nil,
+			expectResult: nil,
+			queryBlocks:  []*types.Block{&blockD, &blockE},
+			dbResponses: map[uint64]bool{
+				blockD.BlockHeight: false,
+				// block E is never called because loop breaks early
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -225,40 +276,36 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 			ctl := gomock.NewController(t)
 			defer ctl.Finish()
 
-			mockCwClient := mocks.NewMockICosmWasmClient(ctl)
-			mockBTCClient := mocks.NewMockIBitcoinClient(ctl)
-			mockBBNClient := mocks.NewMockIBabylonClient(ctl)
-			mockFinalityGadget := &FinalityGadget{
-				cwClient:  mockCwClient,
-				bbnClient: mockBBNClient,
-				btcClient: mockBTCClient,
+			mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
+
+			// Setup mock DB responses
+			for height, isFinalized := range tc.dbResponses {
+				mockDbHandler.EXPECT().
+					QueryIsBlockFinalizedByHeight(height).
+					Return(isFinalized, nil).
+					Times(1)
 			}
 
-			mockCwClient.EXPECT().QueryIsEnabled().Return(true, nil).AnyTimes()
-			mockCwClient.EXPECT().QueryConsumerId().Return("consumer-chain-id", nil).AnyTimes()
-			mockCwClient.EXPECT().QueryListOfVotedFinalityProviders(&blockAWithHashTrimmed).Return([]string{"pk1", "pk2", "pk3"}, nil).AnyTimes()
-			mockCwClient.EXPECT().QueryListOfVotedFinalityProviders(&blockBWithHashTrimmed).Return([]string{"pk1", "pk2", "pk3"}, nil).AnyTimes()
-			mockCwClient.EXPECT().QueryListOfVotedFinalityProviders(&blockCWithHashTrimmed).Return([]string{"pk1", "pk2", "pk3"}, nil).AnyTimes()
-			mockCwClient.EXPECT().QueryListOfVotedFinalityProviders(&blockDWithHashTrimmed).Return([]string{"pk3"}, nil).AnyTimes()
-			mockCwClient.EXPECT().QueryListOfVotedFinalityProviders(&blockEWithHashTrimmed).Return([]string{"pk1"}, nil).AnyTimes()
-			mockCwClient.EXPECT().QueryListOfVotedFinalityProviders(&blockFWithHashTrimmed).Return([]string{"pk2"}, nil).AnyTimes()
-			mockCwClient.EXPECT().QueryListOfVotedFinalityProviders(&blockGWithHashTrimmed).Return([]string{"pk3"}, nil).AnyTimes()
+			// Setup mock DB errors
+			for height, err := range tc.dbErrors {
+				mockDbHandler.EXPECT().
+					QueryIsBlockFinalizedByHeight(height).
+					Return(false, err).
+					Times(1)
+			}
 
-			mockBTCClient.EXPECT().GetBlockHeightByTimestamp(blockA.BlockTimestamp).Return(uint64(111), nil).AnyTimes()
-			mockBTCClient.EXPECT().GetBlockHeightByTimestamp(blockB.BlockTimestamp).Return(uint64(111), nil).AnyTimes()
-			mockBTCClient.EXPECT().GetBlockHeightByTimestamp(blockC.BlockTimestamp).Return(uint64(111), fmt.Errorf("RPC rate limit error")).AnyTimes()
-			mockBTCClient.EXPECT().GetBlockHeightByTimestamp(blockD.BlockTimestamp).Return(uint64(112), fmt.Errorf("RPC rate limit error")).AnyTimes()
-			mockBTCClient.EXPECT().GetBlockHeightByTimestamp(blockE.BlockTimestamp).Return(uint64(112), nil).AnyTimes()
-			mockBTCClient.EXPECT().GetBlockHeightByTimestamp(blockF.BlockTimestamp).Return(uint64(113), nil).AnyTimes()
-			mockBTCClient.EXPECT().GetBlockHeightByTimestamp(blockG.BlockTimestamp).Return(uint64(113), fmt.Errorf("RPC rate limit error")).AnyTimes()
-
-			mockBBNClient.EXPECT().QueryEarliestActiveDelBtcHeight(gomock.Any()).Return(uint64(1), nil).AnyTimes()
-			mockBBNClient.EXPECT().QueryAllFpBtcPubKeys("consumer-chain-id").Return([]string{"pk1", "pk2", "pk3"}, nil).AnyTimes()
-			mockBBNClient.EXPECT().QueryMultiFpPower([]string{"pk1", "pk2", "pk3"}, gomock.Any()).Return(map[string]uint64{"pk1": 100, "pk2": 200, "pk3": 300}, nil).AnyTimes()
+			mockFinalityGadget := &FinalityGadget{
+				db: mockDbHandler,
+			}
 
 			res, err := mockFinalityGadget.QueryBlockRangeBabylonFinalized(tc.queryBlocks)
 			require.Equal(t, tc.expectResult, res)
-			require.Equal(t, tc.expectedErr, err)
+			if tc.expectedErr != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tc.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
 		})
 	}
 }
