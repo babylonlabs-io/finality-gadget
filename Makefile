@@ -13,6 +13,7 @@ GIT_ROOT := $(shell git rev-parse --show-toplevel)
 mock-gen:
 	@which mockgen > /dev/null || CGO_ENABLED=0 go install go.uber.org/mock/mockgen@latest
 	mockgen -source=db/interface.go -package mocks -destination $(MOCKS_DIR)/db_mock.go
+	mockgen -source=finalitygadget/interface.go -package mocks -destination $(MOCKS_DIR)/finalitygadget_mock.go
 	mockgen -source=finalitygadget/expected_clients.go -package mocks -destination $(MOCKS_DIR)/expected_clients_mock.go
 
 test:

@@ -17,6 +17,17 @@ import (
 	"go.uber.org/zap"
 )
 
+type TestFinalityGadget struct {
+	*FinalityGadget
+}
+
+// A helper function for testing only
+func (tfg *TestFinalityGadget) InsertBlocks(blocks []*types.Block) error {
+	return tfg.FinalityGadget.insertBlocks(blocks)
+}
+
+// TODO: add `QueryIsBlockBabylonFinalizedFromBabylon` as test fn once removed from interface
+
 func TestFinalityGadgetDisabled(t *testing.T) {
 	ctl := gomock.NewController(t)
 
@@ -24,14 +35,16 @@ func TestFinalityGadgetDisabled(t *testing.T) {
 	mockCwClient := mocks.NewMockICosmWasmClient(ctl)
 	mockCwClient.EXPECT().QueryIsEnabled().Return(false, nil).Times(1)
 
-	mockFinalityGadget := &FinalityGadget{
-		cwClient:  mockCwClient,
-		bbnClient: nil,
-		btcClient: nil,
+	mockTestFinalityGadget := &TestFinalityGadget{
+		FinalityGadget: &FinalityGadget{
+			cwClient:  mockCwClient,
+			bbnClient: nil,
+			btcClient: nil,
+		},
 	}
 
 	// check QueryIsBlockBabylonFinalized always returns true when finality gadget is not enabled
-	res, err := mockFinalityGadget.QueryIsBlockBabylonFinalizedFromBabylon(&types.Block{})
+	res, err := mockTestFinalityGadget.QueryIsBlockBabylonFinalizedFromBabylon(&types.Block{})
 	require.NoError(t, err)
 	require.True(t, res)
 }
@@ -325,8 +338,10 @@ func TestInsertBlock(t *testing.T) {
 	mockDbHandler.EXPECT().InsertBlocks(blocks).Return(nil).Times(1)
 	mockDbHandler.EXPECT().GetBlockByHeight(block.BlockHeight).Return(block, nil).Times(1)
 
-	mockFinalityGadget := &FinalityGadget{
-		db: mockDbHandler,
+	mockFinalityGadget := &TestFinalityGadget{
+		FinalityGadget: &FinalityGadget{
+			db: mockDbHandler,
+		},
 	}
 
 	// insert block
@@ -428,18 +443,20 @@ func TestBatchInsertBlocks(t *testing.T) {
 			}
 
 			// Create finality gadget instance with mock DB and specified batch size
-			mockFinalityGadget := &FinalityGadget{
-				db:        mockDbHandler,
-				batchSize: tc.batchSize,
+			mockTestFinalityGadget := &TestFinalityGadget{
+				FinalityGadget: &FinalityGadget{
+					db:        mockDbHandler,
+					batchSize: tc.batchSize,
+				},
 			}
 
 			// Test batch insert
-			err := mockFinalityGadget.InsertBlocks(tc.blocks)
+			err := mockTestFinalityGadget.insertBlocks(tc.blocks)
 			require.NoError(t, err)
 
 			// Verify each block was inserted correctly
 			for _, block := range tc.blocks {
-				retrievedBlock, err := mockFinalityGadget.GetBlockByHeight(block.BlockHeight)
+				retrievedBlock, err := mockTestFinalityGadget.GetBlockByHeight(block.BlockHeight)
 				require.NoError(t, err)
 				require.NotNil(t, retrievedBlock)
 				require.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
@@ -465,16 +482,18 @@ func TestGetBlockByHeight(t *testing.T) {
 	mockDbHandler.EXPECT().InsertBlocks(blocks).Return(nil).Times(1)
 	mockDbHandler.EXPECT().GetBlockByHeight(block.BlockHeight).Return(block, nil).Times(1)
 
-	mockFinalityGadget := &FinalityGadget{
-		db: mockDbHandler,
+	mockTestFinalityGadget := &TestFinalityGadget{
+		FinalityGadget: &FinalityGadget{
+			db: mockDbHandler,
+		},
 	}
 
 	// insert block
-	err := mockFinalityGadget.InsertBlocks(blocks)
+	err := mockTestFinalityGadget.insertBlocks(blocks)
 	require.NoError(t, err)
 
 	// fetch block by height
-	retrievedBlock, err := mockFinalityGadget.GetBlockByHeight(1)
+	retrievedBlock, err := mockTestFinalityGadget.GetBlockByHeight(1)
 	require.NoError(t, err)
 	require.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
 	require.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
@@ -487,12 +506,14 @@ func TestGetBlockByHeightForNonExistentBlock(t *testing.T) {
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
 	mockDbHandler.EXPECT().GetBlockByHeight(uint64(1)).Return(nil, types.ErrBlockNotFound).Times(1)
 
-	mockFinalityGadget := &FinalityGadget{
-		db: mockDbHandler,
+	mockTestFinalityGadget := &TestFinalityGadget{
+		FinalityGadget: &FinalityGadget{
+			db: mockDbHandler,
+		},
 	}
 
 	// fetch block by height
-	retrievedBlock, err := mockFinalityGadget.GetBlockByHeight(1)
+	retrievedBlock, err := mockTestFinalityGadget.GetBlockByHeight(1)
 	require.Nil(t, retrievedBlock)
 	require.Equal(t, err, types.ErrBlockNotFound)
 }
@@ -512,23 +533,25 @@ func TestGetBlockByHashWith0xPrefix(t *testing.T) {
 	mockDbHandler.EXPECT().InsertBlocks(blocks).Return(nil).Times(1)
 	mockDbHandler.EXPECT().GetBlockByHash(normalizeBlockHash(block.BlockHash)).Return(block, nil).Times(2)
 
-	mockFinalityGadget := &FinalityGadget{
-		db: mockDbHandler,
+	mockTestFinalityGadget := &TestFinalityGadget{
+		FinalityGadget: &FinalityGadget{
+			db: mockDbHandler,
+		},
 	}
 
 	// insert block
-	err := mockFinalityGadget.InsertBlocks(blocks)
+	err := mockTestFinalityGadget.insertBlocks(blocks)
 	require.NoError(t, err)
 
 	// fetch block by hash including 0x prefix
-	retrievedBlock, err := mockFinalityGadget.GetBlockByHash(block.BlockHash)
+	retrievedBlock, err := mockTestFinalityGadget.GetBlockByHash(block.BlockHash)
 	require.NoError(t, err)
 	require.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
 	require.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
 	require.Equal(t, block.BlockTimestamp, retrievedBlock.BlockTimestamp)
 
 	// fetch block by hash excluding 0x prefix
-	retrievedBlock, err = mockFinalityGadget.GetBlockByHash(strings.TrimPrefix(block.BlockHash, "0x"))
+	retrievedBlock, err = mockTestFinalityGadget.GetBlockByHash(strings.TrimPrefix(block.BlockHash, "0x"))
 	require.NoError(t, err)
 	require.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
 	require.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
@@ -550,23 +573,25 @@ func TestGetBlockByHashWithout0xPrefix(t *testing.T) {
 	mockDbHandler.EXPECT().InsertBlocks(blocks).Return(nil).Times(1)
 	mockDbHandler.EXPECT().GetBlockByHash(normalizeBlockHash(block.BlockHash)).Return(block, nil).Times(2)
 
-	mockFinalityGadget := &FinalityGadget{
-		db: mockDbHandler,
+	mockTestFinalityGadget := &TestFinalityGadget{
+		FinalityGadget: &FinalityGadget{
+			db: mockDbHandler,
+		},
 	}
 
 	// insert block
-	err := mockFinalityGadget.InsertBlocks(blocks)
+	err := mockTestFinalityGadget.insertBlocks(blocks)
 	require.NoError(t, err)
 
 	// fetch block by hash including 0x prefix
-	retrievedBlock, err := mockFinalityGadget.GetBlockByHash("0x" + block.BlockHash)
+	retrievedBlock, err := mockTestFinalityGadget.GetBlockByHash("0x" + block.BlockHash)
 	require.NoError(t, err)
 	require.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
 	require.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
 	require.Equal(t, block.BlockTimestamp, retrievedBlock.BlockTimestamp)
 
 	// fetch block by hash excluding 0x prefix
-	retrievedBlock, err = mockFinalityGadget.GetBlockByHash(block.BlockHash)
+	retrievedBlock, err = mockTestFinalityGadget.GetBlockByHash(block.BlockHash)
 	require.NoError(t, err)
 	require.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
 	require.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
@@ -579,12 +604,14 @@ func TestGetBlockByHashForNonExistentBlock(t *testing.T) {
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
 	mockDbHandler.EXPECT().GetBlockByHash(normalizeBlockHash("123")).Return(nil, types.ErrBlockNotFound).Times(1)
 
-	mockFinalityGadget := &FinalityGadget{
-		db: mockDbHandler,
+	mockTestFinalityGadget := &TestFinalityGadget{
+		FinalityGadget: &FinalityGadget{
+			db: mockDbHandler,
+		},
 	}
 
 	// fetch block by hash
-	retrievedBlock, err := mockFinalityGadget.GetBlockByHash("123")
+	retrievedBlock, err := mockTestFinalityGadget.GetBlockByHash("123")
 	require.Nil(t, retrievedBlock)
 	require.Equal(t, err, types.ErrBlockNotFound)
 }
@@ -597,12 +624,14 @@ func TestQueryIsBlockFinalizedByHeight(t *testing.T) {
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
 	mockDbHandler.EXPECT().QueryIsBlockFinalizedByHeight(blockHeight).Return(true, nil).Times(1)
 
-	mockFinalityGadget := &FinalityGadget{
-		db: mockDbHandler,
+	mockTestFinalityGadget := &TestFinalityGadget{
+		FinalityGadget: &FinalityGadget{
+			db: mockDbHandler,
+		},
 	}
 
 	// fetch block status by height
-	isFinalized, err := mockFinalityGadget.QueryIsBlockFinalizedByHeight(1)
+	isFinalized, err := mockTestFinalityGadget.QueryIsBlockFinalizedByHeight(1)
 	require.NoError(t, err)
 	require.True(t, isFinalized)
 }
@@ -613,12 +642,14 @@ func TestQueryIsBlockFinalizedByHeightForNonExistentBlock(t *testing.T) {
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
 	mockDbHandler.EXPECT().QueryIsBlockFinalizedByHeight(uint64(1)).Return(false, types.ErrBlockNotFound).Times(1)
 
-	mockFinalityGadget := &FinalityGadget{
-		db: mockDbHandler,
+	mockTestFinalityGadget := &TestFinalityGadget{
+		FinalityGadget: &FinalityGadget{
+			db: mockDbHandler,
+		},
 	}
 
 	// fetch block status by height
-	isFinalized, err := mockFinalityGadget.QueryIsBlockFinalizedByHeight(1)
+	isFinalized, err := mockTestFinalityGadget.QueryIsBlockFinalizedByHeight(1)
 	require.False(t, isFinalized)
 	require.Equal(t, err, types.ErrBlockNotFound)
 }
@@ -629,17 +660,19 @@ func TestQueryIsBlockFinalizedByHashWith0xPrefix(t *testing.T) {
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
 	mockDbHandler.EXPECT().QueryIsBlockFinalizedByHash(normalizeBlockHash("0x123")).Return(true, nil).Times(2)
 
-	mockFinalityGadget := &FinalityGadget{
-		db: mockDbHandler,
+	mockTestFinalityGadget := &TestFinalityGadget{
+		FinalityGadget: &FinalityGadget{
+			db: mockDbHandler,
+		},
 	}
 
 	// fetch block status by hash including 0x prefix
-	isFinalized, err := mockFinalityGadget.QueryIsBlockFinalizedByHash("0x123")
+	isFinalized, err := mockTestFinalityGadget.QueryIsBlockFinalizedByHash("0x123")
 	require.NoError(t, err)
 	require.True(t, isFinalized)
 
 	// fetch block status by hash excluding 0x prefix
-	isFinalized, err = mockFinalityGadget.QueryIsBlockFinalizedByHash("123")
+	isFinalized, err = mockTestFinalityGadget.QueryIsBlockFinalizedByHash("123")
 	require.NoError(t, err)
 	require.True(t, isFinalized)
 }
@@ -650,17 +683,19 @@ func TestQueryIsBlockFinalizedByHashWithout0xPrefix(t *testing.T) {
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
 	mockDbHandler.EXPECT().QueryIsBlockFinalizedByHash(normalizeBlockHash("123")).Return(true, nil).Times(2)
 
-	mockFinalityGadget := &FinalityGadget{
-		db: mockDbHandler,
+	mockTestFinalityGadget := &TestFinalityGadget{
+		FinalityGadget: &FinalityGadget{
+			db: mockDbHandler,
+		},
 	}
 
 	// fetch block status by hash including 0x prefix
-	isFinalized, err := mockFinalityGadget.QueryIsBlockFinalizedByHash("0x123")
+	isFinalized, err := mockTestFinalityGadget.QueryIsBlockFinalizedByHash("0x123")
 	require.NoError(t, err)
 	require.True(t, isFinalized)
 
 	// fetch block status by hash excluding 0x prefix
-	isFinalized, err = mockFinalityGadget.QueryIsBlockFinalizedByHash("123")
+	isFinalized, err = mockTestFinalityGadget.QueryIsBlockFinalizedByHash("123")
 	require.NoError(t, err)
 	require.True(t, isFinalized)
 }
@@ -671,12 +706,14 @@ func TestQueryIsBlockFinalizedByHashForNonExistentBlock(t *testing.T) {
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
 	mockDbHandler.EXPECT().QueryIsBlockFinalizedByHash(normalizeBlockHash("123")).Return(false, types.ErrBlockNotFound).Times(1)
 
-	mockFinalityGadget := &FinalityGadget{
-		db: mockDbHandler,
+	mockTestFinalityGadget := &TestFinalityGadget{
+		FinalityGadget: &FinalityGadget{
+			db: mockDbHandler,
+		},
 	}
 
 	// fetch block status by hash
-	isFinalized, err := mockFinalityGadget.QueryIsBlockFinalizedByHash("123")
+	isFinalized, err := mockTestFinalityGadget.QueryIsBlockFinalizedByHash("123")
 	require.False(t, isFinalized)
 	require.Equal(t, err, types.ErrBlockNotFound)
 }
@@ -703,16 +740,18 @@ func TestQueryLatestFinalizedBlock(t *testing.T) {
 	mockDbHandler.EXPECT().InsertBlocks(blocks).Return(nil).Times(1)
 	mockDbHandler.EXPECT().QueryLatestFinalizedBlock().Return(normalizedSecond, nil).Times(1)
 
-	mockFinalityGadget := &FinalityGadget{
-		db: mockDbHandler,
+	mockTestFinalityGadget := &TestFinalityGadget{
+		FinalityGadget: &FinalityGadget{
+			db: mockDbHandler,
+		},
 	}
 
 	// insert two blocks
-	err := mockFinalityGadget.InsertBlocks(blocks)
+	err := mockTestFinalityGadget.insertBlocks(blocks)
 	require.NoError(t, err)
 
 	// fetch latest block
-	latestBlock, err := mockFinalityGadget.QueryLatestFinalizedBlock()
+	latestBlock, err := mockTestFinalityGadget.QueryLatestFinalizedBlock()
 	require.NoError(t, err)
 	require.Equal(t, normalizedSecond.BlockHeight, latestBlock.BlockHeight)
 	require.Equal(t, normalizedSecond.BlockHash, latestBlock.BlockHash)

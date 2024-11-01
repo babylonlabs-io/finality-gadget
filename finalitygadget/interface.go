@@ -3,6 +3,7 @@ package finalitygadget
 import "github.com/babylonlabs-io/finality-gadget/types"
 
 type IFinalityGadget interface {
+	// TODO: make this method internal once fully tested. External services should query the database instead.
 	/* QueryIsBlockBabylonFinalizedFromBabylon checks if the given L2 block is finalized by the Babylon finality gadget
 	 *
 	 * - if the finality gadget is not enabled, always return true
@@ -54,9 +55,6 @@ type IFinalityGadget interface {
 	 * returns math.MaxUint64, ErrBtcStakingNotActivated if the BTC staking is not activated
 	 */
 	QueryBtcStakingActivatedTimestamp() (uint64, error)
-
-	// InsertBlocks inserts a batch of btc finalized blocks into the local db
-	InsertBlocks(blocks []*types.Block) error
 
 	// GetBlockByHeight returns the btc finalized block at given height by querying the local db
 	GetBlockByHeight(height uint64) (*types.Block, error)
