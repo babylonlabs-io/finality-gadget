@@ -171,6 +171,21 @@ func (mr *MockIDatabaseHandlerMockRecorder) QueryIsBlockFinalizedByHeight(height
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryIsBlockFinalizedByHeight", reflect.TypeOf((*MockIDatabaseHandler)(nil).QueryIsBlockFinalizedByHeight), height)
 }
 
+// QueryIsBlockRangeFinalizedByHeight mocks base method.
+func (m *MockIDatabaseHandler) QueryIsBlockRangeFinalizedByHeight(startHeight, endHeight uint64) ([]bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryIsBlockRangeFinalizedByHeight", startHeight, endHeight)
+	ret0, _ := ret[0].([]bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryIsBlockRangeFinalizedByHeight indicates an expected call of QueryIsBlockRangeFinalizedByHeight.
+func (mr *MockIDatabaseHandlerMockRecorder) QueryIsBlockRangeFinalizedByHeight(startHeight, endHeight any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryIsBlockRangeFinalizedByHeight", reflect.TypeOf((*MockIDatabaseHandler)(nil).QueryIsBlockRangeFinalizedByHeight), startHeight, endHeight)
+}
+
 // QueryLatestFinalizedBlock mocks base method.
 func (m *MockIDatabaseHandler) QueryLatestFinalizedBlock() (*types.Block, error) {
 	m.ctrl.T.Helper()

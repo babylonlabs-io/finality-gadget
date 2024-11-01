@@ -166,6 +166,88 @@ func TestGetBlockByHashForNonExistentBlock(t *testing.T) {
 	assert.Equal(t, types.ErrBlockNotFound, err)
 }
 
+func TestQueryIsBlockRangeFinalizedByHeight(t *testing.T) {
+	handler, cleanup := setupDB(t)
+	defer cleanup()
+
+	// Insert some test blocks
+	blocks := []*types.Block{
+		{
+			BlockHeight:    1,
+			BlockHash:      "0x123",
+			BlockTimestamp: 1000,
+		},
+		{
+			BlockHeight:    2,
+			BlockHash:      "0x456",
+			BlockTimestamp: 1050,
+		},
+		{
+			BlockHeight:    3,
+			BlockHash:      "0x789",
+			BlockTimestamp: 1100,
+		},
+	}
+	err := handler.InsertBlocks(blocks)
+	assert.NoError(t, err)
+
+	testCases := []struct {
+		name        string
+		startHeight uint64
+		endHeight   uint64
+		expected    []bool
+		expectErr   bool
+	}{
+		{
+			name:        "single block exists",
+			startHeight: 1,
+			endHeight:   1,
+			expected:    []bool{true},
+			expectErr:   false,
+		},
+		{
+			name:        "multiple blocks exist",
+			startHeight: 1,
+			endHeight:   3,
+			expected:    []bool{true, true, true},
+			expectErr:   false,
+		},
+		{
+			name:        "no blocks exist in range",
+			startHeight: 4,
+			endHeight:   5,
+			expected:    []bool{false, false},
+			expectErr:   false,
+		},
+		{
+			name:        "mixed existing and non-existing blocks",
+			startHeight: 2,
+			endHeight:   4,
+			expected:    []bool{true, true, false},
+			expectErr:   false,
+		},
+		{
+			name:        "invalid range (end < start)",
+			startHeight: 2,
+			endHeight:   1,
+			expected:    nil,
+			expectErr:   true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			results, err := handler.QueryIsBlockRangeFinalizedByHeight(tc.startHeight, tc.endHeight)
+			if tc.expectErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, results)
+			}
+		})
+	}
+}
+
 func TestQueryIsBlockFinalizedByHeight(t *testing.T) {
 	handler, cleanup := setupDB(t)
 	defer cleanup()

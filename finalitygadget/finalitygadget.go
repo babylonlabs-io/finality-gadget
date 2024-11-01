@@ -235,14 +235,20 @@ func (fg *FinalityGadget) QueryBlockRangeBabylonFinalized(
 			return nil, fmt.Errorf("blocks are not consecutive")
 		}
 	}
+
+	// query the finality status of block range from internal db
+	startHeight := queryBlocks[0].BlockHeight
+	endHeight := queryBlocks[len(queryBlocks)-1].BlockHeight
+	isFinalizedArr, err := fg.db.QueryIsBlockRangeFinalizedByHeight(startHeight, endHeight)
+	if err != nil {
+		return nil, err
+	}
+
+	// find the last finalized block in the range
 	var finalizedBlockHeight *uint64
-	for _, block := range queryBlocks {
-		isFinalized, err := fg.QueryIsBlockFinalizedByHeight(block.BlockHeight)
-		if err != nil {
-			return finalizedBlockHeight, err
-		}
+	for i, isFinalized := range isFinalizedArr {
 		if isFinalized {
-			finalizedBlockHeight = &block.BlockHeight
+			finalizedBlockHeight = &queryBlocks[i].BlockHeight
 		} else {
 			break
 		}
@@ -251,6 +257,7 @@ func (fg *FinalityGadget) QueryBlockRangeBabylonFinalized(
 	if finalizedBlockHeight == nil {
 		return nil, nil
 	}
+
 	return finalizedBlockHeight, nil
 }
 
