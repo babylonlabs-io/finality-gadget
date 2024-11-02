@@ -74,8 +74,6 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	// Create a cancellable context
 	fgCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	// Start monitoring BTC staking activation
-	go fg.MonitorBtcStakingActivation(fgCtx)
 
 	// Start grpc server
 	// Hook interceptor for os signals.
