@@ -269,15 +269,13 @@ func (bb *BBoltHandler) QueryLatestFinalizedBlock() (*types.Block, error) {
 
 func (bb *BBoltHandler) GetActivatedTimestamp() (uint64, error) {
 	if bb.db == nil {
-		bb.logger.Error("Database handle is nil")
-		return math.MaxUint64, errors.New("database handle is nil")
+		bb.logger.Error("[GetActivatedTimestamp] Database handle is nil")
 	}
 
 	var timestamp uint64
 	err := bb.db.View(func(tx *bolt.Tx) error {
 		if tx == nil {
-			bb.logger.Error("Transaction is nil")
-			return errors.New("transaction is nil")
+			bb.logger.Error("[GetActivatedTimestamp] Transaction is nil")
 		}
 		b := tx.Bucket([]byte(indexerBucket))
 		v := b.Get([]byte(activatedTimestampKey))
