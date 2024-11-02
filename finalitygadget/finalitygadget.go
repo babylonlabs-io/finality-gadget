@@ -211,8 +211,8 @@ func (fg *FinalityGadget) QueryIsBlockBabylonFinalizedFromBabylon(block *types.B
 }
 
 // QueryIsBlockBabylonFinalized queries the finality status of a given block height from the internal db
-func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(height uint64) (bool, error) {
-	return fg.db.QueryIsBlockFinalizedByHeight(height)
+func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(block *types.Block) (bool, error) {
+	return fg.db.QueryIsBlockFinalizedByHeight(block.BlockHeight)
 }
 
 /* QueryBlockRangeBabylonFinalized searches the internal db and returns the last consecutively finalized block in the block range

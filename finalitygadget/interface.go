@@ -23,7 +23,7 @@ type IFinalityGadget interface {
 	QueryIsBlockBabylonFinalizedFromBabylon(block *types.Block) (bool, error)
 
 	// QueryIsBlockBabylonFinalized queries the finality status of a given block height from the internal db
-	QueryIsBlockBabylonFinalized(height uint64) (bool, error)
+	QueryIsBlockBabylonFinalized(block *types.Block) (bool, error)
 
 	/* QueryBlockRangeBabylonFinalized searches for a row of consecutive finalized blocks in the block range, and returns
 	 * the last finalized block height
