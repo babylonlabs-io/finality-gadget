@@ -806,7 +806,6 @@ func TestQueryBtcStakingActivatedTimestamp(t *testing.T) {
 	mockBBNClient.EXPECT().QueryAllFpBtcPubKeys("consumer-chain-id").Return([]string{"pk1", "pk2"}, nil)
 	mockBBNClient.EXPECT().QueryEarliestActiveDelBtcHeight([]string{"pk1", "pk2"}).Return(uint64(100), nil)
 	mockBTCClient.EXPECT().GetBlockTimestampByHeight(uint64(100)).Return(uint64(1234567890), nil)
-	mockDbHandler.EXPECT().SaveActivatedTimestamp(uint64(1234567890)).Return(nil)
 
 	timestamp, err = mockFinalityGadget.QueryBtcStakingActivatedTimestamp()
 	require.NoError(t, err)
