@@ -210,6 +210,11 @@ func (fg *FinalityGadget) QueryIsBlockBabylonFinalizedFromBabylon(block *types.B
 	return true, nil
 }
 
+// QueryIsBlockBabylonFinalized queries the finality status of a given block height from the internal db
+func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(height uint64) (bool, error) {
+	return fg.db.QueryIsBlockFinalizedByHeight(height)
+}
+
 /* QueryBlockRangeBabylonFinalized searches the internal db and returns the last consecutively finalized block in the block range
  *
  * Example: if give block range 1-10, and block 1-5 are finalized, and block 6-10 are not finalized, then return 5

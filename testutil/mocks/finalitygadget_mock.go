@@ -114,6 +114,21 @@ func (mr *MockIFinalityGadgetMockRecorder) QueryChainSyncStatus() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryChainSyncStatus", reflect.TypeOf((*MockIFinalityGadget)(nil).QueryChainSyncStatus))
 }
 
+// QueryIsBlockBabylonFinalized mocks base method.
+func (m *MockIFinalityGadget) QueryIsBlockBabylonFinalized(height uint64) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryIsBlockBabylonFinalized", height)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryIsBlockBabylonFinalized indicates an expected call of QueryIsBlockBabylonFinalized.
+func (mr *MockIFinalityGadgetMockRecorder) QueryIsBlockBabylonFinalized(height any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryIsBlockBabylonFinalized", reflect.TypeOf((*MockIFinalityGadget)(nil).QueryIsBlockBabylonFinalized), height)
+}
+
 // QueryIsBlockBabylonFinalizedFromBabylon mocks base method.
 func (m *MockIFinalityGadget) QueryIsBlockBabylonFinalizedFromBabylon(block *types.Block) (bool, error) {
 	m.ctrl.T.Helper()
