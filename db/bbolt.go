@@ -292,6 +292,7 @@ func (bb *BBoltHandler) SaveActivatedTimestamp(timestamp uint64) error {
 }
 
 func (bb *BBoltHandler) Close() error {
+	bb.logger.Info("Closing DB...")
 	return bb.db.Close()
 }
 
