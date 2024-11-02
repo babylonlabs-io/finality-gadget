@@ -135,8 +135,8 @@ func (s *Server) startGrpcListen(grpcServer *grpc.Server, listeners []net.Listen
 
 func (s *Server) newHttpHandler() http.Handler {
 	mux := http.NewServeMux()
-	// mux.HandleFunc("/v1/transaction", s.txStatusHandler)
-	// mux.HandleFunc("/v1/chainSyncStatus", s.chainSyncStatusHandler)
-	// mux.HandleFunc("/health", s.healthHandler)
+	mux.HandleFunc("/v1/transaction", s.txStatusHandler)
+	mux.HandleFunc("/v1/chainSyncStatus", s.chainSyncStatusHandler)
+	mux.HandleFunc("/health", s.healthHandler)
 	return mux
 }
