@@ -268,15 +268,8 @@ func (bb *BBoltHandler) QueryLatestFinalizedBlock() (*types.Block, error) {
 }
 
 func (bb *BBoltHandler) GetActivatedTimestamp() (uint64, error) {
-	if bb.db == nil {
-		bb.logger.Error("[GetActivatedTimestamp] Database handle is nil")
-	}
-
 	var timestamp uint64
 	err := bb.db.View(func(tx *bolt.Tx) error {
-		if tx == nil {
-			bb.logger.Error("[GetActivatedTimestamp] Transaction is nil")
-		}
 		b := tx.Bucket([]byte(indexerBucket))
 		v := b.Get([]byte(activatedTimestampKey))
 		if v == nil {
@@ -286,9 +279,6 @@ func (bb *BBoltHandler) GetActivatedTimestamp() (uint64, error) {
 		return nil
 	})
 	if err != nil {
-		bb.logger.Error("GetActivatedTimestamp failed",
-			zap.Error(err),
-			zap.Bool("db_is_nil", bb.db == nil))
 		return math.MaxUint64, err
 	}
 	return timestamp, nil
