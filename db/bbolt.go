@@ -72,8 +72,7 @@ func (bb *BBoltHandler) InsertBlocks(blocks []*types.Block) error {
 	bb.logger.Info("Batch inserting blocks to DB", zap.Int("count", len(blocks)))
 
 	// Single transaction for all operations
-	bb.logger.Debug("[InsertBlocks] Open DB")
-	err := bb.db.Update(func(tx *bolt.Tx) error {
+	return bb.db.Update(func(tx *bolt.Tx) error {
 		blocksBucket := tx.Bucket([]byte(blocksBucket))
 		heightsBucket := tx.Bucket([]byte(blockHeightsBucket))
 		indexBucket := tx.Bucket([]byte(indexerBucket))
@@ -127,13 +126,10 @@ func (bb *BBoltHandler) InsertBlocks(blocks []*types.Block) error {
 
 		return nil
 	})
-	bb.logger.Debug("[InsertBlocks] Close DB")
-	return err
 }
 
 func (bb *BBoltHandler) GetBlockByHeight(height uint64) (*types.Block, error) {
 	var block types.Block
-	bb.logger.Debug("[GetBlockByHeight] Open DB")
 	err := bb.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
 		v := b.Get(bb.itob(height))
@@ -142,7 +138,6 @@ func (bb *BBoltHandler) GetBlockByHeight(height uint64) (*types.Block, error) {
 		}
 		return json.Unmarshal(v, &block)
 	})
-	bb.logger.Debug("[GetBlockByHeight] Close DB")
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +147,6 @@ func (bb *BBoltHandler) GetBlockByHeight(height uint64) (*types.Block, error) {
 func (bb *BBoltHandler) GetBlockByHash(hash string) (*types.Block, error) {
 	// Fetch block number corresponding to hash
 	var blockHeight uint64
-	bb.logger.Debug("[GetBlockByHash] Open DB")
 	err := bb.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blockHeightsBucket))
 		v := b.Get([]byte(hash))
@@ -162,7 +156,6 @@ func (bb *BBoltHandler) GetBlockByHash(hash string) (*types.Block, error) {
 		blockHeight = bb.btoi(v)
 		return nil
 	})
-	bb.logger.Debug("[GetBlockByHash] Close DB")
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +171,6 @@ func (bb *BBoltHandler) QueryIsBlockRangeFinalizedByHeight(startHeight, endHeigh
 	len := endHeight - startHeight + 1
 	results := make([]bool, len)
 
-	bb.logger.Debug("[QueryIsBlockRangeFinalizedByHeight] Open DB")
 	err := bb.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(blocksBucket))
 
@@ -191,7 +183,7 @@ func (bb *BBoltHandler) QueryIsBlockRangeFinalizedByHeight(startHeight, endHeigh
 
 		return nil
 	})
-	bb.logger.Debug("[QueryIsBlockRangeFinalizedByHeight] Close DB")
+
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +192,6 @@ func (bb *BBoltHandler) QueryIsBlockRangeFinalizedByHeight(startHeight, endHeigh
 }
 
 func (bb *BBoltHandler) QueryIsBlockFinalizedByHeight(height uint64) (bool, error) {
-	bb.logger.Debug("[QueryIsBlockFinalizedByHeight] Open DB")
 	_, err := bb.GetBlockByHeight(height)
 	if err != nil {
 		if errors.Is(err, types.ErrBlockNotFound) {
@@ -208,14 +199,12 @@ func (bb *BBoltHandler) QueryIsBlockFinalizedByHeight(height uint64) (bool, erro
 		}
 		return false, err
 	}
-	bb.logger.Debug("[QueryIsBlockFinalizedByHeight] Close DB")
 	return true, nil
 }
 
 func (bb *BBoltHandler) QueryIsBlockFinalizedByHash(hash string) (bool, error) {
 	// Fetch block number by hash
 	var blockHeight uint64
-	bb.logger.Debug("[QueryIsBlockFinalizedByHash] Open DB")
 	err := bb.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blockHeightsBucket))
 		res := b.Get([]byte(hash))
@@ -225,7 +214,6 @@ func (bb *BBoltHandler) QueryIsBlockFinalizedByHash(hash string) (bool, error) {
 		blockHeight = bb.btoi(res)
 		return nil
 	})
-	bb.logger.Debug("[QueryIsBlockFinalizedByHash] Close DB")
 	if err != nil {
 		if errors.Is(err, types.ErrBlockNotFound) {
 			return false, nil
@@ -238,7 +226,6 @@ func (bb *BBoltHandler) QueryIsBlockFinalizedByHash(hash string) (bool, error) {
 
 func (bb *BBoltHandler) QueryEarliestFinalizedBlock() (*types.Block, error) {
 	var earliestBlockHeight uint64
-	bb.logger.Debug("[QueryEarliestFinalizedBlock] Open DB")
 	err := bb.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(indexerBucket))
 		v := b.Get([]byte(earliestBlockKey))
@@ -248,7 +235,6 @@ func (bb *BBoltHandler) QueryEarliestFinalizedBlock() (*types.Block, error) {
 		earliestBlockHeight = bb.btoi(v)
 		return nil
 	})
-	bb.logger.Debug("[QueryEarliestFinalizedBlock] Close DB")
 	if err != nil {
 		return nil, err
 	}
@@ -259,7 +245,6 @@ func (bb *BBoltHandler) QueryLatestFinalizedBlock() (*types.Block, error) {
 	var latestBlockHeight uint64
 
 	// Fetch latest block height
-	bb.logger.Debug("[QueryLatestFinalizedBlock] Open DB")
 	err := bb.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(indexerBucket))
 		v := b.Get([]byte(latestBlockKey))
@@ -269,7 +254,6 @@ func (bb *BBoltHandler) QueryLatestFinalizedBlock() (*types.Block, error) {
 		latestBlockHeight = bb.btoi(v)
 		return nil
 	})
-	bb.logger.Debug("[QueryLatestFinalizedBlock] Close DB")
 	if err != nil {
 		// If no latest block has been stored yet, return nil
 		if errors.Is(err, types.ErrBlockNotFound) {
@@ -285,7 +269,6 @@ func (bb *BBoltHandler) QueryLatestFinalizedBlock() (*types.Block, error) {
 
 func (bb *BBoltHandler) GetActivatedTimestamp() (uint64, error) {
 	var timestamp uint64
-	bb.logger.Debug("[GetActivatedTimestamp] Open DB")
 	err := bb.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(indexerBucket))
 		v := b.Get([]byte(activatedTimestampKey))
@@ -295,7 +278,6 @@ func (bb *BBoltHandler) GetActivatedTimestamp() (uint64, error) {
 		timestamp = bb.btoi(v)
 		return nil
 	})
-	bb.logger.Debug("[GetActivatedTimestamp] Close DB")
 	if err != nil {
 		return math.MaxUint64, err
 	}
@@ -303,13 +285,10 @@ func (bb *BBoltHandler) GetActivatedTimestamp() (uint64, error) {
 }
 
 func (bb *BBoltHandler) SaveActivatedTimestamp(timestamp uint64) error {
-	bb.logger.Debug("[SaveActivatedTimestamp] Open DB")
-	err := bb.db.Update(func(tx *bolt.Tx) error {
+	return bb.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(indexerBucket))
 		return b.Put([]byte(activatedTimestampKey), bb.itob(timestamp))
 	})
-	bb.logger.Debug("[SaveActivatedTimestamp] Close DB")
-	return err
 }
 
 func (bb *BBoltHandler) Close() error {
@@ -322,12 +301,10 @@ func (bb *BBoltHandler) Close() error {
 //////////////////////////////
 
 func (bb *BBoltHandler) tryCreateBucket(tx *bolt.Tx, bucketName string) error {
-	bb.logger.Debug("[tryCreateBucket] Open DB")
 	_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
 	if err != nil {
 		bb.logger.Error("Error creating bucket", zap.Error(err))
 	}
-	bb.logger.Debug("[tryCreateBucket] Close DB")
 	return err
 }
 
