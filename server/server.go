@@ -6,13 +6,11 @@ import (
 	"net/http"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/babylonlabs-io/finality-gadget/config"
 	"github.com/babylonlabs-io/finality-gadget/db"
 	"github.com/babylonlabs-io/finality-gadget/finalitygadget"
 	"github.com/lightningnetwork/lnd/signal"
-	"github.com/rs/cors"
 	"go.uber.org/zap"
 
 	"google.golang.org/grpc"
@@ -79,24 +77,24 @@ func (s *Server) RunUntilShutdown() error {
 		return fmt.Errorf("failed to start gRPC listener: %v", err)
 	}
 
-	// Add cors options to allow access form any origin
-	corsOpts := cors.Options{
-		AllowOriginFunc:  func(origin string) bool { return true },
-		AllowCredentials: true,
-		AllowedMethods:   []string{"GET", "POST"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization"},
-	}
+	// // Add cors options to allow access form any origin
+	// corsOpts := cors.Options{
+	// 	AllowOriginFunc:  func(origin string) bool { return true },
+	// 	AllowCredentials: true,
+	// 	AllowedMethods:   []string{"GET", "POST"},
+	// 	AllowedHeaders:   []string{"Content-Type", "Authorization"},
+	// }
 
-	httpServer := &http.Server{
-		Addr:              s.cfg.HTTPListener,
-		Handler:           cors.New(corsOpts).Handler(s.newHttpHandler()),
-		ReadHeaderTimeout: 30 * time.Second,
-	}
+	// httpServer := &http.Server{
+	// 	Addr:              s.cfg.HTTPListener,
+	// 	Handler:           cors.New(corsOpts).Handler(s.newHttpHandler()),
+	// 	ReadHeaderTimeout: 30 * time.Second,
+	// }
 
-	s.logger.Info("Starting standalone HTTP server on port 8080")
-	if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		s.logger.Error("HTTP server failed", zap.Error(err))
-	}
+	// s.logger.Info("Starting standalone HTTP server on port 8080")
+	// if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	// 	s.logger.Error("HTTP server failed", zap.Error(err))
+	// }
 
 	s.logger.Info("Finality gadget is active")
 
