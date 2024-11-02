@@ -212,6 +212,32 @@ func (fg *FinalityGadget) QueryIsBlockBabylonFinalizedFromBabylon(block *types.B
 
 // QueryIsBlockBabylonFinalized queries the finality status of a given block height from the internal db
 func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(block *types.Block) (bool, error) {
+	// check if the finality gadget is enabled
+	// if not, always return true to pass through op derivation pipeline
+	isEnabled, err := fg.cwClient.QueryIsEnabled()
+	if err != nil {
+		return false, err
+	}
+	if !isEnabled {
+		return true, nil
+	}
+
+	// convert the L2 timestamp to BTC height
+	btcblockHeight, err := fg.btcClient.GetBlockHeightByTimestamp(block.BlockTimestamp)
+	if err != nil {
+		return false, err
+	}
+
+	// check whether the btc staking is activated
+	btcStakingActivatedTimestamp, err := fg.QueryBtcStakingActivatedTimestamp()
+	if err != nil {
+		return false, err
+	}
+	if btcblockHeight < btcStakingActivatedTimestamp {
+		return false, types.ErrBtcStakingNotActivated
+	}
+
+	// query the finality status of the block from internal db
 	return fg.db.QueryIsBlockFinalizedByHeight(block.BlockHeight)
 }
 
