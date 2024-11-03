@@ -40,6 +40,7 @@ func (c *Config) Validate() error {
 	if c.BBNRPCAddress == "" {
 		return fmt.Errorf("bbn-rpc-address is required")
 	}
+	// TODO: add some default values if missing
 	if c.DBFilePath == "" {
 		return fmt.Errorf("db-file-path is required")
 	}
@@ -51,6 +52,7 @@ func (c *Config) Validate() error {
 	}
 
 	// Numeric validations
+	// TODO: add more validations (max batch size, min poll interval)
 	if c.PollInterval <= 0 {
 		return fmt.Errorf("poll-interval must be positive")
 	}
