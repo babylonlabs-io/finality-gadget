@@ -25,6 +25,7 @@ import (
 type MockIBitcoinClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockIBitcoinClientMockRecorder
+	isgomock struct{}
 }
 
 // MockIBitcoinClientMockRecorder is the mock recorder for MockIBitcoinClient.
@@ -123,6 +124,7 @@ func (mr *MockIBitcoinClientMockRecorder) GetBlockTimestampByHeight(height any) 
 type MockIBabylonClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockIBabylonClientMockRecorder
+	isgomock struct{}
 }
 
 // MockIBabylonClientMockRecorder is the mock recorder for MockIBabylonClient.
@@ -206,6 +208,7 @@ func (mr *MockIBabylonClientMockRecorder) QueryMultiFpPower(fpPubkeyHexList, btc
 type MockICosmWasmClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockICosmWasmClientMockRecorder
+	isgomock struct{}
 }
 
 // MockICosmWasmClientMockRecorder is the mock recorder for MockICosmWasmClient.
@@ -274,6 +277,7 @@ func (mr *MockICosmWasmClientMockRecorder) QueryListOfVotedFinalityProviders(que
 type MockIEthL2Client struct {
 	ctrl     *gomock.Controller
 	recorder *MockIEthL2ClientMockRecorder
+	isgomock struct{}
 }
 
 // MockIEthL2ClientMockRecorder is the mock recorder for MockIEthL2Client.

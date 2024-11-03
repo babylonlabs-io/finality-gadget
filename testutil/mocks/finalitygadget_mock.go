@@ -20,6 +20,7 @@ import (
 type MockIFinalityGadget struct {
 	ctrl     *gomock.Controller
 	recorder *MockIFinalityGadgetMockRecorder
+	isgomock struct{}
 }
 
 // MockIFinalityGadgetMockRecorder is the mock recorder for MockIFinalityGadget.
