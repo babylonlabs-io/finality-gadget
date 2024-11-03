@@ -576,26 +576,27 @@ func (fg *FinalityGadget) queryBlockByHeight(blockNumber int64) (*types.Block, e
 	}, nil
 }
 
+// Process blocks in batches of size `fg.batchSize` until the latest height
 func (fg *FinalityGadget) processBlocksTillHeight(ctx context.Context, latestHeight uint64) error {
-	for startHeight := fg.lastProcessedHeight + 1; startHeight <= latestHeight; {
+	for batchStartHeight := fg.lastProcessedHeight + 1; batchStartHeight <= latestHeight; {
 		select {
 		case <-ctx.Done():
 			return nil
 		default:
 			// Calculate batch start and end heights
-			endHeight := startHeight + fg.batchSize - 1
-			if endHeight > latestHeight {
-				endHeight = latestHeight
+			batchEndHeight := batchStartHeight + fg.batchSize - 1
+			if batchEndHeight > latestHeight {
+				batchEndHeight = latestHeight
 			}
-			fg.logger.Info("Processing batch of blocks", zap.Uint64("start_height", startHeight), zap.Uint64("end_height", endHeight))
+			fg.logger.Info("Processing batch of blocks", zap.Uint64("batch_start_height", batchStartHeight), zap.Uint64("batch_end_height", batchEndHeight))
 
 			// Create batch of blocks to check in parallel
-			results := make(chan *types.Block, endHeight-startHeight+1)
-			errors := make(chan error, endHeight-startHeight+1)
+			results := make(chan *types.Block, batchEndHeight-batchStartHeight+1)
+			errors := make(chan error, batchEndHeight-batchStartHeight+1)
 			var wg sync.WaitGroup
 
 			// Query batch in parallel
-			for height := startHeight; height <= endHeight; height++ {
+			for height := batchStartHeight; height <= batchEndHeight; height++ {
 				if height > math.MaxInt64 {
 					return fmt.Errorf("block height %d exceeds maximum int64 value", height)
 				}
@@ -638,7 +639,7 @@ func (fg *FinalityGadget) processBlocksTillHeight(ctx context.Context, latestHei
 			}
 
 			// If no blocks were finalized, wait for next poll
-			if lastFinalizedHeight < startHeight {
+			if lastFinalizedHeight < batchStartHeight {
 				return nil
 			}
 
@@ -649,7 +650,7 @@ func (fg *FinalityGadget) processBlocksTillHeight(ctx context.Context, latestHei
 			fg.lastProcessedHeight = lastFinalizedHeight
 
 			// Update start height for next batch
-			startHeight = lastFinalizedHeight + 1
+			batchStartHeight = lastFinalizedHeight + 1
 		}
 	}
 
