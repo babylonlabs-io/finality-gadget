@@ -463,7 +463,7 @@ func (fg *FinalityGadget) Startup(ctx context.Context) error {
 			}
 
 			// throw error if btc staking activated before the first block was finalized (see startup order above)
-			if latestFinalizedHeight == 0 && latestFinalizedBlockTime < btcStakingActivatedTimestamp {
+			if latestFinalizedHeight == 0 && btcStakingActivatedTimestamp < latestFinalizedBlockTime {
 				return fmt.Errorf("BTC staking activated before the first finalized block")
 			}
 
