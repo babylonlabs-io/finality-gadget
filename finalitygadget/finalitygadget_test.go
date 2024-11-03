@@ -216,13 +216,13 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 	blockE, _ := testutil.GenL2Block(rng, &blockD, l2BlockTime, 1)
 
 	testCases := []struct {
-		name        string
 		queryBlocks []*types.Block
-		queryDb     bool
+		expRes      *uint64
 		expErr      error
 		expDbErr    error
+		name        string
 		expDbRes    []bool
-		expRes      *uint64
+		queryDb     bool
 	}{
 		{
 			name:        "empty query blocks",
@@ -387,8 +387,8 @@ func TestBatchInsertBlocks(t *testing.T) {
 
 	testCases := []struct {
 		name      string
-		batchSize uint64
 		blocks    []*types.Block
+		batchSize uint64
 	}{
 		{
 			name:      "small batch size",

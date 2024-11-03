@@ -78,8 +78,8 @@ func TestInsertBlocks(t *testing.T) {
 	// Verify all blocks were inserted correctly
 	for _, block := range blocks {
 		// Check by height
-		retrievedBlock, err := handler.GetBlockByHeight(block.BlockHeight)
-		assert.NoError(t, err)
+		retrievedBlock, blockErr := handler.GetBlockByHeight(block.BlockHeight)
+		assert.NoError(t, blockErr)
 		assert.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
 		assert.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
 		assert.Equal(t, block.BlockTimestamp, retrievedBlock.BlockTimestamp)
@@ -193,10 +193,10 @@ func TestQueryIsBlockRangeFinalizedByHeight(t *testing.T) {
 
 	testCases := []struct {
 		name        string
-		startHeight uint64
-		endHeight   uint64
 		expected    []bool
 		expectErr   bool
+		endHeight   uint64
+		startHeight uint64
 	}{
 		{
 			name:        "single block exists",
