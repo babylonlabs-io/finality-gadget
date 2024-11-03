@@ -574,13 +574,6 @@ func (fg *FinalityGadget) queryBlockByHeight(blockNumber int64) (*types.Block, e
 	}, nil
 }
 
-type blockResult struct {
-	height      uint64
-	block       *types.Block
-	isFinalized bool
-	err         error
-}
-
 func (fg *FinalityGadget) processBlocksTillHeight(ctx context.Context, latestHeight uint64) error {
 	for startHeight := fg.lastProcessedHeight + 1; startHeight <= latestHeight; {
 		select {
@@ -595,7 +588,8 @@ func (fg *FinalityGadget) processBlocksTillHeight(ctx context.Context, latestHei
 			fg.logger.Info("Processing batch of blocks", zap.Uint64("start_height", startHeight), zap.Uint64("end_height", endHeight))
 
 			// Create batch of blocks to check in parallel
-			results := make(chan blockResult, endHeight-startHeight+1)
+			results := make(chan *types.Block, endHeight-startHeight+1)
+			errors := make(chan error, endHeight-startHeight+1)
 			var wg sync.WaitGroup
 
 			// Query batch in parallel
@@ -606,7 +600,9 @@ func (fg *FinalityGadget) processBlocksTillHeight(ctx context.Context, latestHei
 				wg.Add(1)
 				go func(h uint64) {
 					defer wg.Done()
-					results <- fg.processHeight(h)
+					block, err := fg.processHeight(h)
+					results <- block
+					errors <- err
 				}(height)
 			}
 
@@ -616,28 +612,27 @@ func (fg *FinalityGadget) processBlocksTillHeight(ctx context.Context, latestHei
 				close(results)
 			}()
 
-			// Process results and extract error (if any)
-			statusMap := make(map[uint64]blockResult)
+			// Extract and handle error (if any)
 			var processingError error
-			for result := range results {
-				if result.err != nil {
-					processingError = result.err
+			for err := range errors {
+				if err != nil {
+					processingError = err
 					break
 				}
-				statusMap[result.height] = result
 			}
 			if processingError != nil {
 				return processingError
 			}
 
-			// Find the last consecutive finalized block
+			// Extract blocks and find last consecutive finalized block
+			var finalizedBlocks []*types.Block
 			var lastFinalizedHeight uint64
-			for height := startHeight; height <= endHeight; height++ {
-				status, exists := statusMap[height]
-				if !exists || !status.isFinalized {
+			for block := range results {
+				if block == nil {
 					break
 				}
-				lastFinalizedHeight = height
+				finalizedBlocks = append(finalizedBlocks, block)
+				lastFinalizedHeight = block.BlockHeight
 			}
 
 			// If no blocks were finalized, wait for next poll
@@ -646,10 +641,6 @@ func (fg *FinalityGadget) processBlocksTillHeight(ctx context.Context, latestHei
 			}
 
 			// Batch insert all consecutive finalized blocks
-			finalizedBlocks := make([]*types.Block, lastFinalizedHeight-startHeight+1)
-			for height := startHeight; height <= lastFinalizedHeight; height++ {
-				finalizedBlocks[height-startHeight] = statusMap[height].block
-			}
 			if err := fg.insertBlocks(finalizedBlocks); err != nil {
 				return fmt.Errorf("error storing blocks: %w", err)
 			}
@@ -663,25 +654,24 @@ func (fg *FinalityGadget) processBlocksTillHeight(ctx context.Context, latestHei
 	return nil
 }
 
-func (fg *FinalityGadget) processHeight(height uint64) blockResult {
-	result := blockResult{height: height}
-
+func (fg *FinalityGadget) processHeight(height uint64) (*types.Block, error) {
 	// Fetch block from rpc
 	block, err := fg.queryBlockByHeight(int64(height))
 	if err != nil {
-		result.err = fmt.Errorf("error getting block at height %d: %w", height, err)
-		return result
+		return nil, fmt.Errorf("error getting block at height %d: %w", height, err)
 	}
-	result.block = block
 
 	// Check finalization
 	isFinalized, err := fg.QueryIsBlockBabylonFinalizedFromBabylon(block)
-	if err != nil && !errors.Is(err, types.ErrBtcStakingNotActivated) {
-		result.err = fmt.Errorf("error checking block %d: %w", height, err)
-		return result
+	if err != nil {
+		return nil, fmt.Errorf("error checking is block %d finalized from babylon: %w", height, err)
 	}
-	result.isFinalized = isFinalized
-	return result
+
+	if !isFinalized {
+		return nil, nil
+	}
+
+	return block, nil
 }
 
 // Query the BTC staking activation timestamp from bbnClient
