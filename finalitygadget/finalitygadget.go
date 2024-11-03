@@ -616,15 +616,10 @@ func (fg *FinalityGadget) processBlocksTillHeight(ctx context.Context, latestHei
 			}()
 
 			// Extract and handle error (if any)
-			var processingError error
 			for err := range errors {
 				if err != nil {
-					processingError = err
-					break
+					return err
 				}
-			}
-			if processingError != nil {
-				return processingError
 			}
 
 			// Extract blocks and find last consecutive finalized block
