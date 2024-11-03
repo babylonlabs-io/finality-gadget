@@ -92,6 +92,7 @@ func (bb *BBoltHandler) InsertBlocks(blocks []*types.Block) error {
 			// Store block data
 			blockBytes, err := json.Marshal(block)
 			if err != nil {
+				bb.logger.Error("Error inserting block", zap.Error(err))
 				return err
 			}
 			if err := blocksBucket.Put(bb.itob(block.BlockHeight), blockBytes); err != nil {
@@ -100,6 +101,7 @@ func (bb *BBoltHandler) InsertBlocks(blocks []*types.Block) error {
 
 			// Store height mapping
 			if err := heightsBucket.Put([]byte(block.BlockHash), bb.itob(block.BlockHeight)); err != nil {
+				bb.logger.Error("Error inserting height mapping", zap.Error(err))
 				return err
 			}
 		}
@@ -108,6 +110,7 @@ func (bb *BBoltHandler) InsertBlocks(blocks []*types.Block) error {
 		earliestBytes := indexBucket.Get([]byte(earliestBlockKey))
 		if earliestBytes == nil {
 			if err := indexBucket.Put([]byte(earliestBlockKey), bb.itob(minHeight)); err != nil {
+				bb.logger.Error("Error inserting earliest block", zap.Error(err))
 				return err
 			}
 		}
@@ -120,6 +123,7 @@ func (bb *BBoltHandler) InsertBlocks(blocks []*types.Block) error {
 		}
 		if maxHeight > currentLatest {
 			if err := indexBucket.Put([]byte(latestBlockKey), bb.itob(maxHeight)); err != nil {
+				bb.logger.Error("Error inserting latest block", zap.Error(err))
 				return err
 			}
 		}
