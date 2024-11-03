@@ -578,6 +578,9 @@ func (fg *FinalityGadget) queryBlockByHeight(blockNumber int64) (*types.Block, e
 
 // Process blocks in batches of size `fg.batchSize` until the latest height
 func (fg *FinalityGadget) processBlocksTillHeight(ctx context.Context, latestHeight uint64) error {
+	if latestHeight > math.MaxInt64 {
+		return fmt.Errorf("block height %d exceeds maximum int64 value", latestHeight)
+	}
 	for batchStartHeight := fg.lastProcessedHeight + 1; batchStartHeight <= latestHeight; {
 		select {
 		case <-ctx.Done():
@@ -597,9 +600,6 @@ func (fg *FinalityGadget) processBlocksTillHeight(ctx context.Context, latestHei
 
 			// Query batch in parallel
 			for height := batchStartHeight; height <= batchEndHeight; height++ {
-				if height > math.MaxInt64 {
-					return fmt.Errorf("block height %d exceeds maximum int64 value", height)
-				}
 				wg.Add(1)
 				go func(h uint64) {
 					defer wg.Done()
