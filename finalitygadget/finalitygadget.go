@@ -425,11 +425,13 @@ func (fg *FinalityGadget) QueryLatestFinalizedBlock() (*types.Block, error) {
 }
 
 // This function is run once at startup and starts the FG from the last finalized block.
-// Note that this logic will fail if the FG is started before the chain has ETH finalized its first block.
+// Note that starting FG before the chain has ETH finalized its first block will cause a panic.
 // The intended startup order for new chains is:
-//  1. Integrate FG with it disabled on CW contract
-//  2. Start chain and wait for it to finalize its first block (note for existing chains, this won't be an issue)
-//  3. Enable finality gadget
+//  1. Start the OP chain with `babylonFinalityGadgetRpc` in rollup configs set to an empty string
+//  2. Wait for the chain to finalize its first block
+//  3. Integrate FG with it disabled on CW contract
+//  3. Restart OP chain after setting `babylonFinalityGadgetRpc`
+//  4. Enable FG on CW contract (for network with multiple nodes, enable after majority of nodes upgrade)
 func (fg *FinalityGadget) Startup(ctx context.Context) error {
 	fg.logger.Info("Starting up finality gadget...")
 	// Start polling for new blocks at set interval
