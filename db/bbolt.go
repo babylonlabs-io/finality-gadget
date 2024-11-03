@@ -182,6 +182,10 @@ func (bb *BBoltHandler) QueryIsBlockRangeFinalizedByHeight(startHeight, endHeigh
 		for i := uint64(0); i < len; i++ {
 			height := startHeight + i
 			blockExists := bucket.Get(bb.itob(height)) != nil
+			// break early if block not found, as we only store consecutive blocks
+			if !blockExists {
+				break
+			}
 			results[i] = blockExists
 		}
 
