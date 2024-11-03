@@ -57,7 +57,9 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	}
 	defer func() {
 		logger.Info("Closing DB...")
-		db.Close()
+		if err := db.Close(); err != nil {
+			logger.Error("Error closing DB", zap.Error(err))
+		}
 	}()
 	err = db.CreateInitialSchema()
 	if err != nil {
