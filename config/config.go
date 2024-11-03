@@ -31,12 +31,6 @@ func (c *Config) Validate() error {
 	if c.BitcoinRPCHost == "" {
 		return fmt.Errorf("bitcoin-rpc-host is required")
 	}
-	if c.BitcoinRPCUser == "" {
-		return fmt.Errorf("bitcoin-rpc-user is required")
-	}
-	if c.BitcoinRPCPass == "" {
-		return fmt.Errorf("bitcoin-rpc-pass is required")
-	}
 	if c.FGContractAddress == "" {
 		return fmt.Errorf("fg-contract-address is required")
 	}
