@@ -149,6 +149,19 @@ func (c *BitcoinClient) GetBlockTimestampByHeight(height uint64) (uint64, error)
 	return uint64(timestamp), nil
 }
 
+func (c *BitcoinClient) GetBlock(hash *chainhash.Hash) (*wire.MsgBlock, error) {
+	callForBlock := func() (*wire.MsgBlock, error) {
+		return c.client.GetBlock(hash)
+	}
+
+	block, err := clientCallWithRetry(callForBlock, c.logger, c.cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get block by hash %s: %w", hash.String(), err)
+	}
+
+	return block, nil
+}
+
 //////////////////////////////
 // INTERNAL
 //////////////////////////////
