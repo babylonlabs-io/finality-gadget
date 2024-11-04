@@ -267,29 +267,33 @@ func (fg *FinalityGadget) QueryBlockRangeBabylonFinalized(
 		}
 	}
 
-	// query the finality status of block range from internal db
-	startHeight := queryBlocks[0].BlockHeight
-	endHeight := queryBlocks[len(queryBlocks)-1].BlockHeight
-	isFinalizedArr, err := fg.db.QueryIsBlockRangeFinalizedByHeight(startHeight, endHeight)
+	// query the earliest and latest finalized block from internal db
+	earliestFinalizedBlock, err := fg.db.QueryEarliestFinalizedBlock()
+	if err != nil {
+		return nil, err
+	}
+	latestFinalizedBlock, err := fg.QueryLatestFinalizedBlock()
 	if err != nil {
 		return nil, err
 	}
 
-	// find the last finalized block in the range
-	var finalizedBlockHeight *uint64
-	for i, isFinalized := range isFinalizedArr {
-		if isFinalized {
-			finalizedBlockHeight = &queryBlocks[i].BlockHeight
-		} else {
-			break
-		}
-	}
-	// handle case where no block is finalized
-	if finalizedBlockHeight == nil {
+	// blocks inserted to the db must be consecutive, so we can simply perform a range
+	// check against the first and last blocks
+
+	// block range starts before earliest finalized block, or ends after latest finalized block,
+	// then no blocks are consecutively finalized
+	if queryBlocks[0].BlockHeight < earliestFinalizedBlock.BlockHeight ||
+		queryBlocks[len(queryBlocks)-1].BlockHeight > latestFinalizedBlock.BlockHeight {
 		return nil, nil
 	}
 
-	return finalizedBlockHeight, nil
+	// both block ranges are consecutive, simply return the latest common block
+	finalizedBlockHeight := latestFinalizedBlock.BlockHeight
+	if queryBlocks[len(queryBlocks)-1].BlockHeight < latestFinalizedBlock.BlockHeight {
+		finalizedBlockHeight = queryBlocks[len(queryBlocks)-1].BlockHeight
+	}
+
+	return &finalizedBlockHeight, nil
 }
 
 // QueryBtcStakingActivatedTimestamp retrieves BTC staking activation timestamp from the database
