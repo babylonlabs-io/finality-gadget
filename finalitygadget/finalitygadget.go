@@ -610,6 +610,7 @@ func (fg *FinalityGadget) processBlocksTillHeight(ctx context.Context, latestHei
 			go func() {
 				wg.Wait()
 				close(results)
+				close(errors)
 			}()
 
 			// Extract and handle error (if any)
