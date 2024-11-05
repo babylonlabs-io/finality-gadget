@@ -3,7 +3,8 @@ package finalitygadget
 import "github.com/babylonlabs-io/finality-gadget/types"
 
 type IFinalityGadget interface {
-	/* QueryIsBlockBabylonFinalized checks if the given L2 block is finalized by the Babylon finality gadget
+	// TODO: make this method internal once fully tested. External services should query the database instead.
+	/* QueryIsBlockBabylonFinalizedFromBabylon checks if the given L2 block is finalized by the Babylon finality gadget
 	 *
 	 * - if the finality gadget is not enabled, always return true
 	 * - else, check if the given L2 block is finalized
@@ -19,6 +20,9 @@ type IFinalityGadget interface {
 	 *   - calculate voted voting power
 	 *   - check if the voted voting power is more than 2/3 of the total voting power
 	 */
+	QueryIsBlockBabylonFinalizedFromBabylon(block *types.Block) (bool, error)
+
+	// QueryIsBlockBabylonFinalized queries the finality status of a given block height from the internal db
 	QueryIsBlockBabylonFinalized(block *types.Block) (bool, error)
 
 	/* QueryBlockRangeBabylonFinalized searches for a row of consecutive finalized blocks in the block range, and returns
@@ -54,9 +58,6 @@ type IFinalityGadget interface {
 	 * returns math.MaxUint64, ErrBtcStakingNotActivated if the BTC staking is not activated
 	 */
 	QueryBtcStakingActivatedTimestamp() (uint64, error)
-
-	// InsertBlock inserts a btc finalized block into the local db
-	InsertBlock(block *types.Block) error
 
 	// GetBlockByHeight returns the btc finalized block at given height by querying the local db
 	GetBlockByHeight(height uint64) (*types.Block, error)

@@ -17,6 +17,8 @@ import (
 	"go.uber.org/zap"
 )
 
+// TODO: add `QueryIsBlockBabylonFinalizedFromBabylon` as test fn once removed from interface
+
 func TestFinalityGadgetDisabled(t *testing.T) {
 	ctl := gomock.NewController(t)
 
@@ -24,14 +26,14 @@ func TestFinalityGadgetDisabled(t *testing.T) {
 	mockCwClient := mocks.NewMockICosmWasmClient(ctl)
 	mockCwClient.EXPECT().QueryIsEnabled().Return(false, nil).Times(1)
 
-	mockFinalityGadget := &FinalityGadget{
+	mockTestFinalityGadget := &FinalityGadget{
 		cwClient:  mockCwClient,
 		bbnClient: nil,
 		btcClient: nil,
 	}
 
 	// check QueryIsBlockBabylonFinalized always returns true when finality gadget is not enabled
-	res, err := mockFinalityGadget.QueryIsBlockBabylonFinalized(&types.Block{})
+	res, err := mockTestFinalityGadget.QueryIsBlockBabylonFinalizedFromBabylon(&types.Block{})
 	require.NoError(t, err)
 	require.True(t, res)
 }
@@ -185,7 +187,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 				btcClient: mockBTCClient,
 			}
 
-			res, err := mockFinalityGadget.QueryIsBlockBabylonFinalized(tc.block)
+			res, err := mockFinalityGadget.QueryIsBlockBabylonFinalizedFromBabylon(tc.block)
 			require.Equal(t, tc.expectResult, res)
 			require.Equal(t, tc.expectedErr, err)
 		})
@@ -196,28 +198,76 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	l2BlockTime := uint64(2)
-	blockA, blockAWithHashTrimmed := testutil.RandomL2Block(rng)
-	blockB, blockBWithHashTrimmed := testutil.GenL2Block(rng, &blockA, l2BlockTime, 1)
-	blockC, blockCWithHashTrimmed := testutil.GenL2Block(rng, &blockB, l2BlockTime, 1)
-	blockD, blockDWithHashTrimmed := testutil.GenL2Block(rng, &blockC, l2BlockTime, 300) // 10 minutes later
-	blockE, blockEWithHashTrimmed := testutil.GenL2Block(rng, &blockD, l2BlockTime, 1)
-	blockF, blockFWithHashTrimmed := testutil.GenL2Block(rng, &blockE, l2BlockTime, 300)
-	blockG, blockGWithHashTrimmed := testutil.GenL2Block(rng, &blockF, l2BlockTime, 1)
+	blockA, _ := testutil.RandomL2Block(rng)
+	blockB, _ := testutil.GenL2Block(rng, &blockA, l2BlockTime, 1)
+	blockC, _ := testutil.GenL2Block(rng, &blockB, l2BlockTime, 1)
+	blockD, _ := testutil.GenL2Block(rng, &blockC, l2BlockTime, 300)
+	blockE, _ := testutil.GenL2Block(rng, &blockD, l2BlockTime, 1)
 
 	testCases := []struct {
-		name         string
-		expectedErr  error
-		expectResult *uint64
-		queryBlocks  []*types.Block
+		queryBlocks []*types.Block
+		expRes      *uint64
+		expErr      error
+		expDbErr    error
+		name        string
+		expDbRes    []bool
+		queryDb     bool
 	}{
-		{"empty query blocks", fmt.Errorf("no blocks provided"), nil, []*types.Block{}},
-		{"single block with finalized", nil, &blockA.BlockHeight, []*types.Block{&blockA}},
-		{"single block with error", fmt.Errorf("RPC rate limit error"), nil, []*types.Block{&blockD}},
-		{"non-consecutive blocks", fmt.Errorf("blocks are not consecutive"), nil, []*types.Block{&blockA, &blockD}},
-		{"the first two blocks are finalized and the last block has error", fmt.Errorf("RPC rate limit error"), &blockB.BlockHeight, []*types.Block{&blockA, &blockB, &blockC}},
-		{"all consecutive blocks are finalized", nil, &blockB.BlockHeight, []*types.Block{&blockA, &blockB}},
-		{"none of the block is finalized and the first block has error", fmt.Errorf("RPC rate limit error"), nil, []*types.Block{&blockD, &blockE}},
-		{"none of the block is finalized and the second block has error", nil, nil, []*types.Block{&blockF, &blockG}},
+		{
+			name:        "empty query blocks",
+			queryBlocks: []*types.Block{},
+			queryDb:     false,
+			expErr:      fmt.Errorf("no blocks provided"),
+			expRes:      nil,
+		},
+		{
+			name:        "single block with finalized",
+			queryBlocks: []*types.Block{&blockA},
+			queryDb:     true,
+			expErr:      nil,
+			expDbRes:    []bool{true},
+			expRes:      &blockA.BlockHeight,
+		},
+		{
+			name:        "single block with error",
+			queryBlocks: []*types.Block{&blockD},
+			queryDb:     true,
+			expErr:      fmt.Errorf("database error"),
+			expDbErr:    fmt.Errorf("database error"),
+			expRes:      nil,
+		},
+		{
+			name:        "non-consecutive blocks",
+			queryBlocks: []*types.Block{&blockA, &blockD},
+			queryDb:     false,
+			expErr:      fmt.Errorf("blocks are not consecutive"),
+			expRes:      nil,
+		},
+		{
+			name:        "all consecutive blocks are finalized",
+			queryBlocks: []*types.Block{&blockA, &blockB},
+			queryDb:     true,
+			expErr:      nil,
+			expDbRes:    []bool{true, true},
+			expRes:      &blockB.BlockHeight,
+		},
+		{
+			name:        "first two blocks finalized, third has error",
+			queryBlocks: []*types.Block{&blockA, &blockB, &blockC},
+			queryDb:     true,
+			expErr:      fmt.Errorf("database error"),
+			expDbErr:    fmt.Errorf("database error"),
+			expDbRes:    []bool{true, true},
+			expRes:      nil,
+		},
+		{
+			name:        "none of the blocks are finalized",
+			queryBlocks: []*types.Block{&blockD, &blockE},
+			queryDb:     true,
+			expErr:      nil,
+			expDbRes:    []bool{false},
+			expRes:      nil,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -225,40 +275,42 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 			ctl := gomock.NewController(t)
 			defer ctl.Finish()
 
-			mockCwClient := mocks.NewMockICosmWasmClient(ctl)
-			mockBTCClient := mocks.NewMockIBitcoinClient(ctl)
-			mockBBNClient := mocks.NewMockIBabylonClient(ctl)
-			mockFinalityGadget := &FinalityGadget{
-				cwClient:  mockCwClient,
-				bbnClient: mockBBNClient,
-				btcClient: mockBTCClient,
+			mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
+
+			// Setup mock DB responses
+			if len(tc.queryBlocks) > 0 && tc.queryDb {
+				if tc.expDbErr != nil {
+					mockDbHandler.EXPECT().
+						QueryIsBlockRangeFinalizedByHeight(
+							tc.queryBlocks[0].BlockHeight,
+							tc.queryBlocks[len(tc.queryBlocks)-1].BlockHeight,
+						).
+						Return(nil, tc.expDbErr).
+						Times(1)
+				} else {
+					mockDbHandler.EXPECT().
+						QueryIsBlockRangeFinalizedByHeight(
+							tc.queryBlocks[0].BlockHeight,
+							tc.queryBlocks[len(tc.queryBlocks)-1].BlockHeight,
+						).
+						Return(tc.expDbRes, nil).
+						Times(1)
+				}
 			}
 
-			mockCwClient.EXPECT().QueryIsEnabled().Return(true, nil).AnyTimes()
-			mockCwClient.EXPECT().QueryConsumerId().Return("consumer-chain-id", nil).AnyTimes()
-			mockCwClient.EXPECT().QueryListOfVotedFinalityProviders(&blockAWithHashTrimmed).Return([]string{"pk1", "pk2", "pk3"}, nil).AnyTimes()
-			mockCwClient.EXPECT().QueryListOfVotedFinalityProviders(&blockBWithHashTrimmed).Return([]string{"pk1", "pk2", "pk3"}, nil).AnyTimes()
-			mockCwClient.EXPECT().QueryListOfVotedFinalityProviders(&blockCWithHashTrimmed).Return([]string{"pk1", "pk2", "pk3"}, nil).AnyTimes()
-			mockCwClient.EXPECT().QueryListOfVotedFinalityProviders(&blockDWithHashTrimmed).Return([]string{"pk3"}, nil).AnyTimes()
-			mockCwClient.EXPECT().QueryListOfVotedFinalityProviders(&blockEWithHashTrimmed).Return([]string{"pk1"}, nil).AnyTimes()
-			mockCwClient.EXPECT().QueryListOfVotedFinalityProviders(&blockFWithHashTrimmed).Return([]string{"pk2"}, nil).AnyTimes()
-			mockCwClient.EXPECT().QueryListOfVotedFinalityProviders(&blockGWithHashTrimmed).Return([]string{"pk3"}, nil).AnyTimes()
-
-			mockBTCClient.EXPECT().GetBlockHeightByTimestamp(blockA.BlockTimestamp).Return(uint64(111), nil).AnyTimes()
-			mockBTCClient.EXPECT().GetBlockHeightByTimestamp(blockB.BlockTimestamp).Return(uint64(111), nil).AnyTimes()
-			mockBTCClient.EXPECT().GetBlockHeightByTimestamp(blockC.BlockTimestamp).Return(uint64(111), fmt.Errorf("RPC rate limit error")).AnyTimes()
-			mockBTCClient.EXPECT().GetBlockHeightByTimestamp(blockD.BlockTimestamp).Return(uint64(112), fmt.Errorf("RPC rate limit error")).AnyTimes()
-			mockBTCClient.EXPECT().GetBlockHeightByTimestamp(blockE.BlockTimestamp).Return(uint64(112), nil).AnyTimes()
-			mockBTCClient.EXPECT().GetBlockHeightByTimestamp(blockF.BlockTimestamp).Return(uint64(113), nil).AnyTimes()
-			mockBTCClient.EXPECT().GetBlockHeightByTimestamp(blockG.BlockTimestamp).Return(uint64(113), fmt.Errorf("RPC rate limit error")).AnyTimes()
-
-			mockBBNClient.EXPECT().QueryEarliestActiveDelBtcHeight(gomock.Any()).Return(uint64(1), nil).AnyTimes()
-			mockBBNClient.EXPECT().QueryAllFpBtcPubKeys("consumer-chain-id").Return([]string{"pk1", "pk2", "pk3"}, nil).AnyTimes()
-			mockBBNClient.EXPECT().QueryMultiFpPower([]string{"pk1", "pk2", "pk3"}, gomock.Any()).Return(map[string]uint64{"pk1": 100, "pk2": 200, "pk3": 300}, nil).AnyTimes()
+			mockFinalityGadget := &FinalityGadget{
+				db: mockDbHandler,
+			}
 
 			res, err := mockFinalityGadget.QueryBlockRangeBabylonFinalized(tc.queryBlocks)
-			require.Equal(t, tc.expectResult, res)
-			require.Equal(t, tc.expectedErr, err)
+			fmt.Println("res", res, "err", err)
+			require.Equal(t, tc.expRes, res)
+			if tc.expErr != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tc.expErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
 		})
 	}
 }
@@ -274,7 +326,8 @@ func TestInsertBlock(t *testing.T) {
 	ctl := gomock.NewController(t)
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
 	// note: the block hash is normalized before passing to the db handler
-	mockDbHandler.EXPECT().InsertBlock(normalizedBlock(block)).Return(nil).Times(1)
+	blocks := []*types.Block{normalizedBlock(block)}
+	mockDbHandler.EXPECT().InsertBlocks(blocks).Return(nil).Times(1)
 	mockDbHandler.EXPECT().GetBlockByHeight(block.BlockHeight).Return(block, nil).Times(1)
 
 	mockFinalityGadget := &FinalityGadget{
@@ -282,7 +335,7 @@ func TestInsertBlock(t *testing.T) {
 	}
 
 	// insert block
-	err := mockFinalityGadget.InsertBlock(block)
+	err := mockFinalityGadget.insertBlocks(blocks)
 	require.NoError(t, err)
 
 	// verify block was inserted
@@ -291,6 +344,115 @@ func TestInsertBlock(t *testing.T) {
 	require.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
 	require.Equal(t, block.BlockHash, retrievedBlock.BlockHash)
 	require.Equal(t, block.BlockTimestamp, retrievedBlock.BlockTimestamp)
+}
+
+func TestBatchInsertBlocks(t *testing.T) {
+	// Setup mock controller
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	// Create a larger set of test blocks
+	numBlocks := 25 // Testing with 25 blocks
+	blocks := make([]*types.Block, numBlocks)
+	for i := 0; i < numBlocks; i++ {
+		blocks[i] = &types.Block{
+			BlockHeight:    uint64(i + 1),
+			BlockHash:      fmt.Sprintf("0x%x", i+1000), // unique hash for each block
+			BlockTimestamp: uint64(1000 + i*100),        // increasing timestamps
+		}
+	}
+
+	// Create normalized versions of the blocks
+	normalizedBlocks := make([]*types.Block, len(blocks))
+	for i, block := range blocks {
+		normalizedBlocks[i] = &types.Block{
+			BlockHeight:    block.BlockHeight,
+			BlockHash:      normalizeBlockHash(block.BlockHash),
+			BlockTimestamp: block.BlockTimestamp,
+		}
+	}
+
+	testCases := []struct {
+		name      string
+		blocks    []*types.Block
+		batchSize uint64
+	}{
+		{
+			name:      "small batch size",
+			batchSize: 5,
+			blocks:    blocks,
+		},
+		{
+			name:      "medium batch size",
+			batchSize: 10,
+			blocks:    blocks,
+		},
+		{
+			name:      "large batch size",
+			batchSize: 20,
+			blocks:    blocks,
+		},
+		{
+			name:      "batch size larger than number of blocks",
+			batchSize: 30,
+			blocks:    blocks,
+		},
+		{
+			name:      "single block batch",
+			batchSize: 1,
+			blocks:    blocks[:1], // Test with just one block
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup mock database handler
+			mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
+
+			// Create normalized versions specific to this test case
+			tcNormalizedBlocks := make([]*types.Block, len(tc.blocks))
+			for i, block := range tc.blocks {
+				tcNormalizedBlocks[i] = &types.Block{
+					BlockHeight:    block.BlockHeight,
+					BlockHash:      normalizeBlockHash(block.BlockHash),
+					BlockTimestamp: block.BlockTimestamp,
+				}
+			}
+
+			// Expect batch insert call with normalized blocks
+			if len(tc.blocks) > 0 {
+				mockDbHandler.EXPECT().InsertBlocks(tcNormalizedBlocks).Return(nil).Times(1)
+			}
+
+			// Setup verification calls for each block
+			for i, block := range tc.blocks {
+				mockDbHandler.EXPECT().
+					GetBlockByHeight(block.BlockHeight).
+					Return(tcNormalizedBlocks[i], nil).
+					Times(1)
+			}
+
+			// Create finality gadget instance with mock DB and specified batch size
+			mockFinalityGadget := &FinalityGadget{
+				db:        mockDbHandler,
+				batchSize: tc.batchSize,
+			}
+
+			// Test batch insert
+			err := mockFinalityGadget.insertBlocks(tc.blocks)
+			require.NoError(t, err)
+
+			// Verify each block was inserted correctly
+			for _, block := range tc.blocks {
+				retrievedBlock, err := mockFinalityGadget.GetBlockByHeight(block.BlockHeight)
+				require.NoError(t, err)
+				require.NotNil(t, retrievedBlock)
+				require.Equal(t, block.BlockHeight, retrievedBlock.BlockHeight)
+				require.Equal(t, normalizeBlockHash(block.BlockHash), retrievedBlock.BlockHash)
+				require.Equal(t, block.BlockTimestamp, retrievedBlock.BlockTimestamp)
+			}
+		})
+	}
 }
 
 func TestGetBlockByHeight(t *testing.T) {
@@ -304,7 +466,8 @@ func TestGetBlockByHeight(t *testing.T) {
 	ctl := gomock.NewController(t)
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
 	// note: the block hash is normalized before passing to the db handler
-	mockDbHandler.EXPECT().InsertBlock(normalizedBlock(block)).Return(nil).Times(1)
+	blocks := []*types.Block{normalizedBlock(block)}
+	mockDbHandler.EXPECT().InsertBlocks(blocks).Return(nil).Times(1)
 	mockDbHandler.EXPECT().GetBlockByHeight(block.BlockHeight).Return(block, nil).Times(1)
 
 	mockFinalityGadget := &FinalityGadget{
@@ -312,7 +475,7 @@ func TestGetBlockByHeight(t *testing.T) {
 	}
 
 	// insert block
-	err := mockFinalityGadget.InsertBlock(block)
+	err := mockFinalityGadget.insertBlocks(blocks)
 	require.NoError(t, err)
 
 	// fetch block by height
@@ -350,7 +513,8 @@ func TestGetBlockByHashWith0xPrefix(t *testing.T) {
 	ctl := gomock.NewController(t)
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
 	// note: the block hash is normalized before passing to the db handler
-	mockDbHandler.EXPECT().InsertBlock(normalizedBlock(block)).Return(nil).Times(1)
+	blocks := []*types.Block{normalizedBlock(block)}
+	mockDbHandler.EXPECT().InsertBlocks(blocks).Return(nil).Times(1)
 	mockDbHandler.EXPECT().GetBlockByHash(normalizeBlockHash(block.BlockHash)).Return(block, nil).Times(2)
 
 	mockFinalityGadget := &FinalityGadget{
@@ -358,7 +522,7 @@ func TestGetBlockByHashWith0xPrefix(t *testing.T) {
 	}
 
 	// insert block
-	err := mockFinalityGadget.InsertBlock(block)
+	err := mockFinalityGadget.insertBlocks(blocks)
 	require.NoError(t, err)
 
 	// fetch block by hash including 0x prefix
@@ -387,7 +551,8 @@ func TestGetBlockByHashWithout0xPrefix(t *testing.T) {
 	ctl := gomock.NewController(t)
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
 	// note: the block hash is normalized before passing to the db handler
-	mockDbHandler.EXPECT().InsertBlock(normalizedBlock(block)).Return(nil).Times(1)
+	blocks := []*types.Block{normalizedBlock(block)}
+	mockDbHandler.EXPECT().InsertBlocks(blocks).Return(nil).Times(1)
 	mockDbHandler.EXPECT().GetBlockByHash(normalizeBlockHash(block.BlockHash)).Return(block, nil).Times(2)
 
 	mockFinalityGadget := &FinalityGadget{
@@ -395,7 +560,7 @@ func TestGetBlockByHashWithout0xPrefix(t *testing.T) {
 	}
 
 	// insert block
-	err := mockFinalityGadget.InsertBlock(block)
+	err := mockFinalityGadget.insertBlocks(blocks)
 	require.NoError(t, err)
 
 	// fetch block by hash including 0x prefix
@@ -539,8 +704,8 @@ func TestQueryLatestFinalizedBlock(t *testing.T) {
 	// mock db and finality gadget
 	ctl := gomock.NewController(t)
 	mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
-	mockDbHandler.EXPECT().InsertBlock(normalizedFirst).Return(nil).Times(1)
-	mockDbHandler.EXPECT().InsertBlock(normalizedSecond).Return(nil).Times(1)
+	blocks := []*types.Block{normalizedFirst, normalizedSecond}
+	mockDbHandler.EXPECT().InsertBlocks(blocks).Return(nil).Times(1)
 	mockDbHandler.EXPECT().QueryLatestFinalizedBlock().Return(normalizedSecond, nil).Times(1)
 
 	mockFinalityGadget := &FinalityGadget{
@@ -548,9 +713,7 @@ func TestQueryLatestFinalizedBlock(t *testing.T) {
 	}
 
 	// insert two blocks
-	err := mockFinalityGadget.InsertBlock(first)
-	require.NoError(t, err)
-	err = mockFinalityGadget.InsertBlock(second)
+	err := mockFinalityGadget.insertBlocks(blocks)
 	require.NoError(t, err)
 
 	// fetch latest block

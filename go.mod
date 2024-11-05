@@ -15,7 +15,7 @@ require (
 	github.com/ethereum/go-ethereum v1.13.15
 	github.com/jsternberg/zap-logfmt v1.3.0
 	github.com/lightningnetwork/lnd v0.16.4-beta.rc1
-	github.com/rs/cors v1.11.0
+	github.com/rs/cors v1.8.3
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.9.0

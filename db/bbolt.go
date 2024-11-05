@@ -64,80 +64,72 @@ func (bb *BBoltHandler) CreateInitialSchema() error {
 	})
 }
 
-func (bb *BBoltHandler) InsertBlock(block *types.Block) error {
-	bb.logger.Info("Inserting block to DB", zap.Uint64("block_height", block.BlockHeight))
+func (bb *BBoltHandler) InsertBlocks(blocks []*types.Block) error {
+	if len(blocks) == 0 {
+		return nil
+	}
 
-	// Store mapping number -> block
-	err := bb.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(blocksBucket))
-		key := bb.itob(block.BlockHeight)
-		blockBytes, err := json.Marshal(block)
-		if err != nil {
-			return err
+	bb.logger.Info("Batch inserting blocks to DB", zap.Int("count", len(blocks)))
+
+	// Single transaction for all operations
+	return bb.db.Update(func(tx *bolt.Tx) error {
+		blocksBucket := tx.Bucket([]byte(blocksBucket))
+		heightsBucket := tx.Bucket([]byte(blockHeightsBucket))
+		indexBucket := tx.Bucket([]byte(indexerBucket))
+
+		var minHeight, maxHeight uint64 = math.MaxUint64, 0
+
+		// Insert all blocks
+		for _, block := range blocks {
+			// Update min/max heights
+			if block.BlockHeight < minHeight {
+				minHeight = block.BlockHeight
+			}
+			if block.BlockHeight > maxHeight {
+				maxHeight = block.BlockHeight
+			}
+
+			// Store block data
+			blockBytes, err := json.Marshal(block)
+			if err != nil {
+				bb.logger.Error("Error inserting block", zap.Error(err))
+				return err
+			}
+			if err := blocksBucket.Put(bb.itob(block.BlockHeight), blockBytes); err != nil {
+				return err
+			}
+
+			// Store height mapping
+			if err := heightsBucket.Put([]byte(block.BlockHash), bb.itob(block.BlockHeight)); err != nil {
+				bb.logger.Error("Error inserting height mapping", zap.Error(err))
+				return err
+			}
 		}
-		return b.Put(key, blockBytes)
-	})
-	if err != nil {
-		bb.logger.Error("Error inserting block", zap.Error(err))
-		return err
-	}
 
-	// Store mapping hash -> number
-	err = bb.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(blockHeightsBucket))
-		return b.Put([]byte(block.BlockHash), bb.itob(block.BlockHeight))
-	})
-	if err != nil {
-		bb.logger.Error("Error inserting block", zap.Error(err))
-		return err
-	}
-
-	// Get current earliest block
-	// If it is unset, update earliest block
-	earliestBlock, err := bb.QueryEarliestFinalizedBlock()
-	if earliestBlock == nil || errors.Is(err, types.ErrBlockNotFound) {
-		err = bb.db.Update(func(tx *bolt.Tx) error {
-			b := tx.Bucket([]byte(indexerBucket))
-			return b.Put([]byte(earliestBlockKey), bb.itob(block.BlockHeight))
-		})
-		if err != nil {
-			bb.logger.Error("Error updating earliest block", zap.Error(err))
-			return err
+		// Update earliest block if needed
+		earliestBytes := indexBucket.Get([]byte(earliestBlockKey))
+		if earliestBytes == nil {
+			if err := indexBucket.Put([]byte(earliestBlockKey), bb.itob(minHeight)); err != nil {
+				bb.logger.Error("Error inserting earliest block", zap.Error(err))
+				return err
+			}
 		}
-	}
-	if err != nil {
-		bb.logger.Error("Error getting earliest block", zap.Error(err))
-		return err
-	}
 
-	// Get current latest block
-	latestBlock, err := bb.QueryLatestFinalizedBlock()
-	if latestBlock == nil {
-		latestBlock = &types.Block{BlockHeight: 0}
-	}
-	if err != nil {
-		bb.logger.Error("Error getting latest block", zap.Error(err))
-		return err
-	}
+		// Update latest block if needed
+		latestBytes := indexBucket.Get([]byte(latestBlockKey))
+		var currentLatest uint64
+		if latestBytes != nil {
+			currentLatest = bb.btoi(latestBytes)
+		}
+		if maxHeight > currentLatest {
+			if err := indexBucket.Put([]byte(latestBlockKey), bb.itob(maxHeight)); err != nil {
+				bb.logger.Error("Error inserting latest block", zap.Error(err))
+				return err
+			}
+		}
 
-	// Update latest block if it's the latest
-	err = bb.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(indexerBucket))
-		if err != nil {
-			bb.logger.Error("Error getting latest block", zap.Error(err))
-			return err
-		}
-		if latestBlock.BlockHeight < block.BlockHeight {
-			return b.Put([]byte(latestBlockKey), bb.itob(block.BlockHeight))
-		}
 		return nil
 	})
-	if err != nil {
-		bb.logger.Error("Error updating latest block", zap.Error(err))
-		return err
-	}
-
-	return nil
 }
 
 func (bb *BBoltHandler) GetBlockByHeight(height uint64) (*types.Block, error) {
@@ -172,6 +164,39 @@ func (bb *BBoltHandler) GetBlockByHash(hash string) (*types.Block, error) {
 		return nil, err
 	}
 	return bb.GetBlockByHeight(blockHeight)
+}
+
+func (bb *BBoltHandler) QueryIsBlockRangeFinalizedByHeight(startHeight, endHeight uint64) ([]bool, error) {
+	if startHeight > endHeight {
+		return nil, types.ErrInvalidBlockRange
+	}
+
+	// Create result slice with size of the range
+	len := endHeight - startHeight + 1
+	results := make([]bool, len)
+
+	err := bb.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(blocksBucket))
+
+		// Check each height in the range
+		for i := uint64(0); i < len; i++ {
+			height := startHeight + i
+			blockExists := bucket.Get(bb.itob(height)) != nil
+			// break early if block not found, as we only store consecutive blocks
+			if !blockExists {
+				break
+			}
+			results[i] = blockExists
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }
 
 func (bb *BBoltHandler) QueryIsBlockFinalizedByHeight(height uint64) (bool, error) {
@@ -275,6 +300,7 @@ func (bb *BBoltHandler) SaveActivatedTimestamp(timestamp uint64) error {
 }
 
 func (bb *BBoltHandler) Close() error {
+	bb.logger.Info("Closing DB...")
 	return bb.db.Close()
 }
 

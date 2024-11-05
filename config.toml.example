@@ -10,3 +10,4 @@ BBNRPCAddress = "https://rpc-euphrates.devnet.babylonchain.io"
 GRPCListener = "0.0.0.0:50051"
 HTTPListener = "0.0.0.0:8080"
 PollInterval = "10s"
+BatchSize = 10

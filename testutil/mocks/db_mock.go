@@ -20,6 +20,7 @@ import (
 type MockIDatabaseHandler struct {
 	ctrl     *gomock.Controller
 	recorder *MockIDatabaseHandlerMockRecorder
+	isgomock struct{}
 }
 
 // MockIDatabaseHandlerMockRecorder is the mock recorder for MockIDatabaseHandler.
@@ -112,18 +113,18 @@ func (mr *MockIDatabaseHandlerMockRecorder) GetBlockByHeight(height any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockByHeight", reflect.TypeOf((*MockIDatabaseHandler)(nil).GetBlockByHeight), height)
 }
 
-// InsertBlock mocks base method.
-func (m *MockIDatabaseHandler) InsertBlock(block *types.Block) error {
+// InsertBlocks mocks base method.
+func (m *MockIDatabaseHandler) InsertBlocks(block []*types.Block) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InsertBlock", block)
+	ret := m.ctrl.Call(m, "InsertBlocks", block)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// InsertBlock indicates an expected call of InsertBlock.
-func (mr *MockIDatabaseHandlerMockRecorder) InsertBlock(block any) *gomock.Call {
+// InsertBlocks indicates an expected call of InsertBlocks.
+func (mr *MockIDatabaseHandlerMockRecorder) InsertBlocks(block any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertBlock", reflect.TypeOf((*MockIDatabaseHandler)(nil).InsertBlock), block)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertBlocks", reflect.TypeOf((*MockIDatabaseHandler)(nil).InsertBlocks), block)
 }
 
 // QueryEarliestFinalizedBlock mocks base method.
@@ -169,6 +170,21 @@ func (m *MockIDatabaseHandler) QueryIsBlockFinalizedByHeight(height uint64) (boo
 func (mr *MockIDatabaseHandlerMockRecorder) QueryIsBlockFinalizedByHeight(height any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryIsBlockFinalizedByHeight", reflect.TypeOf((*MockIDatabaseHandler)(nil).QueryIsBlockFinalizedByHeight), height)
+}
+
+// QueryIsBlockRangeFinalizedByHeight mocks base method.
+func (m *MockIDatabaseHandler) QueryIsBlockRangeFinalizedByHeight(startHeight, endHeight uint64) ([]bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryIsBlockRangeFinalizedByHeight", startHeight, endHeight)
+	ret0, _ := ret[0].([]bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryIsBlockRangeFinalizedByHeight indicates an expected call of QueryIsBlockRangeFinalizedByHeight.
+func (mr *MockIDatabaseHandlerMockRecorder) QueryIsBlockRangeFinalizedByHeight(startHeight, endHeight any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryIsBlockRangeFinalizedByHeight", reflect.TypeOf((*MockIDatabaseHandler)(nil).QueryIsBlockRangeFinalizedByHeight), startHeight, endHeight)
 }
 
 // QueryLatestFinalizedBlock mocks base method.

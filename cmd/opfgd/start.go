@@ -55,7 +55,12 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create DB handler: %w", err)
 	}
-	defer db.Close()
+	defer func() {
+		logger.Info("Closing DB...")
+		if dbErr := db.Close(); dbErr != nil {
+			logger.Error("Error closing DB", zap.Error(dbErr))
+		}
+	}()
 	err = db.CreateInitialSchema()
 	if err != nil {
 		return fmt.Errorf("create initial buckets error: %w", err)
@@ -87,6 +92,11 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 			logger.Fatal("Finality gadget server error", zap.Error(err))
 		}
 	}()
+
+	// Start finality gadget
+	if err := fg.Startup(fgCtx); err != nil {
+		logger.Fatal("Error starting finality gadget", zap.Error(err))
+	}
 
 	// Run finality gadget in a separate goroutine
 	go func() {
