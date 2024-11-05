@@ -5,8 +5,6 @@ on:
     branches:
       - 'chore/ci-publish-docker'
       - 'main'
-      # TODO: remove temp branch
-      - 'fix/circular-deps-finalized-head'
     tags:
       - '*'
 

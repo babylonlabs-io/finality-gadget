@@ -205,68 +205,60 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 	blockE, _ := testutil.GenL2Block(rng, &blockD, l2BlockTime, 1)
 
 	testCases := []struct {
-		queryBlocks []*types.Block
-		expRes      *uint64
 		expErr      error
-		expDbErr    error
+		expRes      *uint64
 		name        string
-		expDbRes    []bool
-		queryDb     bool
+		queryBlocks []*types.Block
+		queryDB     bool
 	}{
 		{
 			name:        "empty query blocks",
 			queryBlocks: []*types.Block{},
-			queryDb:     false,
 			expErr:      fmt.Errorf("no blocks provided"),
 			expRes:      nil,
+			queryDB:     false,
 		},
 		{
 			name:        "single block with finalized",
 			queryBlocks: []*types.Block{&blockA},
-			queryDb:     true,
 			expErr:      nil,
-			expDbRes:    []bool{true},
 			expRes:      &blockA.BlockHeight,
+			queryDB:     true,
 		},
 		{
 			name:        "single block with error",
 			queryBlocks: []*types.Block{&blockD},
-			queryDb:     true,
-			expErr:      fmt.Errorf("database error"),
-			expDbErr:    fmt.Errorf("database error"),
+			expErr:      nil,
 			expRes:      nil,
+			queryDB:     true,
 		},
 		{
 			name:        "non-consecutive blocks",
 			queryBlocks: []*types.Block{&blockA, &blockD},
-			queryDb:     false,
 			expErr:      fmt.Errorf("blocks are not consecutive"),
 			expRes:      nil,
+			queryDB:     false,
 		},
 		{
 			name:        "all consecutive blocks are finalized",
 			queryBlocks: []*types.Block{&blockA, &blockB},
-			queryDb:     true,
 			expErr:      nil,
-			expDbRes:    []bool{true, true},
 			expRes:      &blockB.BlockHeight,
+			queryDB:     true,
 		},
 		{
 			name:        "first two blocks finalized, third has error",
 			queryBlocks: []*types.Block{&blockA, &blockB, &blockC},
-			queryDb:     true,
-			expErr:      fmt.Errorf("database error"),
-			expDbErr:    fmt.Errorf("database error"),
-			expDbRes:    []bool{true, true},
+			expErr:      nil,
 			expRes:      nil,
+			queryDB:     true,
 		},
 		{
 			name:        "none of the blocks are finalized",
 			queryBlocks: []*types.Block{&blockD, &blockE},
-			queryDb:     true,
 			expErr:      nil,
-			expDbRes:    []bool{false},
 			expRes:      nil,
+			queryDB:     true,
 		},
 	}
 
@@ -278,24 +270,15 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 			mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
 
 			// Setup mock DB responses
-			if len(tc.queryBlocks) > 0 && tc.queryDb {
-				if tc.expDbErr != nil {
-					mockDbHandler.EXPECT().
-						QueryIsBlockRangeFinalizedByHeight(
-							tc.queryBlocks[0].BlockHeight,
-							tc.queryBlocks[len(tc.queryBlocks)-1].BlockHeight,
-						).
-						Return(nil, tc.expDbErr).
-						Times(1)
-				} else {
-					mockDbHandler.EXPECT().
-						QueryIsBlockRangeFinalizedByHeight(
-							tc.queryBlocks[0].BlockHeight,
-							tc.queryBlocks[len(tc.queryBlocks)-1].BlockHeight,
-						).
-						Return(tc.expDbRes, nil).
-						Times(1)
-				}
+			if len(tc.queryBlocks) > 0 && tc.queryDB {
+				mockDbHandler.EXPECT().
+					QueryEarliestFinalizedBlock().
+					Return(&blockA, nil).
+					Times(1)
+				mockDbHandler.EXPECT().
+					QueryLatestFinalizedBlock().
+					Return(&blockB, nil).
+					Times(1)
 			}
 
 			mockFinalityGadget := &FinalityGadget{
@@ -303,7 +286,6 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 			}
 
 			res, err := mockFinalityGadget.QueryBlockRangeBabylonFinalized(tc.queryBlocks)
-			fmt.Println("res", res, "err", err)
 			require.Equal(t, tc.expRes, res)
 			if tc.expErr != nil {
 				require.Error(t, err)

@@ -166,39 +166,6 @@ func (bb *BBoltHandler) GetBlockByHash(hash string) (*types.Block, error) {
 	return bb.GetBlockByHeight(blockHeight)
 }
 
-func (bb *BBoltHandler) QueryIsBlockRangeFinalizedByHeight(startHeight, endHeight uint64) ([]bool, error) {
-	if startHeight > endHeight {
-		return nil, types.ErrInvalidBlockRange
-	}
-
-	// Create result slice with size of the range
-	len := endHeight - startHeight + 1
-	results := make([]bool, len)
-
-	err := bb.db.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(blocksBucket))
-
-		// Check each height in the range
-		for i := uint64(0); i < len; i++ {
-			height := startHeight + i
-			blockExists := bucket.Get(bb.itob(height)) != nil
-			// break early if block not found, as we only store consecutive blocks
-			if !blockExists {
-				break
-			}
-			results[i] = blockExists
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return results, nil
-}
-
 func (bb *BBoltHandler) QueryIsBlockFinalizedByHeight(height uint64) (bool, error) {
 	_, err := bb.GetBlockByHeight(height)
 	if err != nil {
