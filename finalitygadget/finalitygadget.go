@@ -495,7 +495,7 @@ func (fg *FinalityGadget) Startup(ctx context.Context) error {
 				return fmt.Errorf("error fetching latest finalized block from db: %w", err)
 			}
 			fg.lastProcessedHeight = latestFinalizedHeight - 1
-			if latestFinalizedBlockDb.BlockHeight > latestFinalizedHeight {
+			if latestFinalizedBlockDb != nil && latestFinalizedBlockDb.BlockHeight > latestFinalizedHeight {
 				fg.lastProcessedHeight = latestFinalizedBlockDb.BlockHeight
 			}
 			fg.logger.Info("Starting finality gadget from block", zap.Uint64("block_height", fg.lastProcessedHeight+1))
