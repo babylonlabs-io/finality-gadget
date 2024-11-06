@@ -485,10 +485,16 @@ func (fg *FinalityGadget) Startup(ctx context.Context) error {
 				continue
 			}
 
-			// otherwise, startup the FG at latest finalized block
-			// note we set `lastProcessedHeight` to the prev block to ensure the latest height is also processed
-			fg.logger.Info("Starting finality gadget from block", zap.Uint64("block_height", latestFinalizedHeight))
+			// otherwise, startup the FG at latest finalized block (taking the later of the db and rpc values)
+			latestFinalizedBlockDb, err := fg.QueryLatestFinalizedBlock()
+			if err != nil {
+				return fmt.Errorf("error fetching latest finalized block from db: %w", err)
+			}
 			fg.lastProcessedHeight = latestFinalizedHeight - 1
+			if latestFinalizedBlockDb.BlockHeight > latestFinalizedHeight {
+				fg.lastProcessedHeight = latestFinalizedBlockDb.BlockHeight
+			}
+			fg.logger.Info("Starting finality gadget from block", zap.Uint64("block_height", fg.lastProcessedHeight+1))
 
 			return nil
 		}
