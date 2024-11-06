@@ -19,9 +19,9 @@ type Config struct {
 	GRPCListener      string        `long:"grpc-listener" description:"host:port to listen for gRPC connections"`
 	HTTPListener      string        `long:"http-listener" description:"host:port to listen for HTTP connections"`
 	BitcoinDisableTLS bool          `long:"bitcoin-disable-tls" description:"disable TLS for RPC connections"`
+	DebugLogLevel     bool          `long:"debug-log-level" description:"set log level to debug (true) or info (false)"`
 	PollInterval      time.Duration `long:"retry-interval" description:"interval in seconds to recheck Babylon finality of block"`
 	BatchSize         uint64        `long:"batch-size" description:"number of blocks to process in a batch"`
-	DebugLogLevel     bool          `long:"debug-log-level" description:"set log level to debug (true) or info (false)"`
 }
 
 func (c *Config) Validate() error {
