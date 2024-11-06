@@ -45,7 +45,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	}
 
 	// Create logger
-	logger, err := log.NewRootLogger("console", true)
+	logger, err := log.NewRootLogger("console", cfg.DebugLogLevel)
 	if err != nil {
 		return fmt.Errorf("failed to create logger: %w", err)
 	}
