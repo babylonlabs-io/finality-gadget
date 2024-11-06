@@ -136,6 +136,10 @@ func NewFinalityGadget(cfg *config.Config, db db.IDatabaseHandler, logger *zap.L
  *   - check if the voted voting power is more than 2/3 of the total voting power
  */
 func (fg *FinalityGadget) QueryIsBlockBabylonFinalizedFromBabylon(block *types.Block) (bool, error) {
+	if block == nil {
+		return false, fmt.Errorf("block is nil")
+	}
+
 	// check if the finality gadget is enabled
 	// if not, always return true to pass through op derivation pipeline
 	isEnabled, err := fg.cwClient.QueryIsEnabled()
@@ -338,10 +342,10 @@ func (fg *FinalityGadget) QueryTransactionStatus(txHash string) (*types.Transact
 	// get block info
 	ctx := context.Background()
 	txReceipt, err := fg.l2Client.TransactionReceipt(ctx, txHash)
-	fg.logger.Debug("Transaction receipt", zap.Uint64("block_number", txReceipt.BlockNumber.Uint64()))
-	if err != nil {
+	if err != nil || txReceipt == nil {
 		return nil, err
 	}
+	fg.logger.Debug("Transaction receipt", zap.Uint64("block_number", txReceipt.BlockNumber.Uint64()))
 	header, err := fg.l2Client.HeaderByNumber(ctx, txReceipt.BlockNumber)
 	fg.logger.Debug("Block info", zap.String("block_hash", header.Hash().Hex()), zap.Uint64("block_timestamp", header.Time))
 	if err != nil {
@@ -653,7 +657,9 @@ func (fg *FinalityGadget) processBlocksTillHeight(ctx context.Context, latestHei
 			// consecutively finalized block.
 			sortedBlocks := make(map[uint64]*types.Block)
 			for block := range results {
-				sortedBlocks[block.BlockHeight] = block
+				if block != nil {
+					sortedBlocks[block.BlockHeight] = block
+				}
 			}
 
 			var finalizedBlocks []*types.Block
