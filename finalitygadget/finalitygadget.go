@@ -631,15 +631,26 @@ func (fg *FinalityGadget) processBlocksTillHeight(ctx context.Context, latestHei
 				}
 			}
 
-			// Extract blocks and find last consecutive finalized block
+			// Extract blocks and find last consecutive finalized block.
+			// As channels are async, blocks will NOT be ordered by height
+			// We use a map to first sort blocks by height, then extract the last
+			// consecutively finalized block.
+			sortedBlocks := make(map[uint64]*types.Block)
+			for block := range results {
+				sortedBlocks[block.BlockHeight] = block
+			}
+
 			var finalizedBlocks []*types.Block
 			var lastFinalizedHeight uint64
-			for block := range results {
-				if block == nil {
+			for i := batchStartHeight; i <= batchEndHeight; i++ {
+				if block, ok := sortedBlocks[i]; ok {
+					if block != nil {
+						finalizedBlocks = append(finalizedBlocks, block)
+						lastFinalizedHeight = block.BlockHeight
+					}
+				} else {
 					break
 				}
-				finalizedBlocks = append(finalizedBlocks, block)
-				lastFinalizedHeight = block.BlockHeight
 			}
 			fg.logger.Debug("Last finalized block in batch", zap.Uint64("block_height", lastFinalizedHeight), zap.Uint64("batch_start_height", batchStartHeight), zap.Uint64("batch_end_height", batchEndHeight))
 
