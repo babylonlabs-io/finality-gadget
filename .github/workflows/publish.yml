@@ -5,8 +5,6 @@ on:
     branches:
       - 'chore/ci-publish-docker'
       - 'main'
-      # TODO: delete temp branch after merging with main
-      - 'fix/batch-process-bug'
     tags:
       - '*'
 
