@@ -83,9 +83,11 @@ func (bb *BBoltHandler) InsertBlocks(blocks []*types.Block) error {
 		for _, block := range blocks {
 			// Update min/max heights
 			if block.BlockHeight < minHeight {
+				bb.logger.Debug("Setting min height to", zap.Uint64("min_height", block.BlockHeight))
 				minHeight = block.BlockHeight
 			}
 			if block.BlockHeight > maxHeight {
+				bb.logger.Debug("Setting max height to", zap.Uint64("max_height", block.BlockHeight))
 				maxHeight = block.BlockHeight
 			}
 
@@ -95,11 +97,14 @@ func (bb *BBoltHandler) InsertBlocks(blocks []*types.Block) error {
 				bb.logger.Error("Error inserting block", zap.Error(err))
 				return err
 			}
+			bb.logger.Debug("Inserting block to db", zap.Uint64("block_height", block.BlockHeight), zap.String("block_hash", block.BlockHash))
 			if err := blocksBucket.Put(bb.itob(block.BlockHeight), blockBytes); err != nil {
+				bb.logger.Error("Error inserting block to db", zap.Error(err))
 				return err
 			}
 
 			// Store height mapping
+			bb.logger.Debug("Inserting height mapping to db", zap.String("block_hash", block.BlockHash), zap.Uint64("block_height", block.BlockHeight))
 			if err := heightsBucket.Put([]byte(block.BlockHash), bb.itob(block.BlockHeight)); err != nil {
 				bb.logger.Error("Error inserting height mapping", zap.Error(err))
 				return err
@@ -109,6 +114,7 @@ func (bb *BBoltHandler) InsertBlocks(blocks []*types.Block) error {
 		// Update earliest block if needed
 		earliestBytes := indexBucket.Get([]byte(earliestBlockKey))
 		if earliestBytes == nil {
+			bb.logger.Debug("Updating earliest block in db", zap.Uint64("block_height", minHeight))
 			if err := indexBucket.Put([]byte(earliestBlockKey), bb.itob(minHeight)); err != nil {
 				bb.logger.Error("Error inserting earliest block", zap.Error(err))
 				return err
@@ -122,6 +128,7 @@ func (bb *BBoltHandler) InsertBlocks(blocks []*types.Block) error {
 			currentLatest = bb.btoi(latestBytes)
 		}
 		if maxHeight > currentLatest {
+			bb.logger.Debug("Updating latest block in db", zap.Uint64("block_height", maxHeight))
 			if err := indexBucket.Put([]byte(latestBlockKey), bb.itob(maxHeight)); err != nil {
 				bb.logger.Error("Error inserting latest block", zap.Error(err))
 				return err

@@ -18,6 +18,7 @@ type Config struct {
 	DBFilePath        string        `long:"db-file-path" description:"path to the DB file"`
 	GRPCListener      string        `long:"grpc-listener" description:"host:port to listen for gRPC connections"`
 	HTTPListener      string        `long:"http-listener" description:"host:port to listen for HTTP connections"`
+	LogLevel          string        `long:"log-level" description:"log level (debug, info, warn, error)"`
 	BitcoinDisableTLS bool          `long:"bitcoin-disable-tls" description:"disable TLS for RPC connections"`
 	PollInterval      time.Duration `long:"retry-interval" description:"interval in seconds to recheck Babylon finality of block"`
 	BatchSize         uint64        `long:"batch-size" description:"number of blocks to process in a batch"`
@@ -78,6 +79,11 @@ func Load(configPath string) (*Config, error) {
 
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid configuration: %w", err)
+	}
+
+	// set default log level
+	if config.LogLevel == "" {
+		config.LogLevel = "info"
 	}
 
 	return &config, nil

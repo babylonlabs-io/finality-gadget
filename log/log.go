@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func NewRootLogger(format string, debug bool) (*zap.Logger, error) {
+func NewRootLogger(format string, logLevel zapcore.Level) (*zap.Logger, error) {
 	cfg := zap.NewProductionEncoderConfig()
 	cfg.EncodeTime = func(ts time.Time, encoder zapcore.PrimitiveArrayEncoder) {
 		encoder.AppendString(ts.UTC().Format("2006-01-02T15:04:05.000000Z07:00"))
@@ -29,13 +29,9 @@ func NewRootLogger(format string, debug bool) (*zap.Logger, error) {
 		return nil, fmt.Errorf("unrecognized log format %q", format)
 	}
 
-	level := zap.InfoLevel
-	if debug {
-		level = zap.DebugLevel
-	}
 	return zap.New(zapcore.NewCore(
 		enc,
 		os.Stderr,
-		level,
+		logLevel,
 	)), nil
 }

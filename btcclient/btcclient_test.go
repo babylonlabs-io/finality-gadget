@@ -6,6 +6,7 @@ import (
 
 	"github.com/babylonlabs-io/finality-gadget/log"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
 )
 
 // TODO: 1) not rely on mainnet RPC; 2) add more tests for some other edge cases
@@ -14,7 +15,7 @@ func TestBtcClient(t *testing.T) {
 	var err error
 
 	// Create logger.
-	logger, err := log.NewRootLogger("console", true)
+	logger, err := log.NewRootLogger("console", zapcore.DebugLevel)
 	require.Nil(t, err)
 
 	// Create BTC client
