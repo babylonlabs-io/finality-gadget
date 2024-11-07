@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/babylonlabs-io/finality-gadget/config"
 	"github.com/babylonlabs-io/finality-gadget/db"
@@ -45,7 +46,11 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	}
 
 	// Create logger
-	logger, err := log.NewRootLogger("console", cfg.DebugLogLevel)
+	logLevel, err := zapcore.ParseLevel(cfg.LogLevel)
+	if err != nil {
+		return fmt.Errorf("invalid log level: %w", err)
+	}
+	logger, err := log.NewRootLogger("console", logLevel)
 	if err != nil {
 		return fmt.Errorf("failed to create logger: %w", err)
 	}
