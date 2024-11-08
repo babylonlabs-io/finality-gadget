@@ -38,6 +38,7 @@ jobs:
         run: |
           current_hash=$(git rev-parse HEAD)
           remote_url=$(git remote get-url origin)
+          echo "remote_url: $remote_url"
           if [[ $remote_url == https://* ]]; then
               # For HTTPS URLs
               repo_path=$(echo $remote_url | sed -E 's|https://github.com/(.+)\.git|\1|')
@@ -45,6 +46,7 @@ jobs:
               # For SSH URLs
               repo_path=$(echo $remote_url | sed -E 's/.*:(.+)\.git/\1/')
           fi
+          echo "repo_path: $repo_path"
           fp_version=$(go list -m github.com/$repo_path@$current_hash)
 
           git clone https://github.com/babylonlabs-io/finality-provider
