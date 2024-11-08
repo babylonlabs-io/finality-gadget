@@ -58,4 +58,5 @@ jobs:
 
           export PATH=${PATH}:$(go env GOPATH)/bin
           echo "PATH: $PATH"
+          make op-e2e-devnet
           make test-e2e-op
