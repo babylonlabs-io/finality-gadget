@@ -41,7 +41,7 @@ jobs:
           echo "remote_url: $remote_url"
           if [[ $remote_url == https://* ]]; then
               # For HTTPS URLs
-              repo_path=$(echo $remote_url | sed -E 's|https://github.com/(.+)\.git|\1|')
+              repo_path=$(echo $remote_url | sed -E 's|https://github.com/(.+)(\.git)*|\1|')
           else
               # For SSH URLs
               repo_path=$(echo $remote_url | sed -E 's/.*:(.+)\.git/\1/')
