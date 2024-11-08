@@ -54,8 +54,8 @@ jobs:
           cd finality-provider
           git checkout base/consumer-chain-support
           sed -i "s|github\.com\/babylonlabs-io\/finality-gadget.*|$fp_version|g" go.mod
-          # go mod tidy
+          go mod tidy
 
           export PATH=${PATH}:$(go env GOPATH)/bin
           echo "PATH: $PATH"
-          # make test-e2e-op
+          make test-e2e-op
