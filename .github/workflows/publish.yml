@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - 'chore/ci-publish-docker'
-      - 'bourne/fp_ci'
       - 'main'
     tags:
       - '*'
@@ -57,6 +56,6 @@ jobs:
           go mod tidy
 
           export PATH=${PATH}:$(go env GOPATH)/bin
-          echo "PATH: $PATH"
+
           make op-e2e-devnet
           make test-e2e-op
