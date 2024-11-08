@@ -38,7 +38,6 @@ jobs:
         run: |
           current_hash=$(git rev-parse HEAD)
           remote_url=$(git remote get-url origin)
-          repo_path=$(echo $remote_url | sed -E 's/.*:(.+)\.git/\1/')
           if [[ $remote_url == https://* ]]; then
               # For HTTPS URLs
               repo_path=$(echo $remote_url | sed -E 's|https://github.com/(.+)\.git|\1|')
@@ -51,6 +50,6 @@ jobs:
           git clone https://github.com/babylonlabs-io/finality-provider
           cd finality-provider
           git checkout base/consumer-chain-support
-          sed -i "s|github\.com\/babylonlabs-io\/finality-gadget.*|$fp_version|" go.mod
+          sed -i "s|github\.com\/babylonlabs-io\/finality-gadget.*|$fp_version|g" go.mod
           go mod tidy
           make test-e2e-op
