@@ -57,7 +57,9 @@ jobs:
           sed -i "s|github\.com\/babylonlabs-io\/finality-gadget.*|$fp_version|g" go.mod
           go mod tidy
 
+      - name: Run op e2e tests
+        run: |
+          echo $pwd
           export PATH=${PATH}:$(go env GOPATH)/bin
-
           make op-e2e-devnet
           make test-e2e-op
