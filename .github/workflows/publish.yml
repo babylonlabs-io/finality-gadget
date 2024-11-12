@@ -59,9 +59,7 @@ jobs:
 
       - name: Run op e2e tests
         run: |
-          echo $(pwd)
           export PATH=${PATH}:$(go env GOPATH)/bin
           cd finality-provider
-          cat go.mod
           make op-e2e-devnet
           make test-e2e-op
