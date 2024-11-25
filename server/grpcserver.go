@@ -12,7 +12,7 @@ import (
 
 // rpcServer is the main RPC server for the finality gadget daemon that handles
 // gRPC incoming requests.
-type rpcServer struct {
+type grpcServer struct {
 	proto.UnimplementedFinalityGadgetServer
 
 	fg finalitygadget.IFinalityGadget
@@ -21,22 +21,22 @@ type rpcServer struct {
 // newRPCServer creates a new RPC sever from the set of input dependencies.
 func newRPCServer(
 	fg finalitygadget.IFinalityGadget,
-) *rpcServer {
-	return &rpcServer{
+) *grpcServer {
+	return &grpcServer{
 		fg: fg,
 	}
 }
 
 // RegisterWithGrpcServer registers the rpcServer with the passed root gRPC
 // server.
-func (r *rpcServer) RegisterWithGrpcServer(grpcServer *grpc.Server) error {
+func (r *grpcServer) RegisterWithGrpcServer(grpcServer *grpc.Server) error {
 	// Register the main RPC server.
 	proto.RegisterFinalityGadgetServer(grpcServer, r)
 	return nil
 }
 
 // QueryIsBlockBabylonFinalized is an RPC method that returns the finality status of a block by querying the internal db.
-func (r *rpcServer) QueryIsBlockBabylonFinalized(ctx context.Context, req *proto.QueryIsBlockBabylonFinalizedRequest) (*proto.QueryIsBlockFinalizedResponse, error) {
+func (r *grpcServer) QueryIsBlockBabylonFinalized(ctx context.Context, req *proto.QueryIsBlockBabylonFinalizedRequest) (*proto.QueryIsBlockFinalizedResponse, error) {
 	isFinalized, err := r.fg.QueryIsBlockBabylonFinalized(&types.Block{
 		BlockHash:      req.Block.BlockHash,
 		BlockHeight:    req.Block.BlockHeight,
@@ -50,7 +50,7 @@ func (r *rpcServer) QueryIsBlockBabylonFinalized(ctx context.Context, req *proto
 }
 
 // QueryIsBlockBabylonFinalizedFromBabylon is an RPC method that returns the finality status of a block by querying Babylon chain.
-func (r *rpcServer) QueryIsBlockBabylonFinalizedFromBabylon(ctx context.Context, req *proto.QueryIsBlockBabylonFinalizedRequest) (*proto.QueryIsBlockFinalizedResponse, error) {
+func (r *grpcServer) QueryIsBlockBabylonFinalizedFromBabylon(ctx context.Context, req *proto.QueryIsBlockBabylonFinalizedRequest) (*proto.QueryIsBlockFinalizedResponse, error) {
 	isFinalized, err := r.fg.QueryIsBlockBabylonFinalizedFromBabylon(&types.Block{
 		BlockHash:      req.Block.BlockHash,
 		BlockHeight:    req.Block.BlockHeight,
@@ -64,7 +64,7 @@ func (r *rpcServer) QueryIsBlockBabylonFinalizedFromBabylon(ctx context.Context,
 }
 
 // QueryBlockRangeBabylonFinalized is an RPC method that returns the latest Babylon finalized block in a range by querying Babylon chain.
-func (r *rpcServer) QueryBlockRangeBabylonFinalized(ctx context.Context, req *proto.QueryBlockRangeBabylonFinalizedRequest) (*proto.QueryBlockRangeBabylonFinalizedResponse, error) {
+func (r *grpcServer) QueryBlockRangeBabylonFinalized(ctx context.Context, req *proto.QueryBlockRangeBabylonFinalizedRequest) (*proto.QueryBlockRangeBabylonFinalizedResponse, error) {
 	blocks := make([]*types.Block, 0, len(req.Blocks))
 
 	for _, block := range req.Blocks {
@@ -90,7 +90,7 @@ func (r *rpcServer) QueryBlockRangeBabylonFinalized(ctx context.Context, req *pr
 }
 
 // QueryBtcStakingActivatedTimestamp is an RPC method that returns the timestamp when BTC staking was activated.
-func (r *rpcServer) QueryBtcStakingActivatedTimestamp(ctx context.Context, req *proto.QueryBtcStakingActivatedTimestampRequest) (*proto.QueryBtcStakingActivatedTimestampResponse, error) {
+func (r *grpcServer) QueryBtcStakingActivatedTimestamp(ctx context.Context, req *proto.QueryBtcStakingActivatedTimestampRequest) (*proto.QueryBtcStakingActivatedTimestampResponse, error) {
 	timestamp, err := r.fg.QueryBtcStakingActivatedTimestamp()
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (r *rpcServer) QueryBtcStakingActivatedTimestamp(ctx context.Context, req *
 }
 
 // QueryIsBlockFinalizedByHeight is an RPC method that returns the status of a block at a given height.
-func (r *rpcServer) QueryIsBlockFinalizedByHeight(ctx context.Context, req *proto.QueryIsBlockFinalizedByHeightRequest) (*proto.QueryIsBlockFinalizedResponse, error) {
+func (r *grpcServer) QueryIsBlockFinalizedByHeight(ctx context.Context, req *proto.QueryIsBlockFinalizedByHeightRequest) (*proto.QueryIsBlockFinalizedResponse, error) {
 	isFinalized, err := r.fg.QueryIsBlockFinalizedByHeight(req.BlockHeight)
 
 	if err != nil {
@@ -111,7 +111,7 @@ func (r *rpcServer) QueryIsBlockFinalizedByHeight(ctx context.Context, req *prot
 }
 
 // QueryIsBlockFinalizedByHeight is an RPC method that returns the status of a block at a given height.
-func (r *rpcServer) QueryIsBlockFinalizedByHash(ctx context.Context, req *proto.QueryIsBlockFinalizedByHashRequest) (*proto.QueryIsBlockFinalizedResponse, error) {
+func (r *grpcServer) QueryIsBlockFinalizedByHash(ctx context.Context, req *proto.QueryIsBlockFinalizedByHashRequest) (*proto.QueryIsBlockFinalizedResponse, error) {
 	isFinalized, err := r.fg.QueryIsBlockFinalizedByHash(req.BlockHash)
 
 	if err != nil {
@@ -122,7 +122,7 @@ func (r *rpcServer) QueryIsBlockFinalizedByHash(ctx context.Context, req *proto.
 }
 
 // QueryLatestFinalizedBlock is an RPC method that returns the latest consecutively finalized block.
-func (r *rpcServer) QueryLatestFinalizedBlock(ctx context.Context, req *proto.QueryLatestFinalizedBlockRequest) (*proto.QueryBlockResponse, error) {
+func (r *grpcServer) QueryLatestFinalizedBlock(ctx context.Context, req *proto.QueryLatestFinalizedBlockRequest) (*proto.QueryBlockResponse, error) {
 	block, err := r.fg.QueryLatestFinalizedBlock()
 
 	if block == nil {

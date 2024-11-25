@@ -18,13 +18,13 @@ import (
 	"google.golang.org/grpc"
 )
 
-// Server is the main daemon construct for the finality gadget server. It handles
-// spinning up the RPC sever, the database, and any other components that the
-// the finality gadget server needs to run.
+// Server is the main daemon construct for the finality gadget server. It
+// handles spinning up both the gRPC and HTTP servers, the database, and any
+// other components that the the finality gadget server needs to run.
 type Server struct {
-	rpcServer *rpcServer
-	cfg       *config.Config
-	db        db.IDatabaseHandler
+	fg  finalitygadget.IFinalityGadget
+	cfg *config.Config
+	db  db.IDatabaseHandler
 
 	logger *zap.Logger
 
@@ -35,8 +35,8 @@ type Server struct {
 // NewFinalityGadgetServer creates a new server with the given config.
 func NewFinalityGadgetServer(cfg *config.Config, db db.IDatabaseHandler, fg finalitygadget.IFinalityGadget, sig signal.Interceptor, logger *zap.Logger) *Server {
 	return &Server{
+		fg:          fg,
 		cfg:         cfg,
-		rpcServer:   newRPCServer(fg),
 		db:          db,
 		logger:      logger,
 		interceptor: sig,
@@ -59,27 +59,53 @@ func (s *Server) RunUntilShutdown() error {
 		}
 	}()
 
-	// we create listeners from the GRPCListener defined in the config.
+	if err := s.startGrpcServer(); err != nil {
+		return fmt.Errorf("failed to start gRPC listener: %v", err)
+	}
+
+	if err := s.startHttpServer(); err != nil {
+		return fmt.Errorf("failed to start HTTP server: %v", err)
+	}
+
+	s.logger.Info("Finality gadget is active")
+
+	// Wait for shutdown signal from either a graceful server stop or from
+	// the interrupt handler.
+	<-s.interceptor.ShutdownChannel()
+
+	return nil
+}
+
+func (s *Server) startGrpcServer() error {
 	lis, err := net.Listen("tcp", s.cfg.GRPCListener)
 	if err != nil {
 		return fmt.Errorf("failed to listen on %s: %w", s.cfg.GRPCListener, err)
 	}
 	defer lis.Close()
 
-	// Create grpc server
 	grpcServer := grpc.NewServer()
 	defer grpcServer.Stop()
-	if err := s.rpcServer.RegisterWithGrpcServer(grpcServer); err != nil {
+
+	if err := newRPCServer(s.fg).RegisterWithGrpcServer(grpcServer); err != nil {
 		return fmt.Errorf("failed to register gRPC server: %w", err)
 	}
 
-	// All the necessary components have been registered, so we can
-	// actually start listening for requests.
-	if err := s.startGrpcListen(grpcServer, []net.Listener{lis}); err != nil {
-		return fmt.Errorf("failed to start gRPC listener: %v", err)
-	}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		s.logger.Info("RPC server listening", zap.String("address", lis.Addr().String()))
 
-	// Add cors options to allow access form any origin
+		// Close the ready chan to indicate we are listening.
+		defer lis.Close()
+
+		wg.Done()
+		_ = grpcServer.Serve(lis)
+	}()
+	wg.Wait()
+	return nil
+}
+
+func (s *Server) startHttpServer() error {
 	corsOpts := cors.Options{
 		AllowOriginFunc:  func(origin string) bool { return true },
 		AllowCredentials: true,
@@ -93,50 +119,9 @@ func (s *Server) RunUntilShutdown() error {
 		ReadHeaderTimeout: 30 * time.Second,
 	}
 
-	s.logger.Info("Starting standalone HTTP server on port 8080")
+	s.logger.Info("Starting standalone HTTP server", zap.String("address", s.cfg.HTTPListener))
 	if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		s.logger.Error("HTTP server failed", zap.Error(err))
+		return fmt.Errorf("HTTP server failed: %w", err)
 	}
-
-	s.logger.Info("Finality gadget is active")
-
-	// Wait for shutdown signal from either a graceful server stop or from
-	// the interrupt handler.
-	<-s.interceptor.ShutdownChannel()
-
 	return nil
-}
-
-// startGrpcListen starts the GRPC server on the passed listeners.
-func (s *Server) startGrpcListen(grpcServer *grpc.Server, listeners []net.Listener) error {
-
-	// Use a WaitGroup so we can be sure the instructions on how to input the
-	// password is the last thing to be printed to the console.
-	var wg sync.WaitGroup
-
-	for _, lis := range listeners {
-		wg.Add(1)
-		go func(lis net.Listener) {
-			s.logger.Info("RPC server listening", zap.String("address", lis.Addr().String()))
-
-			// Close the ready chan to indicate we are listening.
-			defer lis.Close()
-
-			wg.Done()
-			_ = grpcServer.Serve(lis)
-		}(lis)
-	}
-
-	// Wait for gRPC servers to be up running.
-	wg.Wait()
-
-	return nil
-}
-
-func (s *Server) newHttpHandler() http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/v1/transaction", s.txStatusHandler)
-	mux.HandleFunc("/v1/chainSyncStatus", s.chainSyncStatusHandler)
-	mux.HandleFunc("/health", s.healthHandler)
-	return mux
 }

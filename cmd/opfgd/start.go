@@ -84,7 +84,7 @@ func runStartCmd(ctx client.Context, cmd *cobra.Command, args []string) error {
 	// Start monitoring BTC staking activation
 	go fg.MonitorBtcStakingActivation(fgCtx)
 
-	// Start grpc server
+	// Start both grpc and http servers
 	// Hook interceptor for os signals.
 	shutdownInterceptor, err := sig.Intercept()
 	if err != nil {
