@@ -88,9 +88,7 @@ func (s *Server) startGrpcServer() error {
 	grpcServer := grpc.NewServer()
 	defer grpcServer.Stop()
 
-	if err := s.RegisterWithGrpcServer(grpcServer); err != nil {
-		return fmt.Errorf("failed to register gRPC server: %w", err)
-	}
+	proto.RegisterFinalityGadgetServer(grpcServer, s)
 
 	var wg sync.WaitGroup
 	wg.Add(1)

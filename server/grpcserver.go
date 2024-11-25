@@ -3,19 +3,9 @@ package server
 import (
 	"context"
 
-	"google.golang.org/grpc"
-
 	"github.com/babylonlabs-io/finality-gadget/proto"
 	"github.com/babylonlabs-io/finality-gadget/types"
 )
-
-// RegisterWithGrpcServer registers the rpcServer with the passed root gRPC
-// server.
-func (s *Server) RegisterWithGrpcServer(grpcServer *grpc.Server) error {
-	// Register the main RPC server.
-	proto.RegisterFinalityGadgetServer(grpcServer, s)
-	return nil
-}
 
 // QueryIsBlockBabylonFinalized is an RPC method that returns the finality status of a block by querying the internal db.
 func (s *Server) QueryIsBlockBabylonFinalized(ctx context.Context, req *proto.QueryIsBlockBabylonFinalizedRequest) (*proto.QueryIsBlockFinalizedResponse, error) {
