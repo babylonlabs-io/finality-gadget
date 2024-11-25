@@ -2,13 +2,21 @@ package server
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/babylonlabs-io/finality-gadget/proto"
 	"github.com/babylonlabs-io/finality-gadget/types"
+	"go.uber.org/zap"
 )
 
 // QueryIsBlockBabylonFinalized is an RPC method that returns the finality status of a block by querying the internal db.
 func (s *Server) QueryIsBlockBabylonFinalized(ctx context.Context, req *proto.QueryIsBlockBabylonFinalizedRequest) (*proto.QueryIsBlockFinalizedResponse, error) {
+	s.logger.Info(
+		"QueryIsBlockBabylonFinalized",
+		zap.String("blockHash", req.Block.BlockHash),
+		zap.Uint64("blockHeight", req.Block.BlockHeight),
+		zap.Uint64("blockTimestamp", req.Block.BlockTimestamp),
+	)
 	isFinalized, err := s.fg.QueryIsBlockBabylonFinalized(&types.Block{
 		BlockHash:      req.Block.BlockHash,
 		BlockHeight:    req.Block.BlockHeight,
@@ -23,6 +31,12 @@ func (s *Server) QueryIsBlockBabylonFinalized(ctx context.Context, req *proto.Qu
 
 // QueryIsBlockBabylonFinalizedFromBabylon is an RPC method that returns the finality status of a block by querying Babylon chain.
 func (s *Server) QueryIsBlockBabylonFinalizedFromBabylon(ctx context.Context, req *proto.QueryIsBlockBabylonFinalizedRequest) (*proto.QueryIsBlockFinalizedResponse, error) {
+	s.logger.Info(
+		"QueryIsBlockBabylonFinalizedFromBabylon",
+		zap.String("blockHash", req.Block.BlockHash),
+		zap.Uint64("blockHeight", req.Block.BlockHeight),
+		zap.Uint64("blockTimestamp", req.Block.BlockTimestamp),
+	)
 	isFinalized, err := s.fg.QueryIsBlockBabylonFinalizedFromBabylon(&types.Block{
 		BlockHash:      req.Block.BlockHash,
 		BlockHeight:    req.Block.BlockHeight,
@@ -37,6 +51,18 @@ func (s *Server) QueryIsBlockBabylonFinalizedFromBabylon(ctx context.Context, re
 
 // QueryBlockRangeBabylonFinalized is an RPC method that returns the latest Babylon finalized block in a range by querying Babylon chain.
 func (s *Server) QueryBlockRangeBabylonFinalized(ctx context.Context, req *proto.QueryBlockRangeBabylonFinalizedRequest) (*proto.QueryBlockRangeBabylonFinalizedResponse, error) {
+	if len(req.Blocks) == 0 {
+		s.logger.Error("blocks array is empty")
+		return nil, fmt.Errorf("blocks array is empty")
+	}
+
+	s.logger.Info(
+		"QueryBlockRangeBabylonFinalized",
+		zap.Uint64("fromBlockHeight", req.Blocks[0].BlockHeight),
+		zap.String("fromBlockHash", req.Blocks[0].BlockHash),
+		zap.Uint64("toBlockHeight", req.Blocks[len(req.Blocks)-1].BlockHeight),
+		zap.String("toBlockHash", req.Blocks[len(req.Blocks)-1].BlockHash),
+	)
 	blocks := make([]*types.Block, 0, len(req.Blocks))
 
 	for _, block := range req.Blocks {
@@ -63,6 +89,7 @@ func (s *Server) QueryBlockRangeBabylonFinalized(ctx context.Context, req *proto
 
 // QueryBtcStakingActivatedTimestamp is an RPC method that returns the timestamp when BTC staking was activated.
 func (s *Server) QueryBtcStakingActivatedTimestamp(ctx context.Context, req *proto.QueryBtcStakingActivatedTimestampRequest) (*proto.QueryBtcStakingActivatedTimestampResponse, error) {
+	s.logger.Info("QueryBtcStakingActivatedTimestamp")
 	timestamp, err := s.fg.QueryBtcStakingActivatedTimestamp()
 	if err != nil {
 		return nil, err
@@ -73,6 +100,10 @@ func (s *Server) QueryBtcStakingActivatedTimestamp(ctx context.Context, req *pro
 
 // QueryIsBlockFinalizedByHeight is an RPC method that returns the status of a block at a given height.
 func (s *Server) QueryIsBlockFinalizedByHeight(ctx context.Context, req *proto.QueryIsBlockFinalizedByHeightRequest) (*proto.QueryIsBlockFinalizedResponse, error) {
+	s.logger.Info(
+		"QueryIsBlockFinalizedByHeight",
+		zap.Uint64("blockHeight", req.BlockHeight),
+	)
 	isFinalized, err := s.fg.QueryIsBlockFinalizedByHeight(req.BlockHeight)
 
 	if err != nil {
@@ -84,6 +115,10 @@ func (s *Server) QueryIsBlockFinalizedByHeight(ctx context.Context, req *proto.Q
 
 // QueryIsBlockFinalizedByHeight is an RPC method that returns the status of a block at a given height.
 func (s *Server) QueryIsBlockFinalizedByHash(ctx context.Context, req *proto.QueryIsBlockFinalizedByHashRequest) (*proto.QueryIsBlockFinalizedResponse, error) {
+	s.logger.Info(
+		"QueryIsBlockFinalizedByHash",
+		zap.String("blockHash", req.BlockHash),
+	)
 	isFinalized, err := s.fg.QueryIsBlockFinalizedByHash(req.BlockHash)
 
 	if err != nil {
@@ -95,6 +130,7 @@ func (s *Server) QueryIsBlockFinalizedByHash(ctx context.Context, req *proto.Que
 
 // QueryLatestFinalizedBlock is an RPC method that returns the latest consecutively finalized block.
 func (s *Server) QueryLatestFinalizedBlock(ctx context.Context, req *proto.QueryLatestFinalizedBlockRequest) (*proto.QueryBlockResponse, error) {
+	s.logger.Info("QueryLatestFinalizedBlock")
 	block, err := s.fg.QueryLatestFinalizedBlock()
 
 	if block == nil {
