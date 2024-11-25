@@ -11,6 +11,7 @@ import (
 	"github.com/babylonlabs-io/finality-gadget/config"
 	"github.com/babylonlabs-io/finality-gadget/db"
 	"github.com/babylonlabs-io/finality-gadget/finalitygadget"
+	"github.com/babylonlabs-io/finality-gadget/proto"
 	"github.com/lightningnetwork/lnd/signal"
 	"github.com/rs/cors"
 	"go.uber.org/zap"
@@ -22,6 +23,7 @@ import (
 // handles spinning up both the gRPC and HTTP servers, the database, and any
 // other components that the the finality gadget server needs to run.
 type Server struct {
+	proto.UnimplementedFinalityGadgetServer
 	fg  finalitygadget.IFinalityGadget
 	cfg *config.Config
 	db  db.IDatabaseHandler
@@ -86,7 +88,7 @@ func (s *Server) startGrpcServer() error {
 	grpcServer := grpc.NewServer()
 	defer grpcServer.Stop()
 
-	if err := newRPCServer(s.fg).RegisterWithGrpcServer(grpcServer); err != nil {
+	if err := s.RegisterWithGrpcServer(grpcServer); err != nil {
 		return fmt.Errorf("failed to register gRPC server: %w", err)
 	}
 
