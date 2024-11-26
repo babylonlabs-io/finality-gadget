@@ -7,13 +7,21 @@ import (
 	"go.uber.org/zap"
 )
 
+func (s *Server) newHttpHandler() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/v1/transaction", s.txStatusHandler)
+	mux.HandleFunc("/v1/chainSyncStatus", s.chainSyncStatusHandler)
+	mux.HandleFunc("/health", s.healthHandler)
+	return mux
+}
+
 func (s *Server) txStatusHandler(w http.ResponseWriter, r *http.Request) {
 	// Extract query parameters
 	txHash := r.URL.Query().Get("hash")
 	s.logger.Debug("Received transaction hash", zap.String("txHash", txHash))
 
 	// Get block from rpc.
-	txInfo, err := s.rpcServer.fg.QueryTransactionStatus(txHash)
+	txInfo, err := s.fg.QueryTransactionStatus(txHash)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -35,7 +43,7 @@ func (s *Server) txStatusHandler(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) chainSyncStatusHandler(w http.ResponseWriter, r *http.Request) {
 	// Get block from rpc.
-	chainSyncStatus, err := s.rpcServer.fg.QueryChainSyncStatus()
+	chainSyncStatus, err := s.fg.QueryChainSyncStatus()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
