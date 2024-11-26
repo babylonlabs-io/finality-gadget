@@ -18,7 +18,7 @@ func (s *Server) newHttpHandler() http.Handler {
 func (s *Server) txStatusHandler(w http.ResponseWriter, r *http.Request) {
 	// Extract query parameters
 	txHash := r.URL.Query().Get("hash")
-	s.logger.Info("/v1/transaction", zap.String("txHash", txHash))
+	s.logger.Debug("/v1/transaction", zap.String("txHash", txHash))
 
 	// Get block from rpc.
 	txInfo, err := s.fg.QueryTransactionStatus(txHash)
@@ -42,7 +42,7 @@ func (s *Server) txStatusHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) chainSyncStatusHandler(w http.ResponseWriter, r *http.Request) {
-	s.logger.Info("/v1/chainSyncStatus")
+	s.logger.Debug("/v1/chainSyncStatus")
 	// Get block from rpc.
 	chainSyncStatus, err := s.fg.QueryChainSyncStatus()
 	if err != nil {
@@ -65,7 +65,7 @@ func (s *Server) chainSyncStatusHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
-	s.logger.Info("/health")
+	s.logger.Debug("/health")
 	response := "Finality gadget is healthy"
 	_, err := w.Write([]byte(response))
 	if err != nil {
