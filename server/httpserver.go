@@ -18,7 +18,12 @@ func (s *Server) newHttpHandler() http.Handler {
 func (s *Server) txStatusHandler(w http.ResponseWriter, r *http.Request) {
 	// Extract query parameters
 	txHash := r.URL.Query().Get("hash")
-	s.logger.Debug("/v1/transaction", zap.String("txHash", txHash))
+	s.logger.Debug("transaction status request",
+		zap.String("path", "/v1/transaction"),
+		zap.String("method", r.Method),
+		zap.String("txHash", txHash),
+		zap.String("remoteAddr", r.RemoteAddr),
+	)
 
 	// Get block from rpc.
 	txInfo, err := s.fg.QueryTransactionStatus(txHash)
@@ -42,7 +47,10 @@ func (s *Server) txStatusHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) chainSyncStatusHandler(w http.ResponseWriter, r *http.Request) {
-	s.logger.Debug("/v1/chainSyncStatus")
+	s.logger.Debug(
+		"chainSyncStatus request",
+		zap.String("path", "/v1/chainSyncStatus"),
+	)
 	// Get block from rpc.
 	chainSyncStatus, err := s.fg.QueryChainSyncStatus()
 	if err != nil {
@@ -65,7 +73,10 @@ func (s *Server) chainSyncStatusHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
-	s.logger.Debug("/health")
+	s.logger.Debug(
+		"health request",
+		zap.String("path", "/health"),
+	)
 	response := "Finality gadget is healthy"
 	_, err := w.Write([]byte(response))
 	if err != nil {
