@@ -95,6 +95,44 @@ func (cwClient *CosmWasmClient) QueryIsEnabled() (bool, error) {
 	return isEnabled, nil
 }
 
+func (cwClient *CosmWasmClient) QueryIsBlockForked(blockHeight uint64) (bool, error) {
+	queryData, err := createIsForkedBlockQueryData(blockHeight)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := cwClient.querySmartContractState(queryData)
+	if err != nil {
+		return false, err
+	}
+
+	var isForked bool
+	if err := json.Unmarshal(resp.Data, &isForked); err != nil {
+		return false, err
+	}
+
+	return isForked, nil
+}
+
+func (cwClient *CosmWasmClient) QueryForkedBlocksInRange(startHeight, endHeight uint64) ([]blockRange, error) {
+	queryData, err := createForkedBlocksInRangeQueryData(startHeight, endHeight)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := cwClient.querySmartContractState(queryData)
+	if err != nil {
+		return nil, err
+	}
+
+	var forkedBlocks []blockRange
+	if err := json.Unmarshal(resp.Data, &forkedBlocks); err != nil {
+		return nil, err
+	}
+
+	return forkedBlocks, nil
+}
+
 //////////////////////////////
 // INTERNAL
 //////////////////////////////
@@ -118,13 +156,24 @@ type contractConfigResponse struct {
 	ActivatedHeight uint64 `json:"activated_height"`
 }
 type ContractQueryMsgs struct {
-	Config      *contractConfig   `json:"config,omitempty"`
-	BlockVoters *blockVotersQuery `json:"block_voters,omitempty"`
-	IsEnabled   *isEnabledQuery   `json:"is_enabled,omitempty"`
+	Config              *contractConfig     `json:"config,omitempty"`
+	BlockVoters         *blockVotersQuery   `json:"block_voters,omitempty"`
+	IsBlockForked       *isBlockForkedQuery `json:"is_block_forked,omitempty"`
+	ForkedBlocksInRange *blockRange         `json:"forked_blocks_in_range,omitempty"`
+	IsEnabled           *isEnabledQuery     `json:"is_enabled,omitempty"`
+}
+
+type blockRange struct {
+	Start uint64 `json:"start"`
+	End   uint64 `json:"end"`
 }
 
 type blockVotersQuery struct {
 	Hash   string `json:"hash"`
+	Height uint64 `json:"height"`
+}
+
+type isBlockForkedQuery struct {
 	Height uint64 `json:"height"`
 }
 
@@ -146,6 +195,33 @@ func createConfigQueryData() ([]byte, error) {
 func createIsEnabledQueryData() ([]byte, error) {
 	queryData := ContractQueryMsgs{
 		IsEnabled: &isEnabledQuery{},
+	}
+	data, err := json.Marshal(queryData)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func createIsForkedBlockQueryData(blockHeight uint64) ([]byte, error) {
+	queryData := ContractQueryMsgs{
+		IsBlockForked: &isBlockForkedQuery{
+			Height: blockHeight,
+		},
+	}
+	data, err := json.Marshal(queryData)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func createForkedBlocksInRangeQueryData(startHeight, endHeight uint64) ([]byte, error) {
+	queryData := ContractQueryMsgs{
+		ForkedBlocksInRange: &blockRange{
+			Start: startHeight,
+			End:   endHeight,
+		},
 	}
 	data, err := json.Marshal(queryData)
 	if err != nil {
