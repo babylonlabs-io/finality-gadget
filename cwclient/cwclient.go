@@ -114,6 +114,7 @@ func (cwClient *CosmWasmClient) QueryIsBlockForked(blockHeight uint64) (bool, er
 	return isForked, nil
 }
 
+// TODO: for temp testing only, to remove if not used
 func (cwClient *CosmWasmClient) QueryForkedBlocksInRange(startHeight, endHeight uint64) ([]blockRange, error) {
 	queryData, err := createForkedBlocksInRangeQueryData(startHeight, endHeight)
 	if err != nil {
