@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -31,6 +32,9 @@ type Server struct {
 
 	interceptor signal.Interceptor
 	started     int32
+
+	grpcServer *grpc.Server
+	httpServer *http.Server
 }
 
 // NewFinalityGadgetServer creates a new server with the given config.
@@ -73,6 +77,10 @@ func (s *Server) RunUntilShutdown() error {
 	// Wait for shutdown signal from either a graceful server stop or from
 	// the interrupt handler.
 	<-s.interceptor.ShutdownChannel()
+
+	// shutdown servers
+	s.grpcServer.GracefulStop()
+	s.httpServer.Shutdown(context.Background())
 
 	return nil
 }
