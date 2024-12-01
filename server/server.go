@@ -101,6 +101,7 @@ func (s *Server) startGrpcServer() error {
 		_ = grpcServer.Serve(listener)
 	}()
 	<-ready
+	s.grpcServer = grpcServer
 	return nil
 }
 
@@ -132,5 +133,6 @@ func (s *Server) startHttpServer() error {
 		}
 	}()
 	<-ready
+	s.httpServer = httpServer
 	return nil
 }
