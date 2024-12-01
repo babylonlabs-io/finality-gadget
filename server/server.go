@@ -24,17 +24,16 @@ import (
 // other components that the the finality gadget server needs to run.
 type Server struct {
 	proto.UnimplementedFinalityGadgetServer
-	fg  finalitygadget.IFinalityGadget
-	cfg *config.Config
-	db  db.IDatabaseHandler
 
-	logger *zap.Logger
-
+	grpcServer  *grpc.Server
+	httpServer  *http.Server
+	fg          finalitygadget.IFinalityGadget
+	cfg         *config.Config
+	db          db.IDatabaseHandler
+	logger      *zap.Logger
 	interceptor signal.Interceptor
-	started     int32
 
-	grpcServer *grpc.Server
-	httpServer *http.Server
+	started int32
 }
 
 // NewFinalityGadgetServer creates a new server with the given config.
@@ -80,7 +79,9 @@ func (s *Server) RunUntilShutdown() error {
 
 	// shutdown servers
 	s.grpcServer.GracefulStop()
-	s.httpServer.Shutdown(context.Background())
+	if err := s.httpServer.Shutdown(context.Background()); err != nil {
+		s.logger.Error("Error shutting down HTTP server", zap.Error(err))
+	}
 
 	return nil
 }
@@ -94,13 +95,15 @@ func (s *Server) startGrpcServer() error {
 	grpcServer := grpc.NewServer()
 	proto.RegisterFinalityGadgetServer(grpcServer, s)
 
-	ready := make(chan struct{})
+	listenerReady := make(chan struct{})
 	go func() {
 		s.logger.Info("gRPC server listening", zap.String("address", s.cfg.GRPCListener))
-		close(ready)
-		_ = grpcServer.Serve(listener)
+		close(listenerReady)
+		if err := grpcServer.Serve(listener); err != nil {
+			s.logger.Error("gRPC server failed", zap.Error(err))
+		}
 	}()
-	<-ready
+	<-listenerReady
 	s.grpcServer = grpcServer
 	return nil
 }
@@ -124,15 +127,15 @@ func (s *Server) startHttpServer() error {
 		return fmt.Errorf("failed to create HTTP listener: %w", err)
 	}
 
-	ready := make(chan struct{})
+	listenerReady := make(chan struct{})
 	go func() {
 		s.logger.Info("Starting standalone HTTP server", zap.String("address", s.cfg.HTTPListener))
-		close(ready)
+		close(listenerReady)
 		if err := httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
 			s.logger.Error("HTTP server failed", zap.Error(err))
 		}
 	}()
-	<-ready
+	<-listenerReady
 	s.httpServer = httpServer
 	return nil
 }
