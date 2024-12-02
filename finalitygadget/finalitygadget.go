@@ -150,6 +150,15 @@ func (fg *FinalityGadget) QueryIsBlockBabylonFinalizedFromBabylon(block *types.B
 		return true, nil
 	}
 
+	// check if block is part of reorg whitelist, if so return true to unblock deriv pipeline
+	isForked, err := fg.cwClient.QueryIsBlockForked(block.BlockHeight)
+	if err != nil {
+		return false, err
+	}
+	if isForked {
+		return true, nil
+	}
+
 	// trim prefix 0x for the L2 block hash
 	block.BlockHash = strings.TrimPrefix(block.BlockHash, "0x")
 

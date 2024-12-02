@@ -243,6 +243,21 @@ func (mr *MockICosmWasmClientMockRecorder) QueryConsumerId() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryConsumerId", reflect.TypeOf((*MockICosmWasmClient)(nil).QueryConsumerId))
 }
 
+// QueryIsBlockForked mocks base method.
+func (m *MockICosmWasmClient) QueryIsBlockForked(blockHeight uint64) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryIsBlockForked", blockHeight)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryIsBlockForked indicates an expected call of QueryIsBlockForked.
+func (mr *MockICosmWasmClientMockRecorder) QueryIsBlockForked(blockHeight any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryIsBlockForked", reflect.TypeOf((*MockICosmWasmClient)(nil).QueryIsBlockForked), blockHeight)
+}
+
 // QueryIsEnabled mocks base method.
 func (m *MockICosmWasmClient) QueryIsEnabled() (bool, error) {
 	m.ctrl.T.Helper()

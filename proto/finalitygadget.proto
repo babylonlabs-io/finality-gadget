@@ -10,6 +10,11 @@ service FinalityGadget {
   rpc QueryIsBlockBabylonFinalized(QueryIsBlockBabylonFinalizedRequest)
       returns (QueryIsBlockFinalizedResponse);
 
+  // QueryIsBlockBabylonFinalizedFromBabylon returns the finality status of a block by
+  // querying Babylon chain directly
+  rpc QueryIsBlockBabylonFinalizedFromBabylon(QueryIsBlockBabylonFinalizedRequest)
+      returns (QueryIsBlockFinalizedResponse);
+
   // QueryBlockRangeBabylonFinalized returns the last finalized block height
   // within a block range by querying Babylon chain
   rpc QueryBlockRangeBabylonFinalized(QueryBlockRangeBabylonFinalizedRequest)
