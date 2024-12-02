@@ -96,6 +96,7 @@ func (s *Server) startGrpcServer() error {
 	proto.RegisterFinalityGadgetServer(grpcServer, s)
 
 	listenerReady := make(chan struct{})
+	// TODO: handle errors if grpcServer.Serve fails in the goroutine
 	go func() {
 		s.logger.Info("gRPC server listening", zap.String("address", s.cfg.GRPCListener))
 		close(listenerReady)
@@ -128,6 +129,7 @@ func (s *Server) startHttpServer() error {
 	}
 
 	listenerReady := make(chan struct{})
+	// TODO: handle errors if httpServer.Serve fails in the goroutine
 	go func() {
 		s.logger.Info("Starting standalone HTTP server", zap.String("address", s.cfg.HTTPListener))
 		close(listenerReady)
