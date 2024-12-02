@@ -1,10 +1,10 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -24,14 +24,16 @@ import (
 // other components that the the finality gadget server needs to run.
 type Server struct {
 	proto.UnimplementedFinalityGadgetServer
-	fg  finalitygadget.IFinalityGadget
-	cfg *config.Config
-	db  db.IDatabaseHandler
 
-	logger *zap.Logger
-
+	grpcServer  *grpc.Server
+	httpServer  *http.Server
+	fg          finalitygadget.IFinalityGadget
+	cfg         *config.Config
+	db          db.IDatabaseHandler
+	logger      *zap.Logger
 	interceptor signal.Interceptor
-	started     int32
+
+	started int32
 }
 
 // NewFinalityGadgetServer creates a new server with the given config.
@@ -75,33 +77,35 @@ func (s *Server) RunUntilShutdown() error {
 	// the interrupt handler.
 	<-s.interceptor.ShutdownChannel()
 
+	// shutdown servers
+	s.grpcServer.GracefulStop()
+	if err := s.httpServer.Shutdown(context.Background()); err != nil {
+		s.logger.Error("Error shutting down HTTP server", zap.Error(err))
+	}
+
 	return nil
 }
 
 func (s *Server) startGrpcServer() error {
-	lis, err := net.Listen("tcp", s.cfg.GRPCListener)
+	listener, err := net.Listen("tcp", s.cfg.GRPCListener)
 	if err != nil {
 		return fmt.Errorf("failed to listen on %s: %w", s.cfg.GRPCListener, err)
 	}
-	defer lis.Close()
 
 	grpcServer := grpc.NewServer()
-	defer grpcServer.Stop()
-
 	proto.RegisterFinalityGadgetServer(grpcServer, s)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
+	listenerReady := make(chan struct{})
+	// TODO: handle errors if grpcServer.Serve fails in the goroutine
 	go func() {
-		s.logger.Info("RPC server listening", zap.String("address", lis.Addr().String()))
-
-		// Close the ready chan to indicate we are listening.
-		defer lis.Close()
-
-		wg.Done()
-		_ = grpcServer.Serve(lis)
+		s.logger.Info("gRPC server listening", zap.String("address", s.cfg.GRPCListener))
+		close(listenerReady)
+		if err := grpcServer.Serve(listener); err != nil {
+			s.logger.Error("gRPC server failed", zap.Error(err))
+		}
 	}()
-	wg.Wait()
+	<-listenerReady
+	s.grpcServer = grpcServer
 	return nil
 }
 
@@ -119,9 +123,21 @@ func (s *Server) startHttpServer() error {
 		ReadHeaderTimeout: 30 * time.Second,
 	}
 
-	s.logger.Info("Starting standalone HTTP server", zap.String("address", s.cfg.HTTPListener))
-	if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		return fmt.Errorf("HTTP server failed: %w", err)
+	listener, err := net.Listen("tcp", s.cfg.HTTPListener)
+	if err != nil {
+		return fmt.Errorf("failed to create HTTP listener: %w", err)
 	}
+
+	listenerReady := make(chan struct{})
+	// TODO: handle errors if httpServer.Serve fails in the goroutine
+	go func() {
+		s.logger.Info("Starting standalone HTTP server", zap.String("address", s.cfg.HTTPListener))
+		close(listenerReady)
+		if err := httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
+			s.logger.Error("HTTP server failed", zap.Error(err))
+		}
+	}()
+	<-listenerReady
+	s.httpServer = httpServer
 	return nil
 }
