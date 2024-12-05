@@ -3,7 +3,6 @@ name: docker_publish
 on:
   push:
     branches:
-      - 'chore/ci-publish-docker'
       - 'main'
     tags:
       - '*'
@@ -29,37 +28,3 @@ jobs:
     with:
       publish: true
       repoName: finality-gadget
-      
-  test_finality_provider:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Clone finality-provider repository
-        run: |
-          current_hash=$(git rev-parse HEAD)
-          remote_url=$(git remote get-url origin)
-          if [[ $remote_url == https://* ]]; then
-              # For HTTPS URLs
-              repo_path=$(echo $remote_url | sed -E 's|https://github.com/(.+)(\.git)*|\1|')
-          else
-              # For SSH URLs
-              repo_path=$(echo $remote_url | sed -E 's/.*:(.+)\.git/\1/')
-          fi
-          fp_version=$(go list -m github.com/$repo_path@$current_hash)
-
-          git clone https://github.com/babylonlabs-io/finality-provider
-          cd finality-provider
-          git checkout base/consumer-chain-support
-          sed -i "s|github\.com\/babylonlabs-io\/finality-gadget.*|$fp_version|g" go.mod
-          go mod tidy
-
-      - name: Run op e2e tests
-        run: |
-          export PATH=${PATH}:$(go env GOPATH)/bin
-          cd finality-provider
-          make op-e2e-devnet
-          make test-e2e-op
