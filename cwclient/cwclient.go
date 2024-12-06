@@ -48,6 +48,11 @@ func (cwClient *CosmWasmClient) QueryListOfVotedFinalityProviders(
 	if err != nil {
 		return nil, err
 	}
+	// BlockVoters's return type is Option<HashSet<String>> in contract
+	// Check empty response before unmarshaling
+	if len(resp.Data) == 0 {
+		return nil, nil
+	}
 
 	votedFpPkHexList := &[]string{}
 	if err := json.Unmarshal(resp.Data, votedFpPkHexList); err != nil {
@@ -114,9 +119,9 @@ func createBlockVotersQueryData(queryParams *types.Block) ([]byte, error) {
 }
 
 type contractConfigResponse struct {
-	ConsumerId      string `json:"consumer_id"`
-	ActivatedHeight uint64 `json:"activated_height"`
+	ConsumerId string `json:"consumer_id"`
 }
+
 type ContractQueryMsgs struct {
 	Config      *contractConfig   `json:"config,omitempty"`
 	BlockVoters *blockVotersQuery `json:"block_voters,omitempty"`
