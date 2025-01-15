@@ -46,10 +46,10 @@ func (m *MockIBitcoinClient) EXPECT() *MockIBitcoinClientMockRecorder {
 }
 
 // GetBlockCount mocks base method.
-func (m *MockIBitcoinClient) GetBlockCount() (uint64, error) {
+func (m *MockIBitcoinClient) GetBlockCount() (uint32, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlockCount")
-	ret0, _ := ret[0].(uint64)
+	ret0, _ := ret[0].(uint32)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -61,7 +61,7 @@ func (mr *MockIBitcoinClientMockRecorder) GetBlockCount() *gomock.Call {
 }
 
 // GetBlockHashByHeight mocks base method.
-func (m *MockIBitcoinClient) GetBlockHashByHeight(height uint64) (*chainhash.Hash, error) {
+func (m *MockIBitcoinClient) GetBlockHashByHeight(height uint32) (*chainhash.Hash, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlockHashByHeight", height)
 	ret0, _ := ret[0].(*chainhash.Hash)
@@ -91,10 +91,10 @@ func (mr *MockIBitcoinClientMockRecorder) GetBlockHeaderByHash(blockHash any) *g
 }
 
 // GetBlockHeightByTimestamp mocks base method.
-func (m *MockIBitcoinClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint64, error) {
+func (m *MockIBitcoinClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint32, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlockHeightByTimestamp", targetTimestamp)
-	ret0, _ := ret[0].(uint64)
+	ret0, _ := ret[0].(uint32)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -106,7 +106,7 @@ func (mr *MockIBitcoinClientMockRecorder) GetBlockHeightByTimestamp(targetTimest
 }
 
 // GetBlockTimestampByHeight mocks base method.
-func (m *MockIBitcoinClient) GetBlockTimestampByHeight(height uint64) (uint64, error) {
+func (m *MockIBitcoinClient) GetBlockTimestampByHeight(height uint32) (uint64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlockTimestampByHeight", height)
 	ret0, _ := ret[0].(uint64)
@@ -160,10 +160,10 @@ func (mr *MockIBabylonClientMockRecorder) QueryAllFpBtcPubKeys(consumerId any) *
 }
 
 // QueryEarliestActiveDelBtcHeight mocks base method.
-func (m *MockIBabylonClient) QueryEarliestActiveDelBtcHeight(fpPubkeyHexList []string) (uint64, error) {
+func (m *MockIBabylonClient) QueryEarliestActiveDelBtcHeight(fpPubkeyHexList []string) (uint32, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "QueryEarliestActiveDelBtcHeight", fpPubkeyHexList)
-	ret0, _ := ret[0].(uint64)
+	ret0, _ := ret[0].(uint32)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -175,7 +175,7 @@ func (mr *MockIBabylonClientMockRecorder) QueryEarliestActiveDelBtcHeight(fpPubk
 }
 
 // QueryFpPower mocks base method.
-func (m *MockIBabylonClient) QueryFpPower(fpPubkeyHex string, btcHeight uint64) (uint64, error) {
+func (m *MockIBabylonClient) QueryFpPower(fpPubkeyHex string, btcHeight uint32) (uint64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "QueryFpPower", fpPubkeyHex, btcHeight)
 	ret0, _ := ret[0].(uint64)
@@ -190,7 +190,7 @@ func (mr *MockIBabylonClientMockRecorder) QueryFpPower(fpPubkeyHex, btcHeight an
 }
 
 // QueryMultiFpPower mocks base method.
-func (m *MockIBabylonClient) QueryMultiFpPower(fpPubkeyHexList []string, btcHeight uint64) (map[string]uint64, error) {
+func (m *MockIBabylonClient) QueryMultiFpPower(fpPubkeyHexList []string, btcHeight uint32) (map[string]uint64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "QueryMultiFpPower", fpPubkeyHexList, btcHeight)
 	ret0, _ := ret[0].(map[string]uint64)

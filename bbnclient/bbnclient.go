@@ -41,7 +41,7 @@ func (bbnClient *BabylonClient) QueryAllFpBtcPubKeys(consumerId string) ([]strin
 	return pkArr, nil
 }
 
-func (bbnClient *BabylonClient) QueryFpPower(fpPubkeyHex string, btcHeight uint64) (uint64, error) {
+func (bbnClient *BabylonClient) QueryFpPower(fpPubkeyHex string, btcHeight uint32) (uint64, error) {
 	totalPower := uint64(0)
 	pagination := &sdkquerytypes.PageRequest{}
 	// queries the BTCStaking module for all delegations of a finality provider
@@ -74,7 +74,7 @@ func (bbnClient *BabylonClient) QueryFpPower(fpPubkeyHex string, btcHeight uint6
 
 func (bbnClient *BabylonClient) QueryMultiFpPower(
 	fpPubkeyHexList []string,
-	btcHeight uint64,
+	btcHeight uint32,
 ) (map[string]uint64, error) {
 	fpPowerMap := make(map[string]uint64)
 
@@ -90,13 +90,13 @@ func (bbnClient *BabylonClient) QueryMultiFpPower(
 }
 
 // QueryEarliestActiveDelBtcHeight returns the earliest active BTC staking height
-func (bbnClient *BabylonClient) QueryEarliestActiveDelBtcHeight(fpPkHexList []string) (uint64, error) {
-	allFpEarliestDelBtcHeight := uint64(math.MaxUint64)
+func (bbnClient *BabylonClient) QueryEarliestActiveDelBtcHeight(fpPkHexList []string) (uint32, error) {
+	allFpEarliestDelBtcHeight := uint32(math.MaxUint32)
 
 	for _, fpPkHex := range fpPkHexList {
 		fpEarliestDelBtcHeight, err := bbnClient.QueryFpEarliestActiveDelBtcHeight(fpPkHex)
 		if err != nil {
-			return math.MaxUint64, err
+			return math.MaxUint32, err
 		}
 		if fpEarliestDelBtcHeight < allFpEarliestDelBtcHeight {
 			allFpEarliestDelBtcHeight = fpEarliestDelBtcHeight
@@ -106,7 +106,7 @@ func (bbnClient *BabylonClient) QueryEarliestActiveDelBtcHeight(fpPkHexList []st
 	return allFpEarliestDelBtcHeight, nil
 }
 
-func (bbnClient *BabylonClient) QueryFpEarliestActiveDelBtcHeight(fpPubkeyHex string) (uint64, error) {
+func (bbnClient *BabylonClient) QueryFpEarliestActiveDelBtcHeight(fpPubkeyHex string) (uint32, error) {
 	pagination := &sdkquerytypes.PageRequest{
 		Limit: 100,
 	}
@@ -114,32 +114,32 @@ func (bbnClient *BabylonClient) QueryFpEarliestActiveDelBtcHeight(fpPubkeyHex st
 	// queries the BTCStaking module for all delegations of a finality provider
 	resp, err := bbnClient.QueryClient.FinalityProviderDelegations(fpPubkeyHex, pagination)
 	if err != nil {
-		return math.MaxUint64, err
+		return math.MaxUint32, err
 	}
 
 	// queries BtcConfirmationDepth, CovenantQuorum, and the latest BTC header
 	btccheckpointParams, err := bbnClient.QueryClient.BTCCheckpointParams()
 	if err != nil {
-		return math.MaxUint64, err
+		return math.MaxUint32, err
 	}
 
 	// get the BTC staking params
 	btcstakingParams, err := bbnClient.QueryClient.BTCStakingParams()
 	if err != nil {
-		return math.MaxUint64, err
+		return math.MaxUint32, err
 	}
 
 	// get the latest BTC header
 	btcHeader, err := bbnClient.QueryClient.BTCHeaderChainTip()
 	if err != nil {
-		return math.MaxUint64, err
+		return math.MaxUint32, err
 	}
 
 	kValue := btccheckpointParams.GetParams().BtcConfirmationDepth
 	covQuorum := btcstakingParams.GetParams().CovenantQuorum
 	latestBtcHeight := btcHeader.GetHeader().Height
 
-	earliestBtcHeight := uint64(math.MaxUint64)
+	earliestBtcHeight := uint32(math.MaxUint32)
 	for {
 		// btcDels contains all the queried BTC delegations
 		for _, btcDels := range resp.BtcDelegatorDelegations {
@@ -166,7 +166,7 @@ func (bbnClient *BabylonClient) QueryFpEarliestActiveDelBtcHeight(fpPubkeyHex st
 // https://github.com/babylonlabs-io/babylon-private/blob/3d8f190c9b0c0795f6546806e3b8582de716cd60/x/btcstaking/types/btc_delegation.go#L90-L111
 func (bbnClient *BabylonClient) isDelegationActive(
 	btcDel *bbntypes.BTCDelegationResponse,
-	btcHeight uint64,
+	btcHeight uint32,
 ) (bool, error) {
 	btccheckpointParams, err := bbnClient.QueryClient.BTCCheckpointParams()
 	if err != nil {
@@ -181,7 +181,7 @@ func (bbnClient *BabylonClient) isDelegationActive(
 	covQuorum := btcstakingParams.GetParams().CovenantQuorum
 	ud := btcDel.UndelegationResponse
 
-	if len(ud.GetDelegatorUnbondingSigHex()) > 0 {
+	if ud.DelegatorUnbondingInfoResponse == nil {
 		return false, nil
 	}
 
@@ -217,14 +217,14 @@ func (bbnClient *BabylonClient) isDelegationActive(
 // 1) the staking tx is k-deep in Bitcoin, i.e., start_height + k
 // 2) it receives a quorum number of covenant committee signatures
 //
-// return math.MaxUint64 if the delegation is not active
+// return math.MaxUint32 if the delegation is not active
 //
 // Note: the delegation can be unbounded and that's totally fine and shouldn't affect when the chain was activated
-func getDelFirstActiveHeight(btcDel *bbntypes.BTCDelegationResponse, latestBtcHeight, kValue uint64, covQuorum uint32) uint64 {
+func getDelFirstActiveHeight(btcDel *bbntypes.BTCDelegationResponse, latestBtcHeight, kValue uint32, covQuorum uint32) uint32 {
 	activationHeight := btcDel.StartHeight + kValue
 	// not activated yet
 	if latestBtcHeight < activationHeight || len(btcDel.CovenantSigs) < int(covQuorum) {
-		return math.MaxUint64
+		return math.MaxUint32
 	}
 	return activationHeight
 }

@@ -11,18 +11,18 @@ import (
 )
 
 type IBitcoinClient interface {
-	GetBlockCount() (uint64, error)
-	GetBlockHashByHeight(height uint64) (*chainhash.Hash, error)
+	GetBlockCount() (uint32, error)
+	GetBlockHashByHeight(height uint32) (*chainhash.Hash, error)
 	GetBlockHeaderByHash(blockHash *chainhash.Hash) (*wire.BlockHeader, error)
-	GetBlockHeightByTimestamp(targetTimestamp uint64) (uint64, error)
-	GetBlockTimestampByHeight(height uint64) (uint64, error)
+	GetBlockHeightByTimestamp(targetTimestamp uint64) (uint32, error)
+	GetBlockTimestampByHeight(height uint32) (uint64, error)
 }
 
 type IBabylonClient interface {
 	QueryAllFpBtcPubKeys(consumerId string) ([]string, error)
-	QueryFpPower(fpPubkeyHex string, btcHeight uint64) (uint64, error)
-	QueryMultiFpPower(fpPubkeyHexList []string, btcHeight uint64) (map[string]uint64, error)
-	QueryEarliestActiveDelBtcHeight(fpPubkeyHexList []string) (uint64, error)
+	QueryFpPower(fpPubkeyHex string, btcHeight uint32) (uint64, error)
+	QueryMultiFpPower(fpPubkeyHexList []string, btcHeight uint32) (map[string]uint64, error)
+	QueryEarliestActiveDelBtcHeight(fpPubkeyHexList []string) (uint32, error)
 }
 
 type ICosmWasmClient interface {
