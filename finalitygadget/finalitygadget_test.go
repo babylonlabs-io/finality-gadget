@@ -150,6 +150,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 
 			mockCwClient := mocks.NewMockICosmWasmClient(ctl)
 			mockCwClient.EXPECT().QueryIsEnabled().Return(true, nil).Times(1)
+			mockCwClient.EXPECT().QueryIsBlockForked(tc.block.BlockHeight).Return(false, nil).Times(1)
 			mockCwClient.EXPECT().QueryConsumerId().Return(consumerChainID, nil).Times(1)
 			mockBTCClient := mocks.NewMockIBitcoinClient(ctl)
 			mockBTCClient.EXPECT().
@@ -268,8 +269,9 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 			defer ctl.Finish()
 
 			mockDbHandler := mocks.NewMockIDatabaseHandler(ctl)
+			mockCwClient := mocks.NewMockICosmWasmClient(ctl)
 
-			// Setup mock DB responses
+			// Setup mock DB and cw contract responses
 			if len(tc.queryBlocks) > 0 && tc.queryDB {
 				mockDbHandler.EXPECT().
 					QueryEarliestFinalizedBlock().
@@ -282,7 +284,8 @@ func TestQueryBlockRangeBabylonFinalized(t *testing.T) {
 			}
 
 			mockFinalityGadget := &FinalityGadget{
-				db: mockDbHandler,
+				db:       mockDbHandler,
+				cwClient: mockCwClient,
 			}
 
 			res, err := mockFinalityGadget.QueryBlockRangeBabylonFinalized(tc.queryBlocks)
@@ -666,6 +669,29 @@ func TestQueryIsBlockFinalizedByHashForNonExistentBlock(t *testing.T) {
 	isFinalized, err := mockFinalityGadget.QueryIsBlockFinalizedByHash("123")
 	require.False(t, isFinalized)
 	require.Equal(t, err, types.ErrBlockNotFound)
+}
+
+func TestQueryIsBlockFinalizedFromBabylonForked(t *testing.T) {
+	ctl := gomock.NewController(t)
+
+	// mock CwClient
+	mockCwClient := mocks.NewMockICosmWasmClient(ctl)
+	mockCwClient.EXPECT().QueryIsEnabled().Return(true, nil).Times(1)
+	mockCwClient.EXPECT().QueryIsBlockForked(uint64(1)).Return(true, nil).Times(1)
+
+	mockTestFinalityGadget := &FinalityGadget{
+		cwClient:  mockCwClient,
+		bbnClient: nil,
+		btcClient: nil,
+	}
+
+	res, err := mockTestFinalityGadget.QueryIsBlockBabylonFinalizedFromBabylon(&types.Block{
+		BlockHeight:    1,
+		BlockHash:      "0x123",
+		BlockTimestamp: 1000,
+	})
+	require.NoError(t, err)
+	require.True(t, res)
 }
 
 func TestQueryLatestFinalizedBlock(t *testing.T) {
