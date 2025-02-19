@@ -226,18 +226,12 @@ func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(block *types.Block) (bool
 		return true, nil
 	}
 
-	// convert the L2 timestamp to BTC height
-	btcblockHeight, err := fg.btcClient.GetBlockHeightByTimestamp(block.BlockTimestamp)
-	if err != nil {
-		return false, err
-	}
-
 	// check whether the btc staking is activated
 	btcStakingActivatedTimestamp, err := fg.QueryBtcStakingActivatedTimestamp()
 	if err != nil {
 		return false, err
 	}
-	if btcblockHeight < btcStakingActivatedTimestamp {
+	if block.BlockTimestamp < btcStakingActivatedTimestamp {
 		return false, types.ErrBtcStakingNotActivated
 	}
 
