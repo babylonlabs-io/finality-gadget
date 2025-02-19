@@ -42,7 +42,7 @@ type BlockCountResponse struct {
 	count int64
 }
 
-func (c *BitcoinClient) GetBlockCount() (uint64, error) {
+func (c *BitcoinClient) GetBlockCount() (uint32, error) {
 	callForBlockCount := func() (*BlockCountResponse, error) {
 		count, err := c.client.GetBlockCount()
 		if err != nil {
@@ -61,12 +61,12 @@ func (c *BitcoinClient) GetBlockCount() (uint64, error) {
 		return 0, fmt.Errorf("unexpected negative block count: %d", blockCount.count)
 	}
 
-	return uint64(blockCount.count), nil
+	return uint32(blockCount.count), nil
 }
 
-func (c *BitcoinClient) GetBlockHashByHeight(height uint64) (*chainhash.Hash, error) {
+func (c *BitcoinClient) GetBlockHashByHeight(height uint32) (*chainhash.Hash, error) {
 	callForBlockHash := func() (*chainhash.Hash, error) {
-		if height > math.MaxInt64 {
+		if height > math.MaxInt32 {
 			return nil, fmt.Errorf("block height %d exceeds maximum int64 value", height)
 		}
 		return c.client.GetBlockHash(int64(height))
@@ -93,14 +93,14 @@ func (c *BitcoinClient) GetBlockHeaderByHash(blockHash *chainhash.Hash) (*wire.B
 	return header, nil
 }
 
-func (c *BitcoinClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint64, error) {
+func (c *BitcoinClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint32, error) {
 	// get the height of the most-work fully-validated chain
 	blockHeight, err := c.GetBlockCount()
 	if err != nil {
 		return 0, err
 	}
 
-	lowerBound := uint64(0)
+	lowerBound := uint32(0)
 	upperBound := blockHeight
 
 	for lowerBound <= upperBound {
@@ -123,13 +123,13 @@ func (c *BitcoinClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint6
 	// timestamp is in the future (not in the most-work fully-validated chain)
 	// we return the max uint64 to indicate this
 	if lowerBound > blockHeight {
-		return math.MaxUint64, nil
+		return math.MaxUint32, nil
 	}
 
 	return lowerBound - 1, nil
 }
 
-func (c *BitcoinClient) GetBlockTimestampByHeight(height uint64) (uint64, error) {
+func (c *BitcoinClient) GetBlockTimestampByHeight(height uint32) (uint64, error) {
 	// get block hash by height
 	blockHash, err := c.GetBlockHashByHeight(height)
 	if err != nil {

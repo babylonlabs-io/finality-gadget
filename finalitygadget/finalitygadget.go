@@ -741,10 +741,10 @@ func (fg *FinalityGadget) queryBtcStakingActivationTimestamp() (uint64, error) {
 	if err != nil {
 		return math.MaxUint64, err
 	}
-	if earliestDelHeight == math.MaxUint64 {
+	if earliestDelHeight == math.MaxUint32 {
 		return math.MaxUint64, types.ErrBtcStakingNotActivated
 	}
-	fg.logger.Debug("Earliest active delegation height", zap.Uint64("height", earliestDelHeight))
+	fg.logger.Debug("Earliest active delegation height", zap.Uint32("height", earliestDelHeight))
 
 	btcBlockTimestamp, err := fg.btcClient.GetBlockTimestampByHeight(earliestDelHeight)
 	if err != nil {
