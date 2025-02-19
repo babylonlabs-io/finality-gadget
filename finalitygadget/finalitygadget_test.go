@@ -49,7 +49,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 	blockWithHashTrimmed.BlockHash = strings.TrimPrefix(blockWithHashUntrimmed.BlockHash, "0x")
 
 	const consumerChainID = "consumer-chain-id"
-	const BTCHeight = uint64(111)
+	const BTCHeight = uint32(111)
 
 	testCases := []struct {
 		name                    string
@@ -58,7 +58,7 @@ func TestQueryIsBlockBabylonFinalized(t *testing.T) {
 		allFpPks                []string
 		fpPowers                map[string]uint64
 		votedProviders          []string
-		stakingActivationHeight uint64
+		stakingActivationHeight uint32
 		expectResult            bool
 	}{
 		{
@@ -749,8 +749,8 @@ func TestQueryBtcStakingActivatedTimestamp(t *testing.T) {
 	mockDbHandler.EXPECT().GetActivatedTimestamp().Return(uint64(0), types.ErrActivatedTimestampNotFound)
 	mockCwClient.EXPECT().QueryConsumerId().Return("consumer-chain-id", nil)
 	mockBBNClient.EXPECT().QueryAllFpBtcPubKeys("consumer-chain-id").Return([]string{"pk1", "pk2"}, nil)
-	mockBBNClient.EXPECT().QueryEarliestActiveDelBtcHeight([]string{"pk1", "pk2"}).Return(uint64(100), nil)
-	mockBTCClient.EXPECT().GetBlockTimestampByHeight(uint64(100)).Return(uint64(1234567890), nil)
+	mockBBNClient.EXPECT().QueryEarliestActiveDelBtcHeight([]string{"pk1", "pk2"}).Return(uint32(100), nil)
+	mockBTCClient.EXPECT().GetBlockTimestampByHeight(uint32(100)).Return(uint64(1234567890), nil)
 
 	timestamp, err = mockFinalityGadget.QueryBtcStakingActivatedTimestamp()
 	require.NoError(t, err)
@@ -760,7 +760,7 @@ func TestQueryBtcStakingActivatedTimestamp(t *testing.T) {
 	mockDbHandler.EXPECT().GetActivatedTimestamp().Return(uint64(0), types.ErrActivatedTimestampNotFound)
 	mockCwClient.EXPECT().QueryConsumerId().Return("consumer-chain-id", nil)
 	mockBBNClient.EXPECT().QueryAllFpBtcPubKeys("consumer-chain-id").Return([]string{"pk1", "pk2"}, nil)
-	mockBBNClient.EXPECT().QueryEarliestActiveDelBtcHeight([]string{"pk1", "pk2"}).Return(uint64(math.MaxUint64), nil)
+	mockBBNClient.EXPECT().QueryEarliestActiveDelBtcHeight([]string{"pk1", "pk2"}).Return(uint32(math.MaxUint32), nil)
 
 	timestamp, err = mockFinalityGadget.QueryBtcStakingActivatedTimestamp()
 	require.Equal(t, types.ErrBtcStakingNotActivated, err)

@@ -26,7 +26,7 @@ func TestBtcClient(t *testing.T) {
 	// timestmap between block 848682 and 848683
 	blockHeight, err = btc.GetBlockHeightByTimestamp(uint64(1718840690))
 	require.Nil(t, err)
-	require.Equal(t, uint64(848682), blockHeight)
+	require.Equal(t, uint32(848682), blockHeight)
 
 	// the exact timestamp of block 848682
 	blockHeight, err = btc.GetBlockHeightByTimestamp(uint64(1718839311))
