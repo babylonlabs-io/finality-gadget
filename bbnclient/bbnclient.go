@@ -181,7 +181,7 @@ func (bbnClient *BabylonClient) isDelegationActive(
 	covQuorum := btcstakingParams.GetParams().CovenantQuorum
 	ud := btcDel.UndelegationResponse
 
-	if len(ud.GetDelegatorUnbondingSigHex()) > 0 {
+	if ud.DelegatorUnbondingInfoResponse != nil {
 		return false, nil
 	}
 
