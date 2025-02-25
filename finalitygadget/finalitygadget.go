@@ -226,18 +226,12 @@ func (fg *FinalityGadget) QueryIsBlockBabylonFinalized(block *types.Block) (bool
 		return true, nil
 	}
 
-	// convert the L2 timestamp to BTC height
-	btcblockHeight, err := fg.btcClient.GetBlockHeightByTimestamp(block.BlockTimestamp)
-	if err != nil {
-		return false, err
-	}
-
 	// check whether the btc staking is activated
 	btcStakingActivatedTimestamp, err := fg.QueryBtcStakingActivatedTimestamp()
 	if err != nil {
 		return false, err
 	}
-	if btcblockHeight < btcStakingActivatedTimestamp {
+	if block.BlockTimestamp < btcStakingActivatedTimestamp {
 		return false, types.ErrBtcStakingNotActivated
 	}
 
@@ -741,10 +735,10 @@ func (fg *FinalityGadget) queryBtcStakingActivationTimestamp() (uint64, error) {
 	if err != nil {
 		return math.MaxUint64, err
 	}
-	if earliestDelHeight == math.MaxUint64 {
+	if earliestDelHeight == math.MaxUint32 {
 		return math.MaxUint64, types.ErrBtcStakingNotActivated
 	}
-	fg.logger.Debug("Earliest active delegation height", zap.Uint64("height", earliestDelHeight))
+	fg.logger.Debug("Earliest active delegation height", zap.Uint32("height", earliestDelHeight))
 
 	btcBlockTimestamp, err := fg.btcClient.GetBlockTimestampByHeight(earliestDelHeight)
 	if err != nil {

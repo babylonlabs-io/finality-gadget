@@ -21,7 +21,7 @@ func NewMockBitcoinClient(cfg *btcclient.BTCConfig, logger *zap.Logger) (*MockBi
 }
 
 // GetBlockHeightByTimestamp overrides the BTCClient's GetBlockHeightByTimestamp method.
-func (c *MockBitcoinClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint64, error) {
+func (c *MockBitcoinClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (uint32, error) {
 	// by default, kValue is 6 and wValue is 20
 	//
 	// in out test, the two mock delegations has:
@@ -37,6 +37,6 @@ func (c *MockBitcoinClient) GetBlockHeightByTimestamp(targetTimestamp uint64) (u
 
 // this is used to determine when the BTC staking is activated. return 0 to
 // simulate that the BTC staking is always activated
-func (c *MockBitcoinClient) GetBlockTimestampByHeight(height uint64) (uint64, error) {
+func (c *MockBitcoinClient) GetBlockTimestampByHeight(height uint32) (uint64, error) {
 	return 0, nil
 }
