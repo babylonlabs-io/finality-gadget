@@ -61,7 +61,7 @@ func (c *BitcoinClient) GetBlockCount() (uint32, error) {
 		return 0, fmt.Errorf("unexpected negative block count: %d", blockCount.count)
 	}
 
-	return uint32(blockCount.count), nil
+	return uint32(blockCount.count), nil // #nosec G115
 }
 
 func (c *BitcoinClient) GetBlockHashByHeight(height uint32) (*chainhash.Hash, error) {
